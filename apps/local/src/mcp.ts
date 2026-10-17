@@ -20,7 +20,7 @@ import {
   dashboardData,
   draftShow,
   draftsList,
-  exportOrders,
+  exportOrdersAs,
   fleet,
   importFile,
   loadCatalogue,
@@ -270,11 +270,21 @@ export function createMcpServer(options: McpOptions): McpServer {
     {
       title: "Export accepted orders",
       description:
-        "Accepted orders only, as CSV (spreadsheet-safe) or JSON with full provenance, returned as text. Read-only.",
-      inputSchema: z.object({ format: z.enum(["csv", "json"]) }),
+        "Accepted orders only. 'csv'/'json' are ChatterPilot's own formats with provenance; 'tally-xml', 'erpnext-csv', 'zoho-csv' and 'ubl-order' are EXPERIMENTAL import files for other tools (read the returned warnings and notes, and test in a sandbox company first). Names for other tools come from export-map.json in the workspace or the given mapPath. Returns file contents as text; writes nothing.",
+      inputSchema: z.object({
+        format: z.enum(["csv", "json", "tally-xml", "erpnext-csv", "zoho-csv", "ubl-order"]),
+        mapPath: z.string().optional().describe("export-map.json inside the allowed folder"),
+      }),
       annotations: READ_ONLY,
     },
-    ({ format }) => guard(async () => ({ format, content: await exportOrders(workspace, format) })),
+    ({ format, mapPath }) =>
+      guard(() =>
+        exportOrdersAs({
+          workspace,
+          format,
+          ...(mapPath ? { mapPath: allowedPath(root, mapPath) } : {}),
+        }),
+      ),
   );
 
   server.registerTool(

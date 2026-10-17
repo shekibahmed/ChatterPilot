@@ -6,6 +6,7 @@
   "type": "module",
   "dependencies": {
     "@chatterpilot/core": "workspace:*",
+    "@chatterpilot/exporters": "workspace:*",
     "@chatterpilot/import-whatsapp": "workspace:*",
     "@chatterpilot/order-automation": "workspace:*",
     "@chatterpilot/orders": "workspace:*",

@@ -151,9 +151,12 @@ describe("MCP server over stdio", () => {
     });
 
     const exported = (await call("export_orders", { format: "csv" })).structuredContent as {
-      content: string;
+      files: { content: string }[];
     };
-    expect(exported.content.trim().split("\r\n")).toHaveLength(1); // header only: nothing accepted
+    expect(exported.files[0]?.content.trim().split("\r\n")).toHaveLength(1); // header only: nothing accepted
+    const tally = await call("export_orders", { format: "tally-xml" });
+    expect(tally.isError).toBe(true);
+    expect(tally.content[0]?.text).toBe("No accepted orders to export yet.");
   });
 
   it("reports errors as tool results the agent can read", async () => {

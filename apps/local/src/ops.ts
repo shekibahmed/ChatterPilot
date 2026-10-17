@@ -3,7 +3,15 @@
  * JSON-serialisable data and throws `OpError` for problems the caller should show to a person.
  * Nothing here talks to the network except `fillForm`, which only reaches a loopback target.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  type ExportFile,
+  type ExportMap,
+  ExportRefused,
+  TARGETS,
+  targetById,
+} from "@chatterpilot/exporters";
 import {
   type DateOrder,
   decodeExportBytes,
@@ -40,6 +48,7 @@ import { readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
 import { fleetEvents } from "./fleet.ts";
 import { ImportError, type ImportOutcome, importExport } from "./import.ts";
 import {
+  acceptedOrders,
   activeCatalogue,
   addTranscript,
   type DraftSummary,
@@ -306,6 +315,76 @@ export function draftsList(dir: string): Promise<DraftSummary[]> {
 
 export function draftShow(dir: string, id: string): Promise<DraftView> {
   return withWorkspace(dir, (ws) => getDraft(ws, id));
+}
+
+export const EXPORT_FORMATS = ["csv", "json", ...TARGETS.map((t) => t.id)] as const;
+
+export interface ExportOutput {
+  readonly format: string;
+  readonly files: readonly ExportFile[];
+  readonly warnings: readonly string[];
+  readonly notes: string | null;
+}
+
+/** Read an export map: the explicit file, else export-map.json in the workspace folder. */
+function readExportMap(ws: Workspace, mapPath?: string): ExportMap | undefined {
+  const path = mapPath ?? join(ws.dir, "export-map.json");
+  if (!existsSync(path)) return undefined;
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as ExportMap;
+  } catch {
+    throw new OpError("bad_map", `${path} is not valid JSON.`);
+  }
+}
+
+/**
+ * Accepted orders as CSV/JSON (ChatterPilot's own formats) or as an import file for another tool
+ * (Tally, ERPNext, Zoho Books, UBL). Experimental formats say so in `warnings`.
+ */
+export function exportOrdersAs(options: {
+  workspace: string;
+  format: string;
+  mapPath?: string | undefined;
+}): Promise<ExportOutput> {
+  return withWorkspace(options.workspace, (ws) => {
+    if (options.format === "csv" || options.format === "json") {
+      const content = options.format === "csv" ? exportCsv(ws) : exportJson(ws);
+      return {
+        format: options.format,
+        files: [
+          {
+            fileName: `chatterpilot-orders.${options.format}`,
+            mediaType: options.format === "csv" ? "text/csv" : "application/json",
+            content,
+          },
+        ],
+        warnings: [],
+        notes: null,
+      };
+    }
+    const target = targetById(options.format);
+    if (!target)
+      throw new OpError(
+        "bad_format",
+        `Unknown format. Use one of: ${EXPORT_FORMATS.join(", ")}.`,
+        2,
+      );
+    const orders = acceptedOrders(ws);
+    if (orders.length === 0)
+      throw new OpError("nothing_accepted", "No accepted orders to export yet.");
+    try {
+      const result = target.render(orders, readExportMap(ws, options.mapPath));
+      return {
+        format: target.id,
+        files: result.files,
+        warnings: result.warnings,
+        notes: target.notes,
+      };
+    } catch (err) {
+      if (err instanceof ExportRefused) throw new OpError("export_refused", err.problems.join(" "));
+      throw err;
+    }
+  });
 }
 
 export function exportOrders(dir: string, format: "csv" | "json"): Promise<string> {

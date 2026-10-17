@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
 import type { OrderDraft } from "@chatterpilot/orders";
@@ -13,7 +14,7 @@ import {
   dashboardData,
   draftShow,
   draftsList,
-  exportOrders,
+  exportOrdersAs,
   fillForm,
   fleet,
   importFile,
@@ -54,8 +55,10 @@ const USAGE = `Usage (every command accepts --json for machine-readable output):
   chatterpilot drafts list [--workspace <dir>] [--json]
   chatterpilot drafts show <id> [--workspace <dir>] [--json]
       Saved drafts and their review status (review and accept them in the app: chatterpilot serve).
-  chatterpilot export --format csv|json [--output <file>] [--workspace <dir>]
-      Accepted orders only, from their frozen snapshots.
+  chatterpilot export --format csv|json|tally-xml|erpnext-csv|zoho-csv|ubl-order [--map <export-map.json>] [--output <file|dir>] [--workspace <dir>] [--json]
+      Accepted orders only, from their frozen snapshots: ChatterPilot CSV/JSON, or import files for
+      Tally Prime, ERPNext, Zoho Books or UBL 2.1 (experimental; see docs/exporters.md).
+      Names come from --map or export-map.json in the workspace folder.
   chatterpilot dashboard [--scope accepted|all] [--workspace <dir>] [--json]
       Deterministic metrics with coverage and exclusions.
   chatterpilot events --vehicles <vehicles.csv> [--chat <name>] [--workspace <dir>] [--json]
@@ -380,14 +383,33 @@ const commands: Record<string, Command> = {
   async export(args) {
     const { values } = parseArgs({
       args,
-      options: { format: { type: "string" }, output: { type: "string" }, workspace: ws },
+      options: {
+        format: { type: "string" },
+        map: { type: "string" },
+        output: { type: "string" },
+        workspace: ws,
+        json: asJson,
+      },
     });
-    if (values.format !== "csv" && values.format !== "json") throw new UsageError();
-    const text = await exportOrders(values.workspace, values.format);
+    if (!values.format) throw new UsageError();
+    const out = await exportOrdersAs({
+      workspace: values.workspace,
+      format: values.format,
+      mapPath: values.map,
+    });
+    if (values.json) return emit(out, 0);
+    for (const w of out.warnings) console.error(`Note: ${w}`);
     if (values.output) {
-      writeFileSync(values.output, text);
-      console.error(`Wrote ${values.output}`);
-    } else process.stdout.write(text);
+      const many = out.files.length > 1;
+      if (many) mkdirSync(values.output, { recursive: true });
+      for (const f of out.files) {
+        const path = many ? join(values.output, f.fileName) : values.output;
+        writeFileSync(path, f.content);
+        console.error(`Wrote ${path}`);
+      }
+    } else {
+      for (const f of out.files) process.stdout.write(f.content);
+    }
     return 0;
   },
 

@@ -315,3 +315,21 @@ their replacement. No secrets, customer data or private transcripts.
   quantity (fixes "site 2 … 20 bori cement").
 - Not done: regional languages beyond the listed words (need native-speaker validation); delivery
   dates ("kal" is ambiguous) are not extracted.
+
+## D018 — Import files for Tally, ERPNext, Zoho Books and UBL (experimental, file-only)
+- Date: 2026-10-17 (+05:30)
+- Status: accepted
+- Context: research on vendor import formats (summarised in `docs/exporters.md`). Tally's Sales
+  Order tags and Zoho's column names are not in public docs; Tally can silently drop lines when
+  masters do not match, and re-imports create duplicates.
+- Chosen: `packages/exporters` renders accepted snapshots only, into files a person imports. No
+  connection to any billing tool. Every target is labelled `experimental` and returns warnings.
+  Names come from `export-map.json` (workspace folder or `--map`); Tally refuses to export until
+  every customer and product is mapped and refuses unit symbols with spaces or `/`. Each order
+  carries `CP-<first 10 hex of snapshot SHA-256>` as voucher/reference so duplicates are visible.
+  UBL writes one file per order with UN/ECE unit codes. Quantities are in the product's base unit
+  (the unit the price is per). Exposed through CLI `export --format`, the Export tab and MCP
+  `export_orders` (read-only).
+- Not done: import verification against real Tally/ERPNext/Zoho accounts (owner or customer to run);
+  UBL XSD validation in CI (well-formedness only, via xmllint when present); Busy/Vyapar/Marg
+  (no documented sales-order import; left to "adapt with your agent").

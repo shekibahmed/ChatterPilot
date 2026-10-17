@@ -347,3 +347,13 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Checks: `pnpm check` exit 0, 389 tests (new Hinglish suite incl. the research note's examples, a
   Devanagari customer, lexicon.json validation/versioning, the synthetic Hinglish chat end to end);
   `pnpm test:e2e` exit 0, 10 passed (dashboard now shows the Jan 16–19 coverage gap).
+
+## 2026-10-17 — Overnight run, slice 3: export files for other tools
+- Starting HEAD: `738decda719a7b9a1d0cbee30476a642c4cbc8d6`
+- Changes: new `packages/exporters` (tally-xml, erpnext-csv, zoho-csv, ubl-order; fail-closed
+  flattening, XML escaping, name mapping with warnings), `exportOrdersAs` in ops, CLI
+  `export --format … --map --output`, server `/api/exports[/:format[/:index]]`, Export tab with
+  per-target warnings, MCP `export_orders` returns files + warnings, docs/exporters.md, example map.
+- Checks: `pnpm check` exit 0, 399 tests (9 exporter tests incl. hostile names and xmllint
+  well-formedness; server export API; MCP export refusal); `pnpm test:e2e` exit 0, 10 passed.
+- Not verified: importing any file into the real tools.

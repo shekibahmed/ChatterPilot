@@ -338,3 +338,39 @@ describe("dashboard API", () => {
     expect((await json<Dash>(get("/api/dashboard?scope=all"))).scope).toBe("all");
   });
 });
+
+describe("export targets API", () => {
+  it("lists targets and prepares files only from accepted orders, refusing Tally without a map", async () => {
+    const targets = await json<{ id: string; maturity: string }[]>(get("/api/exports"));
+    expect(targets.map((t) => [t.id, t.maturity])).toEqual([
+      ["tally-xml", "experimental"],
+      ["erpnext-csv", "experimental"],
+      ["zoho-csv", "experimental"],
+      ["ubl-order", "experimental"],
+    ]);
+    const none = await get("/api/exports/zoho-csv");
+    expect(none.status).toBe(400);
+
+    const [order] = await json<{ id: string }[]>(get("/api/suggestions"));
+    const draft = await json<View>(
+      post("/api/drafts", { messageIds: [order?.id], reviewer: "Anita" }),
+    );
+    await post(`/api/drafts/${draft.record.id}/decisions`, {
+      decision: { action: "accept" },
+      reviewer: "Anita",
+    });
+
+    const zoho = await json<{ files: { index: number; fileName: string }[]; warnings: string[] }>(
+      get("/api/exports/zoho-csv"),
+    );
+    expect(zoho.files).toEqual([{ index: 0, fileName: "chatterpilot-sales-orders-zoho.csv" }]);
+    const file = await get("/api/exports/zoho-csv/0");
+    expect(file.headers.get("content-disposition")).toContain("chatterpilot-sales-orders-zoho.csv");
+    expect(await file.text()).toContain('"Kumar Builders"');
+
+    const tally = await json<{ error: string }>(get("/api/exports/tally-xml"));
+    expect(tally.error).toMatch(/export-map.json/);
+    const unknown = await get("/api/exports/sap-idoc");
+    expect(unknown.status).toBe(400);
+  });
+});

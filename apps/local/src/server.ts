@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { TARGETS } from "@chatterpilot/exporters";
 import type { DateOrder } from "@chatterpilot/import-whatsapp";
 import type { Workspace } from "@chatterpilot/storage";
 import { serve } from "@hono/node-server";
@@ -8,6 +9,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { ImportError, importExport } from "./import.ts";
+import { exportOrdersAs, OpError } from "./ops.ts";
 import {
   activeCatalogue,
   createDraft,
@@ -190,6 +192,37 @@ export function createApp(ws: Workspace, options: AppOptions): Hono {
     );
   });
 
+  app.get("/api/exports", (c) =>
+    c.json(
+      TARGETS.map((t) => ({ id: t.id, label: t.label, maturity: t.maturity, notes: t.notes })),
+    ),
+  );
+  app.get("/api/exports/:format", async (c) => {
+    try {
+      const out = await exportOrdersAs({ workspace: ws.dir, format: c.req.param("format") });
+      return c.json({
+        format: out.format,
+        warnings: out.warnings,
+        notes: out.notes,
+        files: out.files.map((f, index) => ({ index, fileName: f.fileName })),
+      });
+    } catch (err) {
+      if (err instanceof OpError) return c.json({ error: err.message }, 400);
+      throw err;
+    }
+  });
+  app.get("/api/exports/:format/:index", async (c) => {
+    try {
+      const out = await exportOrdersAs({ workspace: ws.dir, format: c.req.param("format") });
+      const file = out.files[Number(c.req.param("index"))];
+      if (!file) return c.json({ error: "Not found." }, 404);
+      c.header("Content-Disposition", `attachment; filename="${safeFileName(file.fileName)}"`);
+      return c.body(file.content, 200, { "Content-Type": `${file.mediaType}; charset=utf-8` });
+    } catch (err) {
+      if (err instanceof OpError) return c.json({ error: err.message }, 400);
+      throw err;
+    }
+  });
   app.get("/api/export/orders.csv", (c) => {
     c.header("Content-Disposition", 'attachment; filename="chatterpilot-orders.csv"');
     return c.body(exportCsv(ws), 200, { "Content-Type": "text/csv; charset=utf-8" });

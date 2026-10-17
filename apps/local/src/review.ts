@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { formatMinor, parseAmountToMinor, toCsv } from "@chatterpilot/core";
+import type { AcceptedOrder } from "@chatterpilot/exporters";
 import {
   buildOrderDraft,
   type Catalogue,
@@ -515,6 +516,17 @@ function accepted(ws: Workspace) {
       const acceptance = [...view.decisions].reverse().find((x) => x.action === "accept");
       return { view, acceptance };
     });
+}
+
+/** Accepted orders as frozen at acceptance, for file exporters. */
+export function acceptedOrders(ws: Workspace): AcceptedOrder[] {
+  return accepted(ws).map(({ view, acceptance }) => ({
+    id: view.record.id,
+    acceptedAt: acceptance?.at ?? null,
+    acceptedBy: acceptance?.reviewer ?? null,
+    snapshotSha256: view.acceptedSnapshotSha256 ?? "",
+    draft: view.draft,
+  }));
 }
 
 export function exportCsv(ws: Workspace): string {
