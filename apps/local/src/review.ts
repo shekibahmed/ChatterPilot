@@ -8,6 +8,7 @@ import {
   type Catalogue,
   type CatalogueIssue,
   canonicalUnit,
+  compileLexicon,
   computeDashboard,
   type Dashboard,
   type DraftOverrides,
@@ -61,7 +62,13 @@ export async function loadCatalogueIntoWorkspace(
   const products = read("products.csv");
   const customers = read("customers.csv");
   const meta = existsSync(join(dir, "catalogue.json")) ? read("catalogue.json") : undefined;
-  const result = loadCatalogue({ products, customers, ...(meta === undefined ? {} : { meta }) });
+  const lexicon = existsSync(join(dir, "lexicon.json")) ? read("lexicon.json") : undefined;
+  const result = loadCatalogue({
+    products,
+    customers,
+    ...(meta === undefined ? {} : { meta }),
+    ...(lexicon === undefined ? {} : { lexicon }),
+  });
   if (!result.catalogue) return result;
   const put = async (text: string) =>
     (await ws.blobs.put(Readable.from([Buffer.from(text, "utf8")]))).sha256;
@@ -72,6 +79,7 @@ export async function loadCatalogueIntoWorkspace(
     productsSha256: await put(products),
     customersSha256: await put(customers),
     metaSha256: meta === undefined ? null : await put(meta),
+    lexiconSha256: lexicon === undefined ? null : await put(lexicon),
   });
   catalogueCache.set(result.catalogue.version, result.catalogue);
   return result;
@@ -88,6 +96,7 @@ export function catalogueFor(ws: Workspace, version: string): Catalogue {
     products: text(record.productsSha256),
     customers: text(record.customersSha256),
     ...(record.metaSha256 ? { meta: text(record.metaSha256) } : {}),
+    ...(record.lexiconSha256 ? { lexicon: text(record.lexiconSha256) } : {}),
   });
   if (!catalogue || catalogue.version !== version) {
     throw new Error(`Stored catalogue ${version} no longer validates to the same version.`);
@@ -267,7 +276,7 @@ function parseDecision(
         }
         value = text;
       } else if (input.field === "unit") {
-        const unit = canonicalUnit(text);
+        const unit = canonicalUnit(text, compileLexicon(catalogue.lexicon));
         if (!unit) throw new ReviewError(400, `Unknown unit "${text}".`);
         value = unit;
       } else {
@@ -462,7 +471,8 @@ export function suggestions(ws: Workspace): StoredMessage[] {
   if (!catalogue) return [];
   const used = usedMessageIds(ws);
   return ws.reviews.allTextMessages().filter((m) => {
-    if (used.has(m.id) || looksLikeNonOrder(draftText(m))) return false;
+    if (used.has(m.id) || looksLikeNonOrder(draftText(m), compileLexicon(catalogue.lexicon)))
+      return false;
     const draft = buildOrderDraft([toSource(m)], catalogue);
     return draft.lines.some((l) => l.product.value !== null);
   });

@@ -4,6 +4,7 @@ import {
   buildOrderDraft,
   type Catalogue,
   type CatalogueIssue,
+  compileLexicon,
   extractOrderLines,
   loadCatalogue,
   looksLikeNonOrder,
@@ -13,19 +14,21 @@ import {
 } from "@chatterpilot/orders";
 import type { Workspace } from "@chatterpilot/storage";
 
-/** Read products.csv, customers.csv and optional catalogue.json from a directory. */
+/** Read products.csv, customers.csv and optional catalogue.json and lexicon.json from a directory. */
 export function readCatalogueDir(dir: string): {
   catalogue: Catalogue | null;
   issues: CatalogueIssue[];
 } {
   const file = (name: string) => join(dir, name);
-  const meta = existsSync(file("catalogue.json"))
-    ? readFileSync(file("catalogue.json"), "utf8")
-    : undefined;
+  const optional = (name: string) =>
+    existsSync(file(name)) ? readFileSync(file(name), "utf8") : undefined;
+  const meta = optional("catalogue.json");
+  const lexicon = optional("lexicon.json");
   return loadCatalogue({
     products: readFileSync(file("products.csv"), "utf8"),
     customers: readFileSync(file("customers.csv"), "utf8"),
     ...(meta === undefined ? {} : { meta }),
+    ...(lexicon === undefined ? {} : { lexicon }),
   });
 }
 
@@ -63,8 +66,8 @@ export function suggestOrderMessages(workspace: Workspace, catalogue: Catalogue)
   return rows
     .filter(
       (r) =>
-        !looksLikeNonOrder(r.body) &&
-        extractOrderLines(r.body).some((line) => {
+        !looksLikeNonOrder(r.body, compileLexicon(catalogue.lexicon)) &&
+        extractOrderLines(r.body, compileLexicon(catalogue.lexicon)).some((line) => {
           const status = matchRecord(line.productText, catalogue.products, (p) => [
             p.name,
             ...p.aliases,

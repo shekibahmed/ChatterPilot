@@ -264,7 +264,7 @@ export class Workspace {
           `SELECT 1 FROM import_batch WHERE chat_text_sha256 = @sha
            UNION ALL SELECT 1 FROM attachment WHERE blob_sha256 = @sha
            UNION ALL SELECT 1 FROM catalogue_version
-             WHERE @sha IN (products_sha256, customers_sha256, meta_sha256)
+             WHERE @sha IN (products_sha256, customers_sha256, meta_sha256, lexicon_sha256)
            LIMIT 1`,
         )
         .get({ sha: sha256 }) !== undefined

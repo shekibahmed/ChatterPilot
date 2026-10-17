@@ -24,6 +24,15 @@ export type {
 export { buildOrderDraft, DRAFT_FORMULA_VERSION, OverrideError } from "./draft.ts";
 export type { ExtractedLine } from "./extract.ts";
 export { extractOrderLines, looksLikeNonOrder } from "./extract.ts";
+export type { CompiledLexicon, Lexicon } from "./lexicon.ts";
+export {
+  compileLexicon,
+  DEFAULT_COMPILED,
+  DEFAULT_LEXICON,
+  mergeLexicon,
+  normaliseDigits,
+  validateLexicon,
+} from "./lexicon.ts";
 export type { MatchResult, MatchStatus } from "./match.ts";
 export { matchRecord } from "./match.ts";
 export type { Dashboard, DashboardInput, Exclusion, Metric, MetricScope } from "./metrics.ts";

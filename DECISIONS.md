@@ -297,3 +297,21 @@ their replacement. No secrets, customer data or private transcripts.
     `agent:<name>` with a required reason; accept/reject/reopen and form filling are not exposed,
     because harness approval prompts can be skipped (e.g. headless runs) and annotations are hints.
 - Not done: MCP resources/prompts; an npm package (`npx chatterpilot`) is not published.
+
+## D017 — Lexicon: Hinglish units and numbers, Indic digits, business word lists
+- Date: 2026-10-17 (+05:30)
+- Status: accepted
+- Context: research note `docs/research/indian-order-language.md` (no primary corpus of order
+  phrasing exists; defaults are general knowledge and must be validated with real exports).
+- Chosen: `packages/orders/src/lexicon.ts` holds data, not code: unit spellings (English, romanised
+  Hindi, some Devanagari), multipliers (dozen 12, gross 144), number words with modifiers
+  (sawa/paune/sadhe) and scales (hazaar/lakh), and non-order phrases. Businesses extend it with
+  `lexicon.json` in the catalogue folder (validated; part of the catalogue version; stored per
+  version, migration 7). Decimal digits of other scripts are normalised one-to-one so evidence
+  spans stay exact. Number words count only when a unit follows, and always raise
+  `quantity_in_words` for a person to confirm. Single-letter units (m, l, g) count only when glued to
+  a digit. Matching keys keep letters, marks and digits of any script, so names like `सीमेंट` work.
+  Quantity-first extraction now takes the earliest candidate whose product phrase contains no other
+  quantity (fixes "site 2 … 20 bori cement").
+- Not done: regional languages beyond the listed words (need native-speaker validation); delivery
+  dates ("kal" is ambiguous) are not extracted.

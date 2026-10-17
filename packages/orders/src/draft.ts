@@ -8,6 +8,7 @@ import {
 } from "@chatterpilot/core";
 import { type Catalogue, type Customer, matchKey, type Product } from "./catalogue.ts";
 import { type ExtractedLine, extractOrderLines } from "./extract.ts";
+import { compileLexicon } from "./lexicon.ts";
 import { matchRecord } from "./match.ts";
 import { canonicalUnit } from "./units.ts";
 
@@ -45,7 +46,8 @@ export type IssueCode =
   | "price_not_yet_effective"
   | "tax_rate_missing"
   | "mixed_currency"
-  | "amount_out_of_range";
+  | "amount_out_of_range"
+  | "quantity_in_words";
 
 export interface DraftIssue {
   readonly code: IssueCode;
@@ -220,7 +222,10 @@ function catalogueEvidence(
 function findKeySpan(body: string, key: string): { start: number; end: number } | null {
   const words = key.split(" ").filter(Boolean);
   if (words.length === 0) return null;
-  const pattern = new RegExp(`(?<![a-z0-9])${words.join("[^a-z0-9]+")}(?![a-z0-9])`, "i");
+  const pattern = new RegExp(
+    `(?<![\\p{L}\\p{M}\\p{N}])${words.join("[^\\p{L}\\p{M}\\p{N}]+")}(?![\\p{L}\\p{M}\\p{N}])`,
+    "iu",
+  );
   const m = pattern.exec(body);
   return m ? { start: m.index, end: m.index + m[0].length } : null;
 }
@@ -307,9 +312,20 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
   }
 
   // Quantity
-  const qtyParsed = parseAmountToMinor(extracted.quantityText, 3);
+  const qtyParsed =
+    extracted.quantityFromWords !== null
+      ? { ok: true as const, minor: Math.round(extracted.quantityFromWords * 1000) }
+      : parseAmountToMinor(extracted.quantityText, 3);
   let quantity: Field<Quantity>;
-  if (qtyParsed.ok && qtyParsed.minor > 0) {
+  if (qtyParsed.ok && qtyParsed.minor > 0 && extracted.quantityFromWords !== null) {
+    // A quantity written in words is read deterministically but still needs a person's eye.
+    quantity = review({ milli: qtyParsed.minor, text: extracted.quantityText }, [lineEvidence]);
+    issue(
+      "quantity_in_words",
+      "quantity",
+      `"${extracted.quantityText}" was read as ${formatQuantity(qtyParsed.minor)}; confirm the quantity.`,
+    );
+  } else if (qtyParsed.ok && qtyParsed.minor > 0) {
     quantity = ok({ milli: qtyParsed.minor, text: extracted.quantityText }, [lineEvidence]);
   } else {
     quantity = review<Quantity>(null, [lineEvidence]);
@@ -329,7 +345,8 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
 
   // Unit: as written, or the catalogue's counting unit when none is written.
   let unit: Field<string> = unknownField();
-  const writtenUnit = extracted.unitText ? canonicalUnit(extracted.unitText) : null;
+  const words = compileLexicon(catalogue.lexicon);
+  const writtenUnit = extracted.unitText ? canonicalUnit(extracted.unitText, words) : null;
   if (writtenUnit) {
     unit = ok(writtenUnit, [lineEvidence]);
   } else if (p && p.unit === "piece") {
@@ -338,7 +355,7 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
     issue("unit_missing", "unit", `No unit given; ${p.name} is sold per ${p.unit}.`);
   }
   if (ov.unit) {
-    const code = canonicalUnit(ov.unit.value);
+    const code = canonicalUnit(ov.unit.value, words);
     if (!code) throw new OverrideError(`Unknown unit ${ov.unit.value}.`);
     unit = human(ov.unit, code, unit.value, chatEvidence(unit));
   }
@@ -348,8 +365,15 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
       factorMilli = 1000;
     } else {
       const alt = p.altUnits.find((a) => a.unit === unit.value);
+      // A counting unit such as "dozen" converts through the unit it counts (12 piece).
+      const multiplier = words.lexicon.multipliers[unit.value];
+      const viaAlt = multiplier && p.altUnits.find((a) => a.unit === multiplier.unit);
       if (alt) {
         factorMilli = alt.factorMilli;
+      } else if (multiplier && multiplier.unit === p.unit) {
+        factorMilli = Math.round(multiplier.factor * 1000);
+      } else if (multiplier && viaAlt) {
+        factorMilli = Math.round(multiplier.factor * viaAlt.factorMilli);
       } else {
         // Even a reviewer cannot sell a product by a unit the catalogue does not define.
         unit = review(unit.value, [...unit.evidence]);
@@ -598,7 +622,7 @@ export function buildOrderDraft(
 
   const lines: DraftLine[] = [];
   for (const msg of messages) {
-    for (const extracted of extractOrderLines(msg.body)) {
+    for (const extracted of extractOrderLines(msg.body, compileLexicon(catalogue.lexicon))) {
       const index = lines.length;
       const built = buildLine({
         catalogue,

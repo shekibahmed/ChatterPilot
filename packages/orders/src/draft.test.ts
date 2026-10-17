@@ -103,7 +103,8 @@ const CASES: [string, Expected[]][] = [
   ["Order for Kumar Builders site 2:", []],
   ["Deliver tomorrow 11am", []],
   ["Total approx 2,790 before GST", []],
-  ["४० bags cement", []],
+  // Devanagari digits are read as digits (offsets unchanged).
+  ["४० bags cement", [["CEM-UB50", 40000, "bag", []]]],
 ];
 
 describe("buildOrderDraft: adversarial order lines", () => {

@@ -1,5 +1,12 @@
 import { createHash } from "node:crypto";
 import { parseAmountToMinor, parseCsv } from "@chatterpilot/core";
+import {
+  compileLexicon,
+  DEFAULT_LEXICON,
+  type Lexicon,
+  mergeLexicon,
+  validateLexicon,
+} from "./lexicon.ts";
 import { canonicalUnit } from "./units.ts";
 
 export interface AltUnit {
@@ -41,9 +48,11 @@ export interface Catalogue {
   readonly stalePriceDays: number;
   readonly products: readonly Product[];
   readonly customers: readonly Customer[];
+  /** Default unit/number words plus this business's additions from lexicon.json. */
+  readonly lexicon: Lexicon;
 }
 
-export type CatalogueFile = "products.csv" | "customers.csv" | "catalogue.json";
+export type CatalogueFile = "products.csv" | "customers.csv" | "catalogue.json" | "lexicon.json";
 
 export interface CatalogueIssue {
   readonly severity: "error" | "warning";
@@ -58,6 +67,8 @@ export interface CatalogueFiles {
   readonly products: string;
   readonly customers: string;
   readonly meta?: string;
+  /** Optional lexicon.json: extra unit, number and non-order words for this business. */
+  readonly lexicon?: string;
 }
 
 const PRODUCT_COLUMNS = [
@@ -93,9 +104,11 @@ const splitList = (text: string) =>
 
 /** Lowercase, punctuation-insensitive key used for alias collision checks and matching. */
 export function matchKey(text: string): string {
+  // Letters, combining marks and digits of any script (Devanagari vowel signs are marks).
   return text
+    .normalize("NFKC")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .trim();
 }
 
@@ -183,6 +196,23 @@ export function loadCatalogue(files: CatalogueFiles): {
     message: string,
   ) => issues.push({ severity, file, row, column, code, message });
 
+  let lexicon: Lexicon = DEFAULT_LEXICON;
+  if (files.lexicon !== undefined) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(files.lexicon);
+    } catch {
+      issue("error", "lexicon.json", null, null, "invalid_json", "lexicon.json is not valid JSON.");
+    }
+    if (parsed !== undefined) {
+      const checked = validateLexicon(parsed);
+      for (const problem of checked.problems)
+        issue("error", "lexicon.json", null, null, "invalid_lexicon", problem);
+      if (checked.lexicon) lexicon = mergeLexicon(DEFAULT_LEXICON, checked.lexicon);
+    }
+  }
+  const words = compileLexicon(lexicon);
+
   let maintainer: string | null = null;
   let stalePriceDays = DEFAULT_STALE_DAYS;
   if (files.meta !== undefined) {
@@ -253,7 +283,7 @@ export function loadCatalogue(files: CatalogueFiles): {
       err("name", "missing_value", "Product name is empty.");
       ok = false;
     }
-    const unit = canonicalUnit(v.unit);
+    const unit = canonicalUnit(v.unit, words);
     if (!unit) {
       err("unit", "invalid_unit", `Unknown unit "${v.unit}".`);
       ok = false;
@@ -261,7 +291,7 @@ export function loadCatalogue(files: CatalogueFiles): {
     const altUnits: AltUnit[] = [];
     for (const spec of splitList(v.alt_units)) {
       const m = /^(.+?)\s*[:=]\s*([\d.]+)$/.exec(spec);
-      const altUnit = m ? canonicalUnit(m[1] ?? "") : null;
+      const altUnit = m ? canonicalUnit(m[1] ?? "", words) : null;
       const factor = m ? parseAmountToMinor(m[2] ?? "", 3) : null;
       if (!m || !altUnit || !factor?.ok || factor.minor === 0 || altUnit === unit) {
         err(
@@ -411,13 +441,15 @@ export function loadCatalogue(files: CatalogueFiles): {
 
   const version = createHash("sha256")
     .update(
-      `products.csv\0${files.products}\0customers.csv\0${files.customers}\0catalogue.json\0${files.meta ?? ""}`,
+      `products.csv\0${files.products}\0customers.csv\0${files.customers}\0catalogue.json\0${files.meta ?? ""}${files.lexicon === undefined ? "" : `\0lexicon.json\0${files.lexicon}`}`,
     )
     .digest("hex")
     .slice(0, 16);
   const hasErrors = issues.some((i) => i.severity === "error");
   return {
-    catalogue: hasErrors ? null : { version, maintainer, stalePriceDays, products, customers },
+    catalogue: hasErrors
+      ? null
+      : { version, maintainer, stalePriceDays, products, customers, lexicon },
     issues,
   };
 }

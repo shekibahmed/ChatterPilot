@@ -228,4 +228,8 @@ export const MIGRATIONS: readonly string[] = [
   CREATE TRIGGER transcript_no_update BEFORE UPDATE ON transcript
   BEGIN SELECT RAISE(ABORT, 'transcripts are versioned, not edited'); END;
   `,
+  `
+  -- Optional business lexicon (extra unit/number words) stored with each catalogue version.
+  ALTER TABLE catalogue_version ADD COLUMN lexicon_sha256 TEXT;
+  `,
 ];

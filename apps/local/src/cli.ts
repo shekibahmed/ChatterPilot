@@ -620,7 +620,11 @@ const commands: Record<string, Command> = {
     }
     await withWorkspace(values.workspace, async (w) => {
       await loadCatalogueIntoWorkspace(w, `${FIXTURES}catalogue`);
-      for (const chat of ["android-dmy-hardware-orders.txt", "ios-mdy-plumbing-orders.txt"]) {
+      for (const chat of [
+        "android-dmy-hardware-orders.txt",
+        "ios-mdy-plumbing-orders.txt",
+        "android-hinglish-orders.txt",
+      ]) {
         await importExport(w, `${FIXTURES}chats/${chat}`);
       }
     });

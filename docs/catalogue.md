@@ -34,3 +34,33 @@ prices, units and tax for order drafts. Check it with `pnpm chatterpilot catalog
 
 Every catalogue file set gets a version (a fingerprint of the files). Each draft records the version
 it was priced with, and the files are stored in the workspace so any draft can be re-checked later.
+
+## lexicon.json (optional): your shop's own words
+
+ChatterPilot already understands common English and romanised Hindi (Hinglish) order words: units
+such as *bori/bora/katta* (bag), *peti/carton* (case), *nag/pcs* (piece), *dabba* (tin),
+*darjan/dozen*; number words such as *ek, do, teen … bees, pachas, sau*, *dedh* (1.5), *dhai*
+(2.5), *sawa/paune/sadhe* (+¼, −¼, +½), *hazaar, lakh*; and digits in Devanagari, Bengali/Assamese,
+Gujarati, Gurmukhi, Tamil, Telugu, Kannada, Malayalam and other scripts. Quantities written in words
+are always flagged for a person to confirm, and a number word only counts when a unit follows it
+("do bori" = 2 bags; "bhej do" = "send it").
+
+Add the words your customers use in `lexicon.json` next to `products.csv`. Entries are added to
+the defaults; nothing is removed:
+
+```json
+{
+  "units": { "than": ["than", "thaan"], "case": ["कार्टन"] },
+  "numbers": { "dus": 10 },
+  "nonOrderPhrases": ["sample bhejo"]
+}
+```
+
+- `units`: canonical unit code (lowercase) → spellings. Use the code in `products.csv` (`unit`,
+  `alt_units`). Pack sizes belong in `alt_units` (`case:48`), never in the lexicon.
+- `numbers`, `modifiers`, `scales`: extra number words (values may be fractional).
+- `multipliers`: counting units, e.g. `{ "gross": { "unit": "piece", "factor": 144 } }`.
+- `nonOrderPhrases`: phrases that mark a message as not an order (questions, references).
+
+The lexicon is part of the catalogue version, so every draft records exactly which words were used.
+Product and customer names may be written in any script (for example `सीमेंट` as an alias).

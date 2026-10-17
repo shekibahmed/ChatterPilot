@@ -7,6 +7,7 @@ export interface CatalogueVersionRecord {
   readonly productsSha256: string;
   readonly customersSha256: string;
   readonly metaSha256: string | null;
+  readonly lexiconSha256: string | null;
 }
 
 export type DraftStatus = "open" | "accepted" | "rejected";
@@ -86,8 +87,9 @@ export class ReviewStore {
     this.db
       .prepare(
         `INSERT OR IGNORE INTO catalogue_version
-           (version, loaded_at, maintainer, products_sha256, customers_sha256, meta_sha256)
-         VALUES (@version, @loadedAt, @maintainer, @productsSha256, @customersSha256, @metaSha256)`,
+           (version, loaded_at, maintainer, products_sha256, customers_sha256, meta_sha256, lexicon_sha256)
+         VALUES (@version, @loadedAt, @maintainer, @productsSha256, @customersSha256, @metaSha256,
+           @lexiconSha256)`,
       )
       .run(record);
   }
@@ -97,7 +99,8 @@ export class ReviewStore {
       (this.db
         .prepare(
           `SELECT version, loaded_at AS loadedAt, maintainer, products_sha256 AS productsSha256,
-                  customers_sha256 AS customersSha256, meta_sha256 AS metaSha256
+                  customers_sha256 AS customersSha256, meta_sha256 AS metaSha256,
+                  lexicon_sha256 AS lexiconSha256
            FROM catalogue_version WHERE version = ?`,
         )
         .get(version) as CatalogueVersionRecord | undefined) ?? null

@@ -337,3 +337,13 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   stdio server and speaks JSON-RPC), D016.
 - Checks: `pnpm check` exit 0, 365 tests; `pnpm test:e2e` exit 0, 10 passed (before MCP tests
   were added). The skill-consistency test caught a dropped `--catalogue` flag in the new usage text.
+
+## 2026-10-17 — Overnight run, slice 2: lexicon (Hinglish, Indic digits, business words)
+- Starting HEAD: `8744070bd4549180249afcd68dfdfe7a9e5a7ec2`
+- Changes: `lexicon.ts` (defaults, merge, validation, compile, digit normalisation), lexicon-driven
+  `extract.ts` (Unicode products, word quantities, earliest-valid candidate), catalogue `lexicon.json`
+  (+ migration 7 storage), Unicode `matchKey`/customer spans, `quantity_in_words` issue, dozen/gross
+  conversion, Hinglish synthetic chat added to the demo, docs (catalogue.md section, research note).
+- Checks: `pnpm check` exit 0, 389 tests (new Hinglish suite incl. the research note's examples, a
+  Devanagari customer, lexicon.json validation/versioning, the synthetic Hinglish chat end to end);
+  `pnpm test:e2e` exit 0, 10 passed (dashboard now shows the Jan 16–19 coverage gap).

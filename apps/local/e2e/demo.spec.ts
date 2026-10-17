@@ -67,7 +67,9 @@ test("demo: review a chat order end to end without any outbound request", async 
 
   // Dashboard: reviewed-only money metrics, explicit coverage, no invented trend.
   await page.getByRole("link", { name: "Dashboard", exact: true }).click();
-  await expect(page.getByTestId("coverage")).toContainText("2026-01-12 to 2026-01-15");
+  // Three synthetic chats cover Jan 12-15 and Jan 20-21; the gap is shown, not hidden.
+  await expect(page.getByTestId("coverage")).toContainText("2026-01-12 to 2026-01-21");
+  await expect(page.getByTestId("coverage")).toContainText("no data for 2026-01-16–2026-01-19");
   await expect(page.getByTestId("comparison")).toContainText("Insufficient comparable data");
   await page.getByRole("button", { name: /2026-01-12: INR 30,979.20 from 1 order/ }).hover();
   await expect(page.locator(".tooltip").first()).toHaveText(
