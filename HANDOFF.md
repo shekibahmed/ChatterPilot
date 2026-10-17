@@ -16,8 +16,8 @@
 ## Verified repository and code state
 - Repository: `shekibahmed/ChatterPilot` (GitHub visibility PRIVATE)
 - Branch: `build/v0.1`; look up the latest commit with `git log -1` (a file cannot contain its own SHA)
-- Last fully checked code: "Flag corrections and partial matches; recognise non-orders"
-  (`1da9bcbb`): `pnpm check` exit 0 (422 tests), `pnpm test:e2e` exit 0 (10 passed)
+- Last fully checked code: "Measure the follow-ups rules and broaden them" (`3651c4c`):
+  `pnpm check` exit 0 (451 tests), `pnpm test:e2e` exit 0 (12 passed)
 
 ## Working tree to preserve
 - Private planning packet: sibling folder `../ChatterPilot-private/`. Never copy it in.
@@ -34,14 +34,18 @@
 6. CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, privacy-first issue forms, PR template
 7. Evaluation harness (`chatterpilot eval`), 115-message agent-written development set — D020
 8. Drafting rules round 1: corrections, partial matches, non-orders (dev set silent errors 11 → 0) — D021
+9. Held-out order set (117): recall 67.4% → 75.0%, precision 81.6% → 87.3%, silent 9 → 2
+10. Performance (100k messages: status 6.0 → 1.3 s) and `pnpm bench`; dev container (tested clean)
+11. CI flake fixed (connector waited too little for async lists; `--slow-master` reproduces it)
+12. Multi-agent review (`wf_4a70377a-3e7`): 8 confirmed defects fixed with regression tests
+13. `docs/for-shops.md`, `docs/privacy.md` (DPDP Act/Rules from official texts; not legal advice)
+14. Follow-ups template + tab + CLI/MCP, measured (held-out 14 → 30 of 34 exact)
 
-## In progress / next candidates (pick in order; each is optional)
-- Held-out evaluation set written by fresh agents (workflow `wf_96736e39-e9c`), reported without
-  tuning, in `fixtures/eval/` and `docs/evaluation.md`.
-- Performance benchmark for large exports (import and drafting time, memory) with a synthetic
-  generator; record numbers in docs.
-- A second template for SMEs (service complaints or bookings) following `packages/templates/fleet.ts`.
-- Dockerfile/devcontainer for one-command trial; periodic multi-agent review of the new code.
+## Next candidates (optional, in order)
+- "Forget a person" (DPDP erasure) conflicts with the append-only decision log and frozen snapshots:
+  needs an owner decision (redaction design) before code. See docs/privacy.md "What it does not do".
+- More labelled data from real (consented) exports during pilots; then re-tune and re-measure.
+- Busy/Vyapar/Marg import recipes once someone shares a template file.
 
 ## Owner actions (unchanged, need Shekib)
 1. **OA0 recording** (about 5 minutes): `fixtures/mock-order-app/recording/README.md`.
