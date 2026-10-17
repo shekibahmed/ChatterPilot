@@ -326,3 +326,14 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   `cc650b54` were pushed with that lint failure (GitHub CI for `956ec4d1`: failure). Fixed by
   formatting in the next commit; `pnpm check` then exit 0, 360 tests passed. Lesson: never chain a
   commit after `pnpm check` without checking its exit status.
+
+## 2026-10-17 — Overnight run, slice 1: operations layer, JSON CLI, MCP server
+- Tool / active writer: Claude Code (overnight autonomous run authorised by the owner)
+- Starting branch / HEAD: `build/v0.1` @ `ed4cc9f0461ca6f2c7d570b17e46792a3b85f524`
+- Research: workflow `wf_73607549-f9f` (6 Sonnet researchers: export formats, billing import
+  formats, Indian order language, agent-harness integration, landscape/stars, patterns).
+- Changes: `apps/local/src/ops.ts`, rewritten `cli.ts` (all commands `--json`; new `status`,
+  `drafts`, `export`, `dashboard`, `mcp`), `apps/local/src/mcp.ts`, `mcp.test.ts` (spawns the real
+  stdio server and speaks JSON-RPC), D016.
+- Checks: `pnpm check` exit 0, 365 tests; `pnpm test:e2e` exit 0, 10 passed (before MCP tests
+  were added). The skill-consistency test caught a dropped `--catalogue` flag in the new usage text.

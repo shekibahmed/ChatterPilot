@@ -277,3 +277,23 @@ their replacement. No secrets, customer data or private transcripts.
   `transcript` provenance kind (message id, transcript id, origin, span), shown as "Voice note line N"
   in the UI and "(voice note, manual transcript)" in the CSV. Works even when the audio file is not in
   the export (TXT-only). Automatic transcription stays behind the P4 provider boundary (D013).
+
+## D016 — Agent-harness interfaces: operations layer, JSON CLI, MCP server
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (owner direction 2026-10-17: the repo is a skeleton that businesses extend with
+  their own agentic harness)
+- Context: research sweep `wf_73607549-f9f` (MCP spec, harness configs, AGENTS.md, skills).
+- Chosen:
+  - `apps/local/src/ops.ts`: one operations layer returning JSON-serialisable data (`OpError` with
+    exit code 1/2). The CLI and the MCP server both call it.
+  - Every CLI command accepts `--json`; new `status`, `drafts list|show`, `export`, `dashboard`.
+  - `chatterpilot mcp`: stdio MCP server using `@modelcontextprotocol/server` 2.3.0 (MIT-era
+    release line, protocol 2025-11-25 handshake so current clients work) and zod 4.6.5 (pinned ≥2
+    weeks old). Tools: workspace_status, parse_export, import_export, check_catalogue,
+    load_catalogue, list_suggestions, create_draft, revise_draft, list_drafts, get_draft,
+    export_orders, dashboard, fleet_events. Annotations mark read-only vs local-write.
+  - Safety: workspace fixed at start; file arguments must resolve (after symlinks) inside `--files`;
+    chat text is labelled untrusted data in descriptions; agent changes are recorded as
+    `agent:<name>` with a required reason; accept/reject/reopen and form filling are not exposed,
+    because harness approval prompts can be skipped (e.g. headless runs) and annotations are hints.
+- Not done: MCP resources/prompts; an npm package (`npx chatterpilot`) is not published.

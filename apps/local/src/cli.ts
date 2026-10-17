@@ -1,353 +1,94 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
-import { type DateOrder, decodeExportBytes, scanExport } from "@chatterpilot/import-whatsapp";
-import {
-  createApproval,
-  currentAcceptedSnapshot,
-  MockBooksConnector,
-  PayloadError,
-  payloadFromAcceptedDraft,
-  prepareApprovedDraft,
-  storeApproval,
-} from "@chatterpilot/order-automation";
 import type { OrderDraft } from "@chatterpilot/orders";
-import { buildOrderDraft } from "@chatterpilot/orders";
-import { type ImportSummary, isValidTimeZone, Workspace } from "@chatterpilot/storage";
-import {
-  type IntakePolicy,
-  intakeGapWarning,
-  processUpdate,
-  type TgUpdate,
-} from "@chatterpilot/telegram-intake";
-import { loadVehicles } from "@chatterpilot/templates";
-import { chromium } from "playwright";
-import { draftFor, readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
-import { fleetEvents } from "./fleet.ts";
+import type { ImportSummary } from "@chatterpilot/storage";
+import type { IntakePolicy } from "@chatterpilot/telegram-intake";
 import { terminalSafe } from "./format.ts";
-import { ImportError, importExport } from "./import.ts";
+import { importExport } from "./import.ts";
 import {
-  activeCatalogue,
-  addTranscript,
-  getDraft,
-  loadCatalogueIntoWorkspace,
-  ReviewError,
-} from "./review.ts";
+  asDateOrder,
+  checkCatalogue,
+  DEFAULT_WORKSPACE,
+  dashboardData,
+  draftShow,
+  draftsList,
+  exportOrders,
+  fillForm,
+  fleet,
+  importFile,
+  initWorkspace,
+  intake,
+  loadCatalogue,
+  OpError,
+  parseFile,
+  suggestDrafts,
+  transcriptAdd,
+  withWorkspace,
+  workspaceStatus,
+} from "./ops.ts";
+import { loadCatalogueIntoWorkspace } from "./review.ts";
 import { DEFAULT_PORT, startServer } from "./server.ts";
 
 const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
 const FIXTURES = new URL("../../../fixtures/synthetic/", import.meta.url).pathname;
 const DEMO_WORKSPACE = "workspaces/demo";
 
-const DEFAULT_WORKSPACE = "workspaces/default";
-
-const USAGE = `Usage:
+const USAGE = `Usage (every command accepts --json for machine-readable output):
   chatterpilot parse <export.txt> [--date-order dmy|mdy|ymd] [--json]
       Preview how every line of a TXT export is interpreted. Stores nothing.
   chatterpilot init --timezone <IANA zone> [--name <name>] [--workspace <dir>]
       Create a local workspace (default ${DEFAULT_WORKSPACE}).
-  chatterpilot import <export.txt|export.zip> [--date-order dmy|mdy|ymd] [--chat <name>] [--workspace <dir>]
+  chatterpilot status [--workspace <dir>] [--json]
+      Imports, catalogue, drafts and pending suggestions in a workspace.
+  chatterpilot import <export.txt|export.zip> [--date-order dmy|mdy|ymd] [--chat <name>] [--workspace <dir>] [--json]
       Import a WhatsApp export into the workspace. Re-importing the same file changes nothing;
       a later export of the same chat (same file name or --chat) only adds what is new.
-  chatterpilot catalogue check <dir>
+  chatterpilot catalogue check <dir> [--json]
       Validate products.csv, customers.csv and catalogue.json in a catalogue folder.
-  chatterpilot catalogue load <dir> [--workspace <dir>]
+  chatterpilot catalogue load <dir> [--workspace <dir>] [--json]
       Validate and store a catalogue version in the workspace (used for new drafts).
-  chatterpilot events --vehicles <vehicles.csv> [--chat <name>] [--workspace <dir>]
+  chatterpilot draft [--catalogue <dir>] [--workspace <dir>] [--json]
+      Suggest order messages and show preview drafts with the source of every value (stores nothing).
+      Uses the loaded catalogue, or --catalogue for this preview only.
+  chatterpilot drafts list [--workspace <dir>] [--json]
+  chatterpilot drafts show <id> [--workspace <dir>] [--json]
+      Saved drafts and their review status (review and accept them in the app: chatterpilot serve).
+  chatterpilot export --format csv|json [--output <file>] [--workspace <dir>]
+      Accepted orders only, from their frozen snapshots.
+  chatterpilot dashboard [--scope accepted|all] [--workspace <dir>] [--json]
+      Deterministic metrics with coverage and exclusions.
+  chatterpilot events --vehicles <vehicles.csv> [--chat <name>] [--workspace <dir>] [--json]
       Fleet/travel template: bookings, faults, quotes and reported payments with their links.
-  chatterpilot intake --updates <updates.jsonl> --policy <policy.json> [--workspace <dir>]
+  chatterpilot intake --updates <updates.jsonl> --policy <policy.json> [--workspace <dir>] [--json]
       Offline Telegram intake: apply sender/chat allowlists, dedupe and repeat checks to saved
       Bot API updates (one JSON object per line) and show draft lines. No bot or network is used.
-  chatterpilot transcript add --audio <exported file name> --text-file <file> --by <name> [--language <code>] [--workspace <dir>]
+  chatterpilot transcript add --audio <exported file name> --text-file <file> --by <name> [--language <code>] [--workspace <dir>] [--json]
       Attach a transcript you already have to a voice-note message (no AI, nothing leaves the computer).
-  chatterpilot fill-form --draft <id> --operator <name> --approve [--target http://127.0.0.1:4330] [--workspace <dir>]
+  chatterpilot fill-form --draft <id> --operator <name> --approve [--target http://127.0.0.1:4330] [--workspace <dir>] [--json]
       Type an ACCEPTED draft into the synthetic MockBooks form on this computer, read it back, and
       stop before Submit. --approve is your approval of exactly the document shown (15 minutes).
   chatterpilot serve [--workspace <dir>] [--port ${DEFAULT_PORT}]
       Open the review app on http://127.0.0.1 (this computer only).
   chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
       Seed ${DEMO_WORKSPACE} with synthetic chats and a catalogue, then serve it. No network needed.
-  chatterpilot draft --catalogue <dir> [--workspace <dir>]
-      Suggest order messages and show draft orders with the source of every value.
+  chatterpilot mcp [--workspace <dir>] [--files <dir>] [--agent <name>]
+      Run as a Model Context Protocol server on stdio for agent harnesses (Claude Code, Codex, ...).
+      File arguments must be inside --files (default: current folder). Accepting drafts stays human.
 
 Everything runs locally. Nothing is sent anywhere.`;
 
-const DATE_ORDERS: readonly string[] = ["dmy", "mdy", "ymd"];
+class UsageError extends Error {}
 
-function parseCommand(args: string[]): number {
-  const { values, positionals } = parseArgs({
-    args,
-    allowPositionals: true,
-    options: { "date-order": { type: "string" }, json: { type: "boolean", default: false } },
-  });
-  const [file] = positionals;
-  const dateOrder = values["date-order"];
-  if (!file || (dateOrder !== undefined && !DATE_ORDERS.includes(dateOrder))) {
-    console.error(USAGE);
-    return 2;
-  }
+const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
+const emit = (value: unknown, code: number) => {
+  json(value);
+  return code;
+};
+const n = (record: Readonly<Record<string, number>>, key: string) => record[key] ?? 0;
 
-  const decoded = decodeExportBytes(readFileSync(file));
-  if (!decoded.ok) {
-    console.error(`Cannot read ${file}: not valid UTF-8/UTF-16 text.`);
-    return 1;
-  }
-  const result = scanExport(
-    decoded.text,
-    dateOrder === undefined ? {} : { dateOrder: dateOrder as DateOrder },
-  );
-
-  if (values.json) {
-    console.log(JSON.stringify(result, null, 2));
-    return 0;
-  }
-
-  const count = (pred: (m: (typeof result.messages)[number]) => boolean) =>
-    result.messages.filter(pred).length;
-  console.log(`File:         ${file} (${decoded.encoding}, ${result.lineCount} lines)`);
-  console.log(`Format:       ${result.formats.join(", ") || "none recognised"}`);
-  console.log(
-    `Date order:   detected ${result.detectedDateOrder}, applied ${result.appliedDateOrder ?? "none"}`,
-  );
-  console.log(
-    `Messages:     ${result.messages.length} (text ${count((m) => m.kind === "text")}, media ${count((m) => m.kind === "media")}, system ${count((m) => m.kind === "system")}, deleted ${count((m) => m.kind === "deleted")})`,
-  );
-  console.log(
-    `Timestamps:   ok ${count((m) => m.status === "ok")}, needs date order ${count((m) => m.status === "needs_date_order")}, invalid ${count((m) => m.status === "invalid_timestamp")}`,
-  );
-  if (result.unattached) {
-    console.log(
-      `Unattached:   lines ${result.unattached.startLine}-${result.unattached.endLine} precede the first message`,
-    );
-  }
-  for (const warning of result.warnings) console.log(`Warning:      ${warning}`);
-  console.log("");
-  for (const m of result.messages) {
-    const lines = m.startLine === m.endLine ? `${m.startLine}` : `${m.startLine}-${m.endLine}`;
-    const when = m.localDateTime ?? m.status;
-    const who = terminalSafe(m.author ?? "(system)", 24);
-    const flags = [m.kind !== "text" ? m.kind : "", m.edited ? "edited" : ""].filter(Boolean);
-    console.log(
-      `${lines.padStart(7)}  ${when.padEnd(19)}  ${who.padEnd(24)}  ${flags.join(",").padEnd(12)}  ${terminalSafe(m.body)}`,
-    );
-  }
-  return 0;
-}
-
-function initCommand(args: string[]): number {
-  const { values } = parseArgs({
-    args,
-    options: {
-      timezone: { type: "string" },
-      name: { type: "string", default: "My workspace" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  if (!values.timezone || !isValidTimeZone(values.timezone)) {
-    console.error("Give the business time zone as an IANA name, e.g. --timezone Asia/Kolkata.");
-    return 2;
-  }
-  if (Workspace.exists(values.workspace)) {
-    console.error(`A workspace already exists in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.create(values.workspace, { name: values.name, timezone: values.timezone });
-  ws.close();
-  console.log(`Created workspace "${values.name}" (${values.timezone}) in ${values.workspace}`);
-  return 0;
-}
-
-function printSummary(summary: ImportSummary): void {
-  const n = (record: Readonly<Record<string, number>>, key: string) => record[key] ?? 0;
-  console.log(`Imported:     ${terminalSafe(summary.sourceName, 80)} (${summary.lineCount} lines)`);
-  console.log(
-    `Messages:     ${summary.messages} (text ${n(summary.byKind, "text")}, media ${n(summary.byKind, "media")}, system ${n(summary.byKind, "system")}, deleted ${n(summary.byKind, "deleted")})`,
-  );
-  console.log(
-    `Timestamps:   ok ${n(summary.byStatus, "ok")}, invalid ${n(summary.byStatus, "invalid_timestamp")}`,
-  );
-  console.log(
-    `Coverage:     ${summary.coverage.first ?? "?"} → ${summary.coverage.last ?? "?"} (local time)`,
-  );
-  const m = summary.media;
-  console.log(
-    `Media:        ${m.linked} linked, ${m.missingFiles} named but not in export, ${m.omitted} omitted by WhatsApp, ${m.unlinkedFiles} unlinked files`,
-  );
-  const o = summary.overlap;
-  console.log(
-    `Overlap:      chat "${terminalSafe(summary.chatKey, 80)}": ${o.new} new, ${o.duplicate} already imported, ${o.uncertain} changed (kept for review)`,
-  );
-  if (summary.skippedEntries > 0)
-    console.log(`Skipped:      ${summary.skippedEntries} unsupported archive entries`);
-  for (const warning of summary.warnings)
-    console.log(`Warning:      ${terminalSafe(warning, 200)}`);
-}
-
-async function importCommand(args: string[]): Promise<number> {
-  const { values, positionals } = parseArgs({
-    args,
-    allowPositionals: true,
-    options: {
-      "date-order": { type: "string" },
-      chat: { type: "string" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  const [file] = positionals;
-  const dateOrder = values["date-order"];
-  if (!file || (dateOrder !== undefined && !DATE_ORDERS.includes(dateOrder))) {
-    console.error(USAGE);
-    return 2;
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}. Run: chatterpilot init --timezone <zone>`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  try {
-    const outcome = await importExport(ws, file, {
-      ...(dateOrder === undefined ? {} : { dateOrder: dateOrder as DateOrder }),
-      ...(values.chat ? { chat: values.chat } : {}),
-    });
-    if (outcome.status === "duplicate") {
-      console.log(`Already imported on ${outcome.importedAt}; nothing changed.`);
-    } else {
-      printSummary(outcome.summary);
-    }
-    return 0;
-  } catch (err) {
-    if (err instanceof ImportError) {
-      console.error(`Not imported (${err.code}): ${err.message}`);
-      return 1;
-    }
-    throw err;
-  } finally {
-    ws.close();
-  }
-}
-
-async function catalogueLoad(args: string[]): Promise<number> {
-  const { values, positionals } = parseArgs({
-    args,
-    allowPositionals: true,
-    options: { workspace: { type: "string", default: DEFAULT_WORKSPACE } },
-  });
-  const [dir] = positionals;
-  if (!dir) {
-    console.error(USAGE);
-    return 2;
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  try {
-    const { catalogue, issues } = await loadCatalogueIntoWorkspace(ws, dir);
-    for (const i of issues) console.log(`${i.severity}: ${terminalSafe(i.message, 200)}`);
-    if (!catalogue) {
-      console.error("Catalogue not loaded: fix the errors above first.");
-      return 1;
-    }
-    console.log(`Loaded catalogue ${catalogue.version} into ${values.workspace}.`);
-    return 0;
-  } finally {
-    ws.close();
-  }
-}
-
-function waitForShutdown(close: () => void): Promise<number> {
-  return new Promise((resolve) => {
-    const stop = () => {
-      close();
-      resolve(0);
-    };
-    process.once("SIGINT", stop);
-    process.once("SIGTERM", stop);
-  });
-}
-
-async function serveCommand(args: string[]): Promise<number> {
-  const { values } = parseArgs({
-    args,
-    options: {
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-      port: { type: "string", default: String(DEFAULT_PORT) },
-    },
-  });
-  const port = Number(values.port);
-  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
-    console.error("Port must be a number between 1024 and 65535.");
-    return 2;
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}. Run: chatterpilot init --timezone <zone>`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  const server = await startServer(ws, { port, webRoot: WEB_ROOT });
-  console.log(
-    `ChatterPilot is running at ${server.url} (this computer only). Press Ctrl+C to stop.`,
-  );
-  return waitForShutdown(() => {
-    server.close();
-    ws.close();
-  });
-}
-
-async function demoCommand(args: string[]): Promise<number> {
-  const { values } = parseArgs({
-    args,
-    options: {
-      port: { type: "string", default: String(DEFAULT_PORT) },
-      workspace: { type: "string", default: DEMO_WORKSPACE },
-    },
-  });
-  const dir = values.workspace;
-  if (!Workspace.exists(dir)) {
-    Workspace.create(dir, {
-      name: "ChatterPilot demo (synthetic data)",
-      timezone: "Asia/Kolkata",
-    }).close();
-  }
-  const ws = Workspace.open(dir);
-  try {
-    await loadCatalogueIntoWorkspace(ws, `${FIXTURES}catalogue`);
-    for (const chat of ["android-dmy-hardware-orders.txt", "ios-mdy-plumbing-orders.txt"]) {
-      await importExport(ws, `${FIXTURES}chats/${chat}`);
-    }
-  } finally {
-    ws.close();
-  }
-  console.log(`Demo workspace ready in ${dir} (synthetic chats and catalogue).`);
-  return serveCommand(["--workspace", dir, "--port", values.port]);
-}
-
-function catalogueCommand(args: string[]): number | Promise<number> {
-  const [sub, dir] = args;
-  if (sub === "load") return catalogueLoad(args.slice(1));
-  if (sub !== "check" || !dir) {
-    console.error(USAGE);
-    return 2;
-  }
-  const { catalogue, issues } = readCatalogueDir(dir);
-  for (const i of issues) {
-    const where = [i.file, i.row === null ? null : `line ${i.row}`, i.column]
-      .filter(Boolean)
-      .join(", ");
-    console.log(
-      `${i.severity === "error" ? "Error  " : "Warning"}  ${where}: ${terminalSafe(i.message, 200)}`,
-    );
-  }
-  if (!catalogue) {
-    console.log("Catalogue is not usable until the errors above are fixed.");
-    return 1;
-  }
-  console.log(
-    `Catalogue ${catalogue.version}: ${catalogue.products.length} products, ${catalogue.customers.length} customers; prices older than ${catalogue.stalePriceDays} days need review. Maintainer: ${catalogue.maintainer ?? "not recorded"}.`,
-  );
-  return 0;
-}
+// ---------------------------------------------------------------------------------------------
+// Text presenters
 
 function sourceTag(p: Provenance): string {
   switch (p.kind) {
@@ -379,7 +120,9 @@ function printDraft(draft: OrderDraft): void {
   console.log(`  Date      ${show(draft.orderDate, (d) => d)}`);
   console.log(`  Customer  ${show(draft.customer, (c) => `${c.name} (${c.customerId})`)}`);
   draft.lines.forEach((line, i) => {
-    console.log(`  Line ${i + 1}    "${terminalSafe(line.sourceText, 50)}"`);
+    console.log(
+      `  Line ${i + 1}    "${terminalSafe(line.sourceText, 50)}"${line.excluded ? " (excluded)" : ""}`,
+    );
     console.log(`    product   ${show(line.product, (p) => `${p.name} (${p.productId})`)}`);
     console.log(
       `    quantity  ${show(line.quantity, (q) => qty(q.milli))} ${line.unit.value ?? ""}`,
@@ -391,77 +134,312 @@ function printDraft(draft: OrderDraft): void {
   console.log(`  Subtotal  ${show(draft.subtotal, money)}`);
   console.log(`  Tax       ${show(draft.taxTotal, money)}`);
   console.log(`  Total     ${show(draft.total, money)}`);
-  if (draft.issues.length === 0) {
+  if (draft.issues.length === 0)
     console.log("  No open issues. A person must still review before use.");
-  }
   for (const issue of draft.issues) console.log(`  To review: ${terminalSafe(issue.message, 200)}`);
 }
 
-function draftCommand(args: string[]): number {
-  const { values } = parseArgs({
-    args,
-    options: {
-      catalogue: { type: "string" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  if (!values.catalogue) {
-    console.error(USAGE);
-    return 2;
-  }
-  const { catalogue } = readCatalogueDir(values.catalogue);
-  if (!catalogue) {
-    console.error(
-      `The catalogue has errors. Run: chatterpilot catalogue check ${values.catalogue}`,
+function printSummary(summary: ImportSummary): void {
+  console.log(`Imported:     ${terminalSafe(summary.sourceName, 80)} (${summary.lineCount} lines)`);
+  console.log(
+    `Messages:     ${summary.messages} (text ${n(summary.byKind, "text")}, media ${n(summary.byKind, "media")}, system ${n(summary.byKind, "system")}, deleted ${n(summary.byKind, "deleted")})`,
+  );
+  console.log(
+    `Timestamps:   ok ${n(summary.byStatus, "ok")}, invalid ${n(summary.byStatus, "invalid_timestamp")}`,
+  );
+  console.log(
+    `Coverage:     ${summary.coverage.first ?? "?"} → ${summary.coverage.last ?? "?"} (local time)`,
+  );
+  const m = summary.media;
+  console.log(
+    `Media:        ${m.linked} linked, ${m.missingFiles} named but not in export, ${m.omitted} omitted by WhatsApp, ${m.unlinkedFiles} unlinked files`,
+  );
+  const o = summary.overlap;
+  console.log(
+    `Overlap:      chat "${terminalSafe(summary.chatKey, 80)}": ${o.new} new, ${o.duplicate} already imported, ${o.uncertain} changed (kept for review)`,
+  );
+  if (summary.skippedEntries > 0)
+    console.log(`Skipped:      ${summary.skippedEntries} unsupported archive entries`);
+  for (const warning of summary.warnings)
+    console.log(`Warning:      ${terminalSafe(warning, 200)}`);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Commands
+
+type Command = (args: string[]) => Promise<number> | number;
+
+const ws = { type: "string", default: DEFAULT_WORKSPACE } as const;
+const asJson = { type: "boolean", default: false } as const;
+
+const commands: Record<string, Command> = {
+  parse(args) {
+    const { values, positionals } = parseArgs({
+      args,
+      allowPositionals: true,
+      options: { "date-order": { type: "string" }, json: asJson },
+    });
+    const [file] = positionals;
+    if (!file) throw new UsageError();
+    const { encoding, scan } = parseFile(file, asDateOrder(values["date-order"]));
+    if (values.json) return emit(scan, 0);
+    const count = (pred: (m: (typeof scan.messages)[number]) => boolean) =>
+      scan.messages.filter(pred).length;
+    console.log(`File:         ${file} (${encoding}, ${scan.lineCount} lines)`);
+    console.log(`Format:       ${scan.formats.join(", ") || "none recognised"}`);
+    console.log(
+      `Date order:   detected ${scan.detectedDateOrder}, applied ${scan.appliedDateOrder ?? "none"}`,
     );
-    return 1;
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  try {
-    const candidates = suggestOrderMessages(ws, catalogue);
-    console.log(`${candidates.length} suggested order messages (catalogue ${catalogue.version}).`);
-    console.log("Legend: ? needs review, ! unknown; [sources] show where each value came from.\n");
-    for (const c of candidates) {
+    console.log(
+      `Messages:     ${scan.messages.length} (text ${count((m) => m.kind === "text")}, media ${count((m) => m.kind === "media")}, system ${count((m) => m.kind === "system")}, deleted ${count((m) => m.kind === "deleted")})`,
+    );
+    console.log(
+      `Timestamps:   ok ${count((m) => m.status === "ok")}, needs date order ${count((m) => m.status === "needs_date_order")}, invalid ${count((m) => m.status === "invalid_timestamp")}`,
+    );
+    if (scan.unattached) {
       console.log(
-        `${terminalSafe(c.sourceName, 40)} lines ${c.message.startLine}-${c.message.endLine}, ${c.message.localDateTime ?? "date unknown"}, from ${terminalSafe(c.author ?? "?", 30)}:`,
+        `Unattached:   lines ${scan.unattached.startLine}-${scan.unattached.endLine} precede the first message`,
       );
-      printDraft(draftFor(c, catalogue));
+    }
+    for (const warning of scan.warnings) console.log(`Warning:      ${warning}`);
+    console.log("");
+    for (const m of scan.messages) {
+      const lines = m.startLine === m.endLine ? `${m.startLine}` : `${m.startLine}-${m.endLine}`;
+      const flags = [m.kind !== "text" ? m.kind : "", m.edited ? "edited" : ""].filter(Boolean);
+      console.log(
+        `${lines.padStart(7)}  ${(m.localDateTime ?? m.status).padEnd(19)}  ${terminalSafe(m.author ?? "(system)", 24).padEnd(24)}  ${flags.join(",").padEnd(12)}  ${terminalSafe(m.body)}`,
+      );
+    }
+    return 0;
+  },
+
+  init(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        timezone: { type: "string" },
+        name: { type: "string", default: "My workspace" },
+        workspace: ws,
+        json: asJson,
+      },
+    });
+    if (!values.timezone)
+      throw new OpError(
+        "bad_timezone",
+        "Give the business time zone, e.g. --timezone Asia/Kolkata.",
+        2,
+      );
+    const info = initWorkspace({
+      workspace: values.workspace,
+      timezone: values.timezone,
+      name: values.name,
+    });
+    if (values.json) return emit(info, 0);
+    console.log(`Created workspace "${info.name}" (${info.timezone}) in ${values.workspace}`);
+    return 0;
+  },
+
+  async status(args) {
+    const { values } = parseArgs({ args, options: { workspace: ws, json: asJson } });
+    const s = await workspaceStatus(values.workspace);
+    if (values.json) return emit(s, 0);
+    console.log(
+      `Workspace:    ${terminalSafe(s.workspace.name, 60)} (${s.workspace.timezone}), schema v${s.workspace.schemaVersion}`,
+    );
+    console.log(
+      `Catalogue:    ${s.catalogue ? `${s.catalogue.version}: ${s.catalogue.products} products, ${s.catalogue.customers} customers` : "none loaded"}`,
+    );
+    console.log(`Imports:      ${s.imports.length}`);
+    for (const i of s.imports) {
+      console.log(
+        `  ${terminalSafe(i.sourceName, 50)}: ${i.messages} messages, ${i.coverage.first ?? "?"} → ${i.coverage.last ?? "?"}`,
+      );
+    }
+    const by = (status: string) => s.drafts.filter((d) => d.status === status).length;
+    console.log(
+      `Drafts:       ${by("open")} open, ${by("accepted")} accepted, ${by("rejected")} rejected`,
+    );
+    console.log(
+      `Suggestions:  ${s.pendingSuggestions} messages look like orders and are not drafted yet`,
+    );
+    return 0;
+  },
+
+  async import(args) {
+    const { values, positionals } = parseArgs({
+      args,
+      allowPositionals: true,
+      options: {
+        "date-order": { type: "string" },
+        chat: { type: "string" },
+        workspace: ws,
+        json: asJson,
+      },
+    });
+    const [file] = positionals;
+    if (!file) throw new UsageError();
+    const outcome = await importFile({
+      workspace: values.workspace,
+      file,
+      dateOrder: asDateOrder(values["date-order"]),
+      chat: values.chat,
+    });
+    if (values.json) return emit(outcome, 0);
+    if (outcome.status === "duplicate")
+      console.log(`Already imported on ${outcome.importedAt}; nothing changed.`);
+    else printSummary(outcome.summary);
+    return 0;
+  },
+
+  async catalogue(args) {
+    const [sub, ...rest] = args;
+    const { values, positionals } = parseArgs({
+      args: rest,
+      allowPositionals: true,
+      options: { workspace: ws, json: asJson },
+    });
+    const [dir] = positionals;
+    if ((sub !== "check" && sub !== "load") || !dir) throw new UsageError();
+    const result =
+      sub === "check"
+        ? checkCatalogue(dir)
+        : await loadCatalogue({ workspace: values.workspace, dir });
+    if (values.json) return emit(result, result.usable ? 0 : 1);
+    for (const i of result.issues) {
+      const where = [i.file, i.row === null ? null : `line ${i.row}`, i.column]
+        .filter(Boolean)
+        .join(", ");
+      console.log(
+        `${i.severity === "error" ? "Error  " : "Warning"}  ${where}: ${terminalSafe(i.message, 200)}`,
+      );
+    }
+    if (!result.usable) {
+      console.log("Catalogue is not usable until the errors above are fixed.");
+      return 1;
+    }
+    if (sub === "load") console.log(`Loaded catalogue ${result.version} into ${values.workspace}.`);
+    else {
+      console.log(
+        `Catalogue ${result.version}: ${result.products} products, ${result.customers} customers; prices older than ${result.stalePriceDays} days need review. Maintainer: ${result.maintainer ?? "not recorded"}.`,
+      );
+    }
+    return 0;
+  },
+
+  async draft(args) {
+    const { values } = parseArgs({
+      args,
+      options: { catalogue: { type: "string" }, workspace: ws, json: asJson },
+    });
+    const suggested = await suggestDrafts(values.workspace, values.catalogue);
+    if (values.json) return emit(suggested, 0);
+    console.log(`${suggested.length} suggested order messages.`);
+    console.log("Legend: ? needs review, ! unknown; [sources] show where each value came from.\n");
+    for (const s of suggested) {
+      console.log(
+        `${terminalSafe(s.sourceName, 40)} lines ${s.startLine}-${s.endLine}, ${s.localDateTime ?? "date unknown"}, from ${terminalSafe(s.author ?? "?", 30)}:`,
+      );
+      printDraft(s.draft);
       console.log("");
     }
     return 0;
-  } finally {
-    ws.close();
-  }
-}
+  },
 
-function eventsCommand(args: string[]): number {
-  const { values } = parseArgs({
-    args,
-    options: {
-      vehicles: { type: "string" },
-      chat: { type: "string" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  if (!values.vehicles) {
-    console.error(USAGE);
-    return 2;
-  }
-  const registry = loadVehicles(readFileSync(values.vehicles, "utf8"));
-  for (const i of registry.issues)
-    console.log(`Warning: vehicles.csv line ${i.row ?? "?"}: ${i.message}`);
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  try {
-    const { events, summary } = fleetEvents(ws, registry, values.chat?.toLowerCase());
-    for (const e of events) {
+  async drafts(args) {
+    const [sub, ...rest] = args;
+    const { values, positionals } = parseArgs({
+      args: rest,
+      allowPositionals: true,
+      options: { workspace: ws, json: asJson },
+    });
+    if (sub === "list") {
+      const list = await draftsList(values.workspace);
+      if (values.json) return emit(list, 0);
+      for (const d of list) {
+        console.log(
+          `${d.id}  ${d.status.padEnd(8)}  ${terminalSafe(d.customer ?? "customer unknown", 30).padEnd(30)}  ${d.orderDate ?? "?"}  ${d.total ?? "total unknown"}  ${d.openIssues} open issues`,
+        );
+      }
+      return 0;
+    }
+    const [id] = positionals;
+    if (sub !== "show" || !id) throw new UsageError();
+    const view = await draftShow(values.workspace, id);
+    if (values.json) return emit(view, 0);
+    console.log(
+      `Draft ${view.record.id}: ${view.record.status} (created by ${terminalSafe(view.record.createdBy, 40)})`,
+    );
+    printDraft(view.draft);
+    for (const d of view.decisions)
+      console.log(
+        `  ${d.at}  ${d.action} by ${terminalSafe(d.reviewer, 40)}: ${terminalSafe(d.reason, 120)}`,
+      );
+    return 0;
+  },
+
+  async export(args) {
+    const { values } = parseArgs({
+      args,
+      options: { format: { type: "string" }, output: { type: "string" }, workspace: ws },
+    });
+    if (values.format !== "csv" && values.format !== "json") throw new UsageError();
+    const text = await exportOrders(values.workspace, values.format);
+    if (values.output) {
+      writeFileSync(values.output, text);
+      console.error(`Wrote ${values.output}`);
+    } else process.stdout.write(text);
+    return 0;
+  },
+
+  async dashboard(args) {
+    const { values } = parseArgs({
+      args,
+      options: { scope: { type: "string", default: "accepted" }, workspace: ws, json: asJson },
+    });
+    if (values.scope !== "accepted" && values.scope !== "all") throw new UsageError();
+    const d = await dashboardData(values.workspace, values.scope);
+    if (values.json) return emit(d, 0);
+    const cov = d.coverage;
+    console.log(
+      `Coverage:   ${cov.window ? `${cov.window.from} → ${cov.window.to}, ${cov.value.coveredDays}/${cov.value.days} days` : "no imports"}`,
+    );
+    console.log(
+      `Pipeline:   ${d.pipeline.value.suggested} suggested, ${d.pipeline.value.open} open, ${d.pipeline.value.accepted} accepted, ${d.pipeline.value.rejected} rejected`,
+    );
+    for (const r of d.orderValueByDay.value)
+      console.log(
+        `Value:      ${r.date}  ${r.currency} ${formatMinor(r.totalMinor)} (${r.orders} orders)`,
+      );
+    for (const x of d.orderValueByDay.excluded) console.log(`Excluded:   ${x.count} ${x.reason}`);
+    const cmp = d.weekComparison.value;
+    console.log(
+      `Trend:      ${cmp.status === "ok" ? `${cmp.changePercent ?? "n/a"}% vs previous 7 days` : `insufficient comparable data. ${cmp.reason}`}`,
+    );
+    for (const i of d.openIssues.value)
+      console.log(`Open work:  ${i.count} × ${i.code.replaceAll("_", " ")}`);
+    return 0;
+  },
+
+  async events(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        vehicles: { type: "string" },
+        chat: { type: "string" },
+        workspace: ws,
+        json: asJson,
+      },
+    });
+    if (!values.vehicles) throw new UsageError();
+    const r = await fleet({
+      workspace: values.workspace,
+      vehiclesCsv: values.vehicles,
+      chat: values.chat,
+    });
+    if (values.json) return emit(r, 0);
+    for (const i of r.registryIssues)
+      console.log(`Warning: vehicles.csv line ${i.row ?? "?"}: ${i.message}`);
+    for (const e of r.events) {
       const parts = [
         e.occurredAt ?? "time unknown",
         e.type.replaceAll("_", " ").padEnd(20),
@@ -471,257 +449,236 @@ function eventsCommand(args: string[]): number {
           ? `${e.amount.value.kind === "quoted" ? "quoted" : "reported paid"} ${formatMinor(e.amount.value.minor)}`
           : "",
         ...e.relations.map(
-          (r) => `${r.type} ${r.eventId}${r.strength === "needs_review" ? " (check)" : ""}`,
+          (x) => `${x.type} ${x.eventId}${x.strength === "needs_review" ? " (check)" : ""}`,
         ),
         ...e.notes,
       ].filter(Boolean);
       console.log(`${e.id.padEnd(48)} ${terminalSafe(parts.join("  "), 200)}`);
     }
     console.log("");
-    for (const b of summary.bookings)
+    for (const b of r.summary.bookings)
       console.log(`Booking ${b.ref}: ${b.status} (${b.eventIds.length} messages)`);
-    for (const f of summary.faults)
+    for (const f of r.summary.faults)
       console.log(`Fault on ${f.vehicle ?? "unknown vehicle"}: ${f.status}`);
     console.log(
-      `Quoted ${formatMinor(summary.quotedMinor)}; reported paid ${formatMinor(summary.reportedPaidMinor)} (reports, not verified payments).`,
+      `Quoted ${formatMinor(r.summary.quotedMinor)}; reported paid ${formatMinor(r.summary.reportedPaidMinor)} (reports, not verified payments).`,
     );
     return 0;
-  } finally {
-    ws.close();
-  }
-}
+  },
 
-function intakeCommand(args: string[]): number {
-  const { values } = parseArgs({
-    args,
-    options: {
-      updates: { type: "string" },
-      policy: { type: "string" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  if (!values.updates || !values.policy) {
-    console.error(USAGE);
-    return 2;
-  }
-  const policy = JSON.parse(readFileSync(values.policy, "utf8")) as IntakePolicy;
-  const updates: TgUpdate[] = [];
-  for (const [n, line] of readFileSync(values.updates, "utf8").split("\n").entries()) {
-    if (!line.trim()) continue;
-    try {
-      const u = JSON.parse(line) as TgUpdate;
-      if (!Number.isSafeInteger(u?.update_id)) throw new Error("no numeric update_id");
-      updates.push(u);
-    } catch (err) {
-      console.log(
-        `line ${n + 1}  skipped: ${terminalSafe(err instanceof Error ? err.message : String(err), 80)}`,
-      );
-    }
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  try {
-    const now = new Date();
-    const gap = intakeGapWarning(ws.intake.lastSeenAt(), now);
-    if (gap) console.log(`Warning: ${gap}`);
-    const resolver = { acceptedSnapshot: (id: string) => currentAcceptedSnapshot(ws, id) };
-    const catalogue = activeCatalogue(ws);
-    for (const u of updates) {
-      const r = processUpdate(ws.intake, u, policy, resolver, now);
-      const detail = "reason" in r ? `: ${r.reason}` : "";
-      console.log(`update ${r.updateId}  ${r.outcome}${detail}`);
-      if ((r.outcome === "accepted" || r.outcome === "edit") && catalogue) {
-        const env = ws.intake.envelopes().find((e) => e.id === r.envelopeId);
-        if (!env) continue;
-        const draft = buildOrderDraft(
-          [
-            {
-              id: env.id,
-              startLine: 1,
-              endLine: 1,
-              timestampText: env.forwardDate ?? env.receivedAt,
-              localDateTime: null,
-              body: env.text,
-            },
-          ],
-          catalogue,
+  async intake(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        updates: { type: "string" },
+        policy: { type: "string" },
+        workspace: ws,
+        json: asJson,
+      },
+    });
+    if (!values.updates || !values.policy) throw new UsageError();
+    const run = await intake({
+      workspace: values.workspace,
+      updatesText: readFileSync(values.updates, "utf8"),
+      policy: JSON.parse(readFileSync(values.policy, "utf8")) as IntakePolicy,
+    });
+    if (values.json) return emit(run, 0);
+    for (const s of run.skippedLines)
+      console.log(`line ${s.line}  skipped: ${terminalSafe(s.reason, 80)}`);
+    if (run.gapWarning) console.log(`Warning: ${run.gapWarning}`);
+    for (const r of run.results) {
+      console.log(`update ${r.updateId}  ${r.outcome}${"reason" in r ? `: ${r.reason}` : ""}`);
+      for (const l of r.draftLines ?? []) {
+        console.log(
+          `    ${terminalSafe(l.text, 40).padEnd(40)} → ${l.product ?? "unknown product"}`,
         );
-        for (const line of draft.lines) {
-          console.log(
-            `    ${terminalSafe(line.sourceText, 40).padEnd(40)} → ${line.product.value?.name ?? "unknown product"}`,
-          );
-        }
       }
     }
     return 0;
-  } finally {
-    ws.close();
-  }
-}
+  },
 
-async function fillFormCommand(args: string[]): Promise<number> {
-  const { values } = parseArgs({
-    args,
-    options: {
-      draft: { type: "string" },
-      operator: { type: "string" },
-      approve: { type: "boolean", default: false },
-      target: { type: "string", default: "http://127.0.0.1:4330" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  if (!values.draft || !values.operator) {
-    console.error(USAGE);
-    return 2;
-  }
-  const target = new URL(values.target);
-  if (target.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(target.hostname)) {
-    console.error(
-      "Only the synthetic MockBooks form on this computer is supported in this release.",
-    );
-    return 2;
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  const browser = await chromium.launch();
-  try {
-    const view = getDraft(ws, values.draft);
-    let payload: ReturnType<typeof payloadFromAcceptedDraft>;
-    try {
-      payload = payloadFromAcceptedDraft({
-        draftId: view.record.id,
-        status: view.record.status,
-        snapshotSha256: view.acceptedSnapshotSha256,
-        draft: view.draft,
-      });
-    } catch (err) {
-      if (err instanceof PayloadError) {
-        console.error(`Not sent: ${err.message}`);
-        return 1;
-      }
-      throw err;
-    }
+  async transcript(args) {
+    const [sub, ...rest] = args;
+    const { values } = parseArgs({
+      args: rest,
+      options: {
+        audio: { type: "string" },
+        "text-file": { type: "string" },
+        by: { type: "string" },
+        language: { type: "string" },
+        workspace: ws,
+        json: asJson,
+      },
+    });
+    if (sub !== "add" || !values.audio || !values["text-file"] || !values.by)
+      throw new UsageError();
+    const t = await transcriptAdd({
+      workspace: values.workspace,
+      audio: values.audio,
+      text: readFileSync(values["text-file"], "utf8"),
+      by: values.by,
+      language: values.language,
+    });
+    if (values.json) return emit(t, 0);
+    console.log(`Added transcript version ${t.version} to ${terminalSafe(values.audio, 80)}.`);
+    return 0;
+  },
+
+  async "fill-form"(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        draft: { type: "string" },
+        operator: { type: "string" },
+        approve: { type: "boolean", default: false },
+        target: { type: "string", default: "http://127.0.0.1:4330" },
+        workspace: ws,
+        json: asJson,
+      },
+    });
+    if (!values.draft || !values.operator) throw new UsageError();
+    const r = await fillForm({
+      workspace: values.workspace,
+      draftId: values.draft,
+      operator: values.operator,
+      approve: values.approve,
+      target: values.target,
+    });
+    if (values.json)
+      return emit(r, r.sent && r.result?.state !== "awaiting_submit_approval" ? 1 : 0);
+    const p = r.payload;
     console.log(
-      `Document for ${terminalSafe(payload.customerName, 60)} (${payload.customerId}), ${payload.orderDate}:`,
+      `Document for ${terminalSafe(p.customerName, 60)} (${p.customerId}), ${p.orderDate}:`,
     );
-    for (const l of payload.lines) {
+    for (const l of p.lines) {
       console.log(
         `  ${l.quantity} ${l.unit} ${terminalSafe(l.productName, 40)} @ ${l.unitPrice} = ${l.amount} + tax ${l.tax}`,
       );
     }
     console.log(
-      `  Total ${payload.currency} ${payload.total} → ${target.origin} (synthetic MockBooks), action: prepare draft only`,
+      `  Total ${p.currency} ${p.total} → ${r.target} (synthetic MockBooks), action: prepare draft only`,
     );
-    if (!values.approve) {
+    if (!r.sent || !r.result) {
       console.log(
         "Nothing sent. Re-run with --approve to approve exactly this document for 15 minutes.",
       );
       return 0;
     }
-    const page = await browser.newPage();
-    const connector = new MockBooksConnector({ page, origin: target.origin, account: "demo" });
-    const approval = createApproval({
-      id: crypto.randomUUID(),
-      operator: values.operator,
-      target: { connectorId: connector.id, origin: connector.origin, account: connector.account },
-      action: "prepare_draft",
-      payload,
-      now: new Date(),
-      minutes: 15,
-    });
-    storeApproval(ws, approval, payload.sourceDraftId, payload);
-    const result = await prepareApprovedDraft({
-      ws,
-      approvalId: approval.id,
-      operator: values.operator,
-      connector,
-      currentCatalogueVersion: activeCatalogue(ws)?.version ?? "",
-    });
     console.log(
-      `Result: ${result.state}${result.remoteRef ? ` (${result.remoteRef})` : ""}. ${result.message}`,
+      `Result: ${r.result.state}${r.result.remoteRef ? ` (${r.result.remoteRef})` : ""}. ${r.result.message}`,
     );
-    for (const d of result.diff)
+    for (const d of r.result.diff)
       console.log(`  ${d.field}: expected ${d.expected}, target has ${d.actual}`);
-    return result.state === "awaiting_submit_approval" ? 0 : 1;
-  } finally {
-    await browser.close();
-    ws.close();
-  }
-}
+    return r.result.state === "awaiting_submit_approval" ? 0 : 1;
+  },
 
-function transcriptCommand(args: string[]): number {
-  const [sub, ...rest] = args;
-  const { values } = parseArgs({
-    args: rest,
-    options: {
-      audio: { type: "string" },
-      "text-file": { type: "string" },
-      by: { type: "string" },
-      language: { type: "string" },
-      workspace: { type: "string", default: DEFAULT_WORKSPACE },
-    },
-  });
-  if (sub !== "add" || !values.audio || !values["text-file"] || !values.by) {
-    console.error(USAGE);
-    return 2;
-  }
-  if (!Workspace.exists(values.workspace)) {
-    console.error(`No workspace in ${values.workspace}.`);
-    return 1;
-  }
-  const ws = Workspace.open(values.workspace);
-  try {
-    const matches = ws.db
-      .prepare("SELECT id FROM message WHERE media_file_name = ? AND duplicate_of IS NULL")
-      .all(values.audio) as { id: string }[];
-    if (matches.length !== 1 || !matches[0]) {
-      console.error(
-        matches.length === 0
-          ? `No voice-note message names ${values.audio}.`
-          : `${matches.length} messages name ${values.audio}; it is ambiguous.`,
-      );
-      return 1;
-    }
-    const t = addTranscript(ws, {
-      messageId: matches[0].id,
-      text: readFileSync(values["text-file"], "utf8").trim(),
-      language: values.language ?? null,
-      by: values.by,
+  async serve(args) {
+    const { values } = parseArgs({
+      args,
+      options: { workspace: ws, port: { type: "string", default: String(DEFAULT_PORT) } },
     });
-    console.log(`Added transcript version ${t.version} to ${terminalSafe(values.audio, 80)}.`);
-    return 0;
-  } catch (err) {
-    if (err instanceof ReviewError) {
-      console.error(err.message);
-      return 1;
+    const port = Number(values.port);
+    if (!Number.isInteger(port) || port < 1024 || port > 65535)
+      throw new OpError("bad_port", "Port must be a number between 1024 and 65535.", 2);
+    const { Workspace } = await import("@chatterpilot/storage");
+    if (!Workspace.exists(values.workspace)) {
+      throw new OpError(
+        "no_workspace",
+        `No workspace in ${values.workspace}. Run: chatterpilot init --timezone <zone>`,
+      );
     }
-    throw err;
-  } finally {
-    ws.close();
-  }
-}
+    const w = Workspace.open(values.workspace);
+    const server = await startServer(w, { port, webRoot: WEB_ROOT });
+    console.log(
+      `ChatterPilot is running at ${server.url} (this computer only). Press Ctrl+C to stop.`,
+    );
+    return new Promise((resolve) => {
+      const stop = () => {
+        server.close();
+        w.close();
+        resolve(0);
+      };
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+    });
+  },
+
+  async demo(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        port: { type: "string", default: String(DEFAULT_PORT) },
+        workspace: { type: "string", default: DEMO_WORKSPACE },
+      },
+    });
+    const { Workspace } = await import("@chatterpilot/storage");
+    if (!Workspace.exists(values.workspace)) {
+      Workspace.create(values.workspace, {
+        name: "ChatterPilot demo (synthetic data)",
+        timezone: "Asia/Kolkata",
+      }).close();
+    }
+    await withWorkspace(values.workspace, async (w) => {
+      await loadCatalogueIntoWorkspace(w, `${FIXTURES}catalogue`);
+      for (const chat of ["android-dmy-hardware-orders.txt", "ios-mdy-plumbing-orders.txt"]) {
+        await importExport(w, `${FIXTURES}chats/${chat}`);
+      }
+    });
+    console.log(`Demo workspace ready in ${values.workspace} (synthetic chats and catalogue).`);
+    return commands.serve?.(["--workspace", values.workspace, "--port", values.port]) ?? 1;
+  },
+
+  async mcp(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        workspace: ws,
+        files: { type: "string" },
+        agent: { type: "string", default: "mcp" },
+      },
+    });
+    const { runMcpServer } = await import("./mcp.ts");
+    await runMcpServer({
+      workspace: values.workspace,
+      agentName: values.agent,
+      ...(values.files ? { filesRoot: values.files } : {}),
+    });
+    return new Promise<number>(() => {
+      // Runs until the client closes stdin.
+    });
+  },
+};
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
-  if (command === "parse") return parseCommand(rest);
-  if (command === "init") return initCommand(rest);
-  if (command === "import") return importCommand(rest);
-  if (command === "catalogue") return catalogueCommand(rest);
-  if (command === "draft") return draftCommand(rest);
-  if (command === "serve") return serveCommand(rest);
-  if (command === "events") return eventsCommand(rest);
-  if (command === "intake") return intakeCommand(rest);
-  if (command === "fill-form") return fillFormCommand(rest);
-  if (command === "transcript") return transcriptCommand(rest);
-  if (command === "demo") return demoCommand(rest);
-  console.error(USAGE);
-  return 2;
+  const run = command ? commands[command] : undefined;
+  if (!run) {
+    console.error(USAGE);
+    return 2;
+  }
+  try {
+    return await run(rest);
+  } catch (err) {
+    if (err instanceof UsageError) {
+      console.error(USAGE);
+      return 2;
+    }
+    if (err instanceof OpError) {
+      if (argv.includes("--json")) json({ error: { code: err.code, message: err.message } });
+      console.error(
+        err.code === "not_sendable" || err.code.startsWith("no_")
+          ? err.message
+          : `Not done (${err.code}): ${err.message}`,
+      );
+      return err.exitCode;
+    }
+    if (err instanceof TypeError && /parseArgs|Unknown option/i.test(err.message)) {
+      console.error(err.message);
+      console.error(USAGE);
+      return 2;
+    }
+    throw err;
+  }
 }
 
 process.exitCode = await main(process.argv.slice(2));
