@@ -369,3 +369,30 @@ their replacement. No secrets, customer data or private transcripts.
   Hindi polite orders are phrased as questions.
 - Trade-off: (3) can hide a new order written in the same message as a report; documented and
   tested as a known limit. A person can always draft any message by hand.
+
+## D022 — Erasing one person's data (proposed; needs the owner)
+- Date: 2026-10-18 (+05:30)
+- Status: **proposed**, not implemented. Needs the owner's decision.
+- Context: the DPDP Act gives people a right to erasure and requires erasing data once its purpose is
+  served (s. 8(7)); Rule 8(3) also asks for at least one year of retention of processing records
+  (`docs/privacy.md`). ChatterPilot keeps personal data in: raw export blobs (byte-for-byte, by
+  design), `message` rows, attachments, transcripts (append-only trigger), `draft_decision` (append-only
+  trigger, may contain names in reasons/values), accepted snapshots inside decisions (frozen JSON with
+  evidence text), execution events (append-only) and exported files outside the workspace.
+- Options:
+  1. **Delete the workspace** (works today): all or nothing.
+  2. **Redaction with tombstones** (recommended): a `chatterpilot forget --author "<name>" | --message
+     <id>` command that, in one transaction, overwrites the person's message bodies, author names,
+     transcripts and attachment blobs with a fixed marker and a hash of the original; deletes the raw
+     export blobs that contained them (the import record keeps its hash and counts); and appends a
+     `redaction` record (who, when, why, which ids). The append-only triggers would gain one narrow,
+     audited exception (UPDATE allowed only to the redaction marker, never to other values).
+     Accepted snapshots that cite the person would keep their structure and totals but replace
+     evidence text with the marker, so totals stay reproducible while the words are gone.
+  3. **Crypto-shredding**: encrypt each sender's text with a per-person key and destroy the key on
+     request. Clean in theory; adds key management to a tool meant for small shops.
+- Trade-offs of (2): re-checking an old draft against its chat text becomes impossible for redacted
+  lines (by design); exported files already sent elsewhere are out of reach (the docs must say so);
+  the append-only guarantee becomes "append-only except audited redaction".
+- Owner to decide: adopt (2)?; the retention period default; whether redaction is offered in the review
+  app or CLI only.

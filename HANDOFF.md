@@ -16,8 +16,8 @@
 ## Verified repository and code state
 - Repository: `shekibahmed/ChatterPilot` (GitHub visibility PRIVATE)
 - Branch: `build/v0.1`; look up the latest commit with `git log -1` (a file cannot contain its own SHA)
-- Last fully checked code: "Measure the follow-ups rules and broaden them" (`3651c4c`):
-  `pnpm check` exit 0 (451 tests), `pnpm test:e2e` exit 0 (12 passed)
+- Last fully checked code: "Read follow-up payment amounts only from money" (`6d7d80a`):
+  `pnpm check` exit 0 (462 tests); last `pnpm test:e2e` exit 0 (12 passed) at `3651c4c`
 
 ## Working tree to preserve
 - Private planning packet: sibling folder `../ChatterPilot-private/`. Never copy it in.
@@ -40,10 +40,11 @@
 12. Multi-agent review (`wf_4a70377a-3e7`): 8 confirmed defects fixed with regression tests
 13. `docs/for-shops.md`, `docs/privacy.md` (DPDP Act/Rules from official texts; not legal advice)
 14. Follow-ups template + tab + CLI/MCP, measured (held-out 14 → 30 of 34 exact)
+15. `docs/how-it-was-built.md` (method case study); second review (`wf_3f15d46f-5da`): 2 fixes
 
 ## Next candidates (optional, in order)
-- "Forget a person" (DPDP erasure) conflicts with the append-only decision log and frozen snapshots:
-  needs an owner decision (redaction design) before code. See docs/privacy.md "What it does not do".
+- "Forget a person" (DPDP erasure): proposed design and options in DECISIONS.md D022; needs the
+  owner's decision before code.
 - More labelled data from real (consented) exports during pilots; then re-tune and re-measure.
 - Busy/Vyapar/Marg import recipes once someone shares a template file.
 
