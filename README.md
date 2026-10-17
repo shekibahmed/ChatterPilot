@@ -25,6 +25,7 @@ It runs on your computer. The core needs no account, no API key and no internet 
 | Review | A person can set the customer, fix any field, exclude a line or link a later correction. | Every edit needs a reason and is kept in an append-only history. A draft with open issues cannot be accepted. |
 | Dashboard | Order value by day, chat activity, pipeline, quantities by product, orders by customer and open review work. | Money figures count accepted orders only unless you choose otherwise; every metric states its definition, date coverage and what it left out; trends are refused ("insufficient comparable data") when coverage or volume is too thin. |
 | Export | Accepted orders download as CSV or JSON. | Exports come from frozen, fingerprinted snapshots; spreadsheet formula injection is neutralised. |
+| Fill a form (opt-in, synthetic only) | An accepted order can be typed into another system's web form by a browser connector, proven on a local synthetic form. | Approval bound to the exact document, prices, target, person and expiry; checked before and after saving; never twice; unknown outcomes reconciled, not retried; **stops before Submit**. See [docs/order-automation.md](docs/order-automation.md). |
 
 ![Dashboard with coverage banner, reviewed-only order value and a refused week-on-week trend](docs/images/dashboard.png)
 
@@ -67,7 +68,7 @@ Only import chats you have the right to process. Workspaces live in `workspaces/
 - **Language:** order lines are understood in English with Western digits. Hindi digits and unit
   words are skipped rather than guessed. Regional-language support needs proper evaluation first.
 - **Not included:** live WhatsApp connection, voice-note transcription, AI extraction, Telegram
-  intake and filling forms in other systems. These are planned as separate, opt-in,
+  intake, and any real (non-synthetic) target system or document submission. These are planned as separate, opt-in,
   permission-gated steps.
 
 ## How it is built

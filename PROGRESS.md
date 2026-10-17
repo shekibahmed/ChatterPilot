@@ -202,3 +202,29 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Found while testing: the dash in registrations was never made optional (escaper does not escape
   "-"); the fixture's dates are ambiguous, which correctly left times unknown until declared.
 - Next: OA0 synthetic order form and connector (needs the owner's Codegen recording; see D003).
+
+## 2026-10-17 — OA0 synthetic order execution proof (partial: recording pending)
+- Tool / active writer: Claude Code (autonomous run)
+- Approved scope: OA0 (outline approval); D011, D003
+- Starting branch / HEAD: `build/v0.1` @ `d3e7ec3ffb2c53608bcd7cbf1db670fa9ec917c6`
+- Outcome: **partial** — everything except the owner's genuine Codegen recording is built and
+  tested; the connector is labelled hand-written until that recording exists.
+- Changes: `packages/order-automation` (payload, approval, connector contract, runner, MockBooks
+  connector); storage migration 4 + `ExecutionStore`; `fixtures/mock-order-app` (server, form,
+  draft and drafts views, recording guide); `apps/local/src/execution.test.ts` (fake target);
+  `apps/local/e2e/connector.spec.ts` (real browser against MockBooks); `docs/order-automation.md`;
+  README row.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, Chromium rev 1243, code state = OA0 tree):
+  - `pnpm check` — exit 0; 313 tests passed (approval binding matrix, state machine, runner with
+    duplicate/stale-price/operator/layout/lost-response/not-found/tamper/submit-refusal cases,
+    append-only execution history)
+  - `pnpm test:e2e` — exit 0; 8 passed (2 demo + 6 connector: two orders with 2 and 1 lines read
+    back exactly and 0 submissions; price drift blocked before saving; layout change stops with
+    nothing saved; lost response reconciled to one draft; duplicate drafts after a dropped
+    connection stop for a person; other origins blocked)
+  - Stability: connector spec `--repeat-each 3` — 18/18 passed
+- Issues found and fixed: exact `getByLabel` includes option text for wrapping labels (switched to
+  role locators); `<output>` values read with `textContent`; tests used absolute counts on shared
+  servers (now deltas); orphaned test servers from a timed-out background run were stopped.
+- Owner action needed: follow `fixtures/mock-order-app/recording/README.md` (about 5 minutes).
+- Next: WP7 agent skill package against the real CLI; then OA1 offline Telegram intake fixtures.

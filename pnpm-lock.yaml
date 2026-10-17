@@ -190,6 +190,9 @@ importers:
       '@chatterpilot/import-whatsapp':
         specifier: workspace:*
         version: link:../../packages/import-whatsapp
+      '@chatterpilot/order-automation':
+        specifier: workspace:*
+        version: link:../../packages/order-automation
       '@chatterpilot/orders':
         specifier: workspace:*
         version: link:../../packages/orders
@@ -239,6 +242,22 @@ importers:
       whatsapp-chat-parser:
         specifier: 4.0.2
         version: 4.0.2
+
+  packages/order-automation:
+    dependencies:
+      '@chatterpilot/core':
+        specifier: workspace:*
+        version: link:../core
+      '@chatterpilot/orders':
+        specifier: workspace:*
+        version: link:../orders
+      playwright:
+        specifier: 1.63.0
+        version: 1.63.0
+    devDependencies:
+      '@chatterpilot/storage':
+        specifier: workspace:*
+        version: link:../storage
 
   packages/orders:
     dependencies:

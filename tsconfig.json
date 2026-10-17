@@ -5,6 +5,7 @@
     "apps/*/src/**/*.ts",
     "vitest.config.ts",
     "apps/local/web/vite.config.ts",
-    "apps/local/e2e/**/*.ts"
+    "apps/local/e2e/**/*.ts",
+    "fixtures/mock-order-app/*.ts"
   ]
 }

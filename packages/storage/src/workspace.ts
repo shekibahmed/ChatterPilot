@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { reconcileSequences } from "@chatterpilot/core";
 import Database from "better-sqlite3";
 import { BlobStore, type StoredBlob } from "./blobs.ts";
+import { ExecutionStore } from "./executions.ts";
 import { MIGRATIONS } from "./migrations.ts";
 import { ReviewStore } from "./reviews.ts";
 
@@ -190,12 +191,14 @@ export class Workspace {
   readonly db: Database.Database;
   readonly blobs: BlobStore;
   readonly reviews: ReviewStore;
+  readonly executions: ExecutionStore;
 
   private constructor(dir: string, db: Database.Database) {
     this.dir = dir;
     this.db = db;
     this.blobs = new BlobStore(join(dir, "blobs"));
     this.reviews = new ReviewStore(db);
+    this.executions = new ExecutionStore(db);
   }
 
   static exists(dir: string): boolean {

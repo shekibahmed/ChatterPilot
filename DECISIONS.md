@@ -192,3 +192,33 @@ their replacement. No secrets, customer data or private transcripts.
   Quoted and reported-paid amounts are summed separately and never presented as verified expenses.
   Links that depend on time are not drawn when message times are unknown.
 - Not included: UI for fleet events (CLI `events` only), fleet dashboard, route/trip metrics.
+
+## D011 — OA0 order execution: approvals, ledger and synthetic connector
+- Date: 2026-10-17 (+05:30)
+- Status: accepted for the synthetic proof; **recording requirement still open** (see D003)
+- Context: PLAN §16 OA0 and ORDER_AUTOMATION.md: synthetic form, recorded and parameterised
+  connector, read-back, approval binding, stale-price invalidation, rejected unauthorised actions,
+  hard stop before Submit, recovery tests.
+- Chosen:
+  - `@chatterpilot/order-automation`: `ExecutionPayload` only from accepted snapshots (decimal
+    strings; unknown values refuse); approvals bind operator, target (connector, origin, account),
+    action, document type, counterparty, payload SHA-256 (canonical JSON), catalogue version and an
+    expiry of at most 60 minutes; `checkApproval` returns every failed reason.
+  - Storage migration 4: `connector_approval`, `execution_attempt` with the PLAN §16 states and a
+    partial unique index (one live attempt per connector/account/document/business reference),
+    append-only `execution_event` (triggers). Transitions are compare-and-set in a transaction and
+    must be in the `TRANSITIONS` table.
+  - Runner `prepareApprovedDraft` stops at `awaiting_submit_approval`. Pre-save mismatch → blocked
+    (nothing saved); layout/missing option → failed_before_side_effect (key freed); possible side
+    effect without confirmation → submitted_unknown → reconcile by reference (exactly one match
+    continues, otherwise a person must check; the key stays locked). `submitApproved` always refuses.
+  - `fixtures/mock-order-app` "MockBooks": synthetic local proforma form (labelled as a test
+    fixture), with `--drift`, `--layout-v2`, `--lost-response`, `--reset-after-save` faults.
+  - `MockBooksConnector` (Playwright): origin route guard, role/label locators with exact names,
+    variable line counts, pre-save comparison of the target's computed values, post-save read-back,
+    never clicks Submit. **Provenance: hand-written** — the genuine Codegen recording must be made by
+    the owner (`fixtures/mock-order-app/recording/README.md`); only after reconciliation with that
+    recording may it be labelled "recorded".
+- Found during testing: dropping the connection after a save made Chromium retry the POST, creating
+  two drafts in the target; reconciliation correctly refused to pick one. Kept as a regression test.
+- Not included: real targets, submit/send, Telegram intake (OA1), UI for approvals.

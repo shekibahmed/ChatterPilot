@@ -1,5 +1,7 @@
 export type { StoredBlob } from "./blobs.ts";
 export { BlobStore } from "./blobs.ts";
+export type { ApprovalRecord, AttemptRecord, ExecutionEventRecord } from "./executions.ts";
+export { ExecutionStore } from "./executions.ts";
 export type {
   CatalogueVersionRecord,
   DecisionRecord,

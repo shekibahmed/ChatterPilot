@@ -7,6 +7,7 @@
   "dependencies": {
     "@chatterpilot/core": "workspace:*",
     "@chatterpilot/import-whatsapp": "workspace:*",
+    "@chatterpilot/order-automation": "workspace:*",
     "@chatterpilot/orders": "workspace:*",
     "@chatterpilot/storage": "workspace:*",
     "@chatterpilot/templates": "workspace:*",

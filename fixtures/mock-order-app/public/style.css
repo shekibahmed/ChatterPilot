@@ -1,0 +1,29 @@
+body {
+  font:
+    15px / 1.5 system-ui,
+    sans-serif;
+  margin: 24px;
+  max-width: 980px;
+}
+.note {
+  color: #8a5300;
+  background: #fff4e5;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 12px 4px 0;
+}
+table {
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+th,
+td {
+  border-bottom: 1px solid #ddd;
+  padding: 4px 8px;
+  text-align: left;
+}

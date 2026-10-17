@@ -121,4 +121,57 @@ export const MIGRATIONS: readonly string[] = [
   CREATE INDEX message_canonical ON message (duplicate_of, local_datetime);
   CREATE INDEX import_batch_chat ON import_batch (chat_key);
   `,
+  `
+  -- Opt-in order execution (OA0): approvals bound to exact payloads, attempts with a state
+  -- machine, and an append-only transition log.
+  CREATE TABLE connector_approval (
+    id TEXT PRIMARY KEY,
+    draft_id TEXT NOT NULL REFERENCES order_draft (id),
+    operator TEXT NOT NULL,
+    connector_id TEXT NOT NULL,
+    origin TEXT NOT NULL,
+    account TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('prepare_draft', 'submit')),
+    document_type TEXT NOT NULL,
+    counterparty_id TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    catalogue_version TEXT NOT NULL,
+    approved_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    payload_json TEXT NOT NULL
+  ) STRICT;
+
+  CREATE TABLE execution_attempt (
+    id TEXT PRIMARY KEY,
+    approval_id TEXT NOT NULL REFERENCES connector_approval (id),
+    idempotency_key TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN (
+      'received', 'validated', 'needs_review', 'approved_for_draft', 'preparing_draft',
+      'draft_readback', 'awaiting_submit_approval', 'approved_to_submit', 'submitting',
+      'verified_complete', 'blocked', 'rejected', 'cancelled_before_submit',
+      'failed_before_side_effect', 'submitted_unknown')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    remote_ref TEXT,
+    readback_json TEXT,
+    diff_json TEXT,
+    error TEXT
+  ) STRICT;
+  -- One live attempt per business document: duplicates and concurrent runs are refused.
+  CREATE UNIQUE INDEX execution_attempt_live ON execution_attempt (idempotency_key)
+    WHERE state NOT IN ('failed_before_side_effect', 'rejected');
+
+  CREATE TABLE execution_event (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    attempt_id TEXT NOT NULL REFERENCES execution_attempt (id),
+    at TEXT NOT NULL,
+    from_state TEXT,
+    to_state TEXT NOT NULL,
+    note TEXT NOT NULL
+  ) STRICT;
+  CREATE TRIGGER execution_event_no_update BEFORE UPDATE ON execution_event
+  BEGIN SELECT RAISE(ABORT, 'execution history is append-only'); END;
+  CREATE TRIGGER execution_event_no_delete BEFORE DELETE ON execution_event
+  BEGIN SELECT RAISE(ABORT, 'execution history is append-only'); END;
+  `,
 ];
