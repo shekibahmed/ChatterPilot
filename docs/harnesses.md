@@ -109,6 +109,8 @@ A typical session:
 > not guess prices.
 
 Then open the review app, check the drafts the agent prepared, and accept them yourself.
+A real recorded session, with each tool call and the server's answer, is in
+[docs/agent-session.md](agent-session.md).
 
 ## 4. Extend it with your agent
 

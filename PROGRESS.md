@@ -468,3 +468,11 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   (amount-miss metric definition; closing message resolves the person's latest item of any kind).
 - Follow-ups labelled set unchanged: 69/73 exact; held-out 30/34, amounts 8/9.
 - Checks: `pnpm check` exit 0, 462 tests.
+
+## 2026-10-18 — Overnight run, slice 17: recorded agent session
+- `apps/local/src/agent-session.ts` runs a real MCP session (raw JSON-RPC over stdio) on a fresh
+  synthetic workspace and writes `docs/agent-session.md`: load catalogue, import a Hinglish chat,
+  list suggestions, create a draft (evidence shown), propose an edit (recorded as `agent:demo-agent`),
+  Tally export refused (nothing accepted), `accept_draft` does not exist, follow-ups. A test keeps it
+  running. Linked from docs/harnesses.md.
+- Checks: `pnpm check` exit 0, 463 tests.
