@@ -29,7 +29,14 @@ import {
   type RunResult,
   storeApproval,
 } from "@chatterpilot/order-automation";
-import { buildOrderDraft, type CatalogueIssue, type OrderDraft } from "@chatterpilot/orders";
+import {
+  buildOrderDraft,
+  type CatalogueIssue,
+  type EvalReport,
+  evaluate,
+  type OrderDraft,
+  validateEvalCases,
+} from "@chatterpilot/orders";
 import {
   type ImportSummary,
   isValidTimeZone,
@@ -238,6 +245,29 @@ export function loadCatalogue(options: {
       issues,
     };
   });
+}
+
+/**
+ * Score the drafting rules against a labelled message set (default: the synthetic set in
+ * fixtures/eval) with a catalogue folder. Needs no workspace; stores nothing.
+ */
+export function evaluateDrafting(options: { cases: string; catalogue: string }): EvalReport {
+  const { catalogue, issues } = readCatalogueDir(options.catalogue);
+  if (!catalogue) {
+    throw new OpError(
+      "bad_catalogue",
+      `The catalogue is not usable: ${issues.map((i) => i.message).join(" ")}`,
+    );
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(options.cases, "utf8"));
+  } catch {
+    throw new OpError("bad_cases", `${options.cases} is not readable JSON.`);
+  }
+  const { cases, problems } = validateEvalCases(raw, catalogue);
+  if (problems.length > 0) throw new OpError("bad_cases", problems.slice(0, 10).join(" "));
+  return evaluate(cases, catalogue);
 }
 
 export interface SuggestedDraft {

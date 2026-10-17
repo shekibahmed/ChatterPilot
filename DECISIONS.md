@@ -344,3 +344,15 @@ their replacement. No secrets, customer data or private transcripts.
   `.mcp.json` and the documented flags in line with the CLI. The MCP command now exits 0 when the
   client closes stdin.
 - Not done: npm package (`npx chatterpilot`), so configs run from a clone.
+
+## D020 — Evaluate drafting against an independently written labelled set
+- Date: 2026-10-17 (+05:30)
+- Status: accepted
+- Chosen: `packages/orders/src/evaluate.ts` scores the real `buildOrderDraft` against labelled
+  messages: exact product + base quantity per line, abstention on AMBIGUOUS/UNKNOWN, spurious lines,
+  order/non-order detection, customers. The headline safety metric is *silent errors* (wrong lines
+  without a review flag). The development set (115 messages) was written by three agents and
+  label-checked by a fourth, none of which saw the code. CLI `eval`; a test ratchets the floors.
+- Plan: improve rules on this set, then author a separate held-out set the same way and report it
+  without tuning on it.
+- Not claimed: accuracy on real chats.

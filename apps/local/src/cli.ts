@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
-import type { OrderDraft } from "@chatterpilot/orders";
+import { formatEvalReport, type OrderDraft } from "@chatterpilot/orders";
 import type { ImportSummary } from "@chatterpilot/storage";
 import type { IntakePolicy } from "@chatterpilot/telegram-intake";
 import { terminalSafe } from "./format.ts";
@@ -14,6 +14,7 @@ import {
   dashboardData,
   draftShow,
   draftsList,
+  evaluateDrafting,
   exportOrdersAs,
   fillForm,
   fleet,
@@ -32,7 +33,8 @@ import { loadCatalogueIntoWorkspace } from "./review.ts";
 import { DEFAULT_PORT, startServer } from "./server.ts";
 
 const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
-const FIXTURES = new URL("../../../fixtures/synthetic/", import.meta.url).pathname;
+const FIXTURES_DIR = new URL("../../../fixtures/", import.meta.url).pathname;
+const FIXTURES = `${FIXTURES_DIR}synthetic/`;
 const DEMO_WORKSPACE = "workspaces/demo";
 
 const USAGE = `Usage (every command accepts --json for machine-readable output):
@@ -75,6 +77,10 @@ const USAGE = `Usage (every command accepts --json for machine-readable output):
       Open the review app on http://127.0.0.1 (this computer only).
   chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
       Seed ${DEMO_WORKSPACE} with synthetic chats and a catalogue, then serve it. No network needed.
+  chatterpilot eval [--cases <file.json>] [--catalogue <dir>] [--tags] [--failures] [--json]
+      Score the drafting rules against a labelled message set (default: the synthetic set in
+      fixtures/eval). Nothing is stored. See docs/evaluation.md.
+
   chatterpilot mcp [--workspace <dir>] [--files <dir>] [--agent <name>]
       Run as a Model Context Protocol server on stdio for agent harnesses (Claude Code, Codex, ...).
       File arguments must be inside --files (default: current folder). Accepting drafts stays human.
@@ -344,6 +350,35 @@ const commands: Record<string, Command> = {
       );
       printDraft(s.draft);
       console.log("");
+    }
+    return 0;
+  },
+
+  async eval(args) {
+    const { values } = parseArgs({
+      args,
+      options: {
+        cases: { type: "string", default: `${FIXTURES_DIR}eval/order-messages.json` },
+        catalogue: { type: "string", default: `${FIXTURES_DIR}synthetic/catalogue` },
+        tags: { type: "boolean", default: false },
+        failures: { type: "boolean", default: false },
+        json: asJson,
+      },
+    });
+    const report = evaluateDrafting({ cases: values.cases, catalogue: values.catalogue });
+    if (values.json) return emit(report, 0);
+    process.stdout.write(formatEvalReport(report, { tags: values.tags }));
+    console.log(
+      "\nrecall = clerk's lines drafted exactly; prec. = drafted lines that are exactly right; silent = wrong lines with no review flag (the dangerous kind); abstained = ambiguous/unknown products correctly left for a person.",
+    );
+    if (values.failures) {
+      for (const c of report.cases) {
+        const bad = c.lines.filter((l) => l.outcome !== "exact" && l.outcome !== "abstained");
+        if (bad.length === 0 && c.expectedKind === c.predictedKind) continue;
+        console.log(
+          `${c.id}: ${c.expectedKind}→${c.predictedKind} ${bad.map((l) => `${l.outcome}(${l.expected ?? "-"}→${l.predicted ?? "-"}${l.flagged ? ", flagged" : ""})`).join(" ")}`,
+        );
+      }
     }
     return 0;
   },

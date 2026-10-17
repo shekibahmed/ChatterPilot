@@ -380,3 +380,11 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   (private reporting, scope), CODE_OF_CONDUCT (Contributor Covenant 2.1 by reference), issue forms
   (bug, export format/order words, idea) with a privacy checkbox, PR template; link test covers them.
 - Owner to do: enable private vulnerability reporting in repository settings when the repo is public.
+
+## 2026-10-17 — Overnight run, slice 7: evaluation harness and baseline
+- Starting HEAD: `a0c25e7bb83f37acede0fced29595684c21052e9`
+- Workflow `wf_1130947d-eda` (6 Sonnet agents: 3 authors, 3 label checkers; 18 label changes, 5
+  messages dropped as ambiguous) produced `fixtures/eval/order-messages.json` (115 messages).
+- Changes: `evaluate.ts` (+ tests), CLI `eval [--tags] [--failures] [--json]`, docs/evaluation.md.
+- Baseline: recall 81.7%, precision 85.0%, 11 silent errors, 23/37 non-orders rejected.
+- Checks: `pnpm check` exit 0, 407 tests.
