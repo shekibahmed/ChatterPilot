@@ -32,3 +32,5 @@ export {
   linkFollowups,
   summariseFollowups,
 } from "./followups.ts";
+export type { FollowupCase, FollowupEvalReport, KindScore } from "./followups-eval.ts";
+export { evaluateFollowups } from "./followups-eval.ts";

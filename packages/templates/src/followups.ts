@@ -50,35 +50,46 @@ export interface FollowupLink {
   readonly basis: string;
 }
 
-const RULES: readonly { kind: Exclude<FollowupKind, "resolution">; re: RegExp }[] = [
+// Money context: payments need a money word or a money-like amount, so "40 bags bhej diye" (the
+// shop sending goods) is not a payment.
+const MONEY =
+  /(?:payment|paid|transfer|paise|paisa|rupees?|rs\.?|₹|upi|g ?pay|phone ?pe|paytm|neft|imps|rtgs|cheque|check|dues|amount|balance|baki|baaki|bill|\d{1,3}(?:,\d{2,3})+|\d{4,}|\d+k\b|रुपये|रुपए|पैसे|पेमेंट|फोनपे|बाकी)/iu;
+
+const RULES: readonly {
+  kind: Exclude<FollowupKind, "resolution">;
+  re: RegExp;
+  needs?: RegExp;
+}[] = [
   {
     kind: "delivery_chase",
-    re: /\b(?:abhi tak (?:nahi|nahin) (?:aaya|aayi|aaye|mila|mili|pahunch\w*)|kab tak (?:aayega|aayegi|aaenge|bhejoge|milega)|kab (?:aayega|aayegi|bhejoge)|where is (?:my|the|our) (?:\w+ ){0,2}(?:order|delivery|material|maal|truck)|not (?:yet )?(?:received|delivered)|still (?:waiting|not received)|any update on (?:my|the) (?:order|delivery)|delivery (?:kab|status))\b/iu,
+    re: /(?:abhi tak(?:\s+\p{L}+){0,2}\s+(?:nahi|nahin|nhi)\s+(?:aaya|aayi|aaye|aai|mila|mili|mile|pahuncha|pahunchi|pahunch\p{L}*)|(?:order|maal|saman|delivery|gaadi|gadi|truck|tempo)(?:\s+#?\w+)?\s+(?:ka|ki)\s+kya\s+hua|(?:kahan|kaha|kidhar)\s+(?:hai|h)\s+(?:gaadi|gadi|truck|tempo|maal|order|delivery)|(?:gaadi|gadi|truck|tempo|maal|order|delivery)\s+(?:kahan|kaha|kidhar)\s+(?:hai|h)|kab (?:tak )?(?:aayega|aayegi|aaenge|aaega|bhejoge|bhej rahe|milega|pahunchega|pahunchegi)|jaldi (?:bhijwa|bhej|bhejo|bhejiye)|kaam ruka|where is (?:my|the|our)(?:\s+\w+){0,3}\s+(?:order|delivery|material|maal|truck|cement|tiles|goods)|not (?:yet )?(?:received|delivered|arrived|reached)|still (?:waiting|not here|not received|not delivered|not arrived)|(?:has not|hasn't|haven't|have not) (?:arrived|reached|come)|supposed to (?:arrive|reach|come|be delivered)|any update on (?:my|the) (?:order|delivery)|delivery (?:kab|status)|अभी तक(?:\s+\S+){0,2}\s+नहीं\s+(?:आया|आई|आए|मिला|मिली|पहुँचा|पहुंचा)|कब (?:भेज|आएगा|आएगी|पहुंचेगा))/iu,
   },
   {
     kind: "complaint",
-    re: /\b(?:\d+\s*(?:\w+\s+)?(?:short|kam|missing)|kam (?:aaya|aaye|aayi|tha|the|thi|hai|mila|mile)|toot (?:gaye|gaya|gayi)|tut (?:gaye|gaya)|broken|damaged?|leak(?:ing|age)?|wrong (?:item|material|size|colour|color|product)|galat (?:maal|saman|size|item)|defective|kharab|quality (?:issue|problem|kharab))\b/iu,
+    re: /(?:\b\d+\s*(?:\p{L}+\s+)?(?:short|missing)\b|\b(?:are|is|was|were|came|aaya|aaye)\s+short\b|\bonly \d+ (?:came|arrived|received|delivered)|\b(?:sirf|only) \d+ (?:aaye|aayi|aaya|mile|mila)|\bkam (?:aaya|aaye|aayi|tha|the|thi|hai|mila|mile)\b|\b(?:toot|tut|toote|tooti|tuti|tute)\b|\b(?:phat|phate|phati|fate|fati)\b|\bbroken\b|\bdamaged?\b|\bleak(?:ing|age|s)?\b|\bwrong (?:item|material|size|colou?r|product|grade|quantity)\b|\bgalat\b|\bdefective\b|\bkharab\b|\b(?:poor|bad|low) quality\b|\bquality (?:issue|problem|kharab)\b|\bweak\b|टूट|खराब|कमज़ोर|कमजोर|गलत|क्वालिटी)/iu,
   },
   {
     kind: "payment_promise",
-    re: /\b(?:will (?:pay|transfer|send (?:the )?payment)|(?:payment|paise|cheque|check) (?:kal|parso|tomorrow|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2} tarikh)|(?:kal|parso|tomorrow) (?:tak )?(?:payment|paise|pay) (?:kar|bhej|de) ?(?:dunga|denge|dege|doonga|du)|cheque will come|payment (?:kar dunga|kar denge|bhej dunga|bhej denge|de dunga|de denge))\b/iu,
+    re: /(?:\bwill (?:pay|clear|transfer|send|settle)\b|\b(?:bhej|de|kar|clear kar|transfer kar|chuka)\s*(?:dunga|doonga|dungi|denge|dege)\b|\b(?:payment|paise|cheque|check)\s+(?:kal|parso|tomorrow|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2} tarikh)\b|\bcheque will come\b|(?:दे|भेज|कर) (?:दूंगा|दूँगा|देंगे|दूंगी))/iu,
+    needs: MONEY,
   },
   {
     kind: "payment_report",
-    re: /\b(?:payment (?:done|made|sent|kar diya|kar di|bhej diya|bhej di)|paid|paise bhej diye|transferred|neft (?:done|kar diya)|upi (?:done|kar diya|se bhej diya)|gpay (?:kar diya|done)|amount (?:sent|transferred))\b/iu,
+    re: /(?:\bpayment(?:\s+of)?(?:\s+(?:rs\.?|₹)?\s*[\d,]+)?\s+(?:done|made|sent|kar diya|kar di|bhej diya|bhej di)\b|\b(?:i have |i've |have )?paid\b|\b(?:bhej|kar|transfer kar|de)\s*(?:diya|diye|di|dia)\b|\btransferred\b|\b(?:neft|upi|imps|gpay|g pay|phonepe|paytm)\s+(?:done|kar diya|se bhej diya|kar diye)\b|\bamount (?:sent|transferred)\b|(?:कर|भेज|दे) (?:दिए|दिया|दी))/iu,
+    needs: MONEY,
   },
   {
     kind: "quote_request",
-    re: /\b(?:quotation|quote for|rate (?:batao|bhejo|kya hai|list)|bhav (?:batao|kya hai)|price list|best (?:rate|price)|kitne ka (?:padega|hoga))\b/iu,
+    re: /(?:\bquotation\b|\bquote for\b|\b(?:share|send|give|tell)\s+(?:me\s+)?(?:the\s+|your\s+)?(?:price|rate|quote|prices|rates)\b|\b(?:price|rate|rates|prices) (?:for|of)\b|\b(?:rate|bhav) (?:batao|bata do|bhejo|kya|list)\b|\b(?:kya|ka) (?:rate|bhav)\b|\brate chal\b|\bprice list\b|\bbest (?:rate|price)\b|\bkitne ka (?:padega|hoga)\b|कोटेशन|(?:रेट|भाव) (?:क्या|बताओ|भेजो))/iu,
   },
 ];
 
 const RESOLUTION =
-  /\b(?:mil gaya|mil gaye|mil gayi|aa gaya|aa gaye|pahunch gaya|received(?: ok| all| thanks)?|got it|delivered,? thanks|thanks?,? (?:received|got it)|sab (?:sahi|theek) (?:hai|aaya|mila)|problem solved|issue resolved|ho gaya,? thanks)\b/iu;
+  /(?:\b(?:mil gaya|mil gaye|mil gayi|aa gaya|aa gaye|aa gayi|pahunch gaya|pahunch gayi|pahunch gaye|received(?: ok| all| thanks)?|got it|delivered,? thanks|thanks?,? (?:received|got it)|sab (?:sahi|theek|thik) (?:hai|aaya|mila)|koi problem nahi|(?:problem|issue) (?:solved|resolved|solve ho gayi|solve ho gaya)|solved|ho gaya,? thanks)\b|मिल गया|मिल गई|आ गया|पहुँच गया|पहुंच गया)/iu;
 
 // Amounts: "15000", "15,000", "1,50,000", "₹ 2500.50"; a payment needs one written near it.
 const AMOUNT =
-  /(?:rs\.?|inr|₹)?\s*(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d{3,}(?:\.\d{1,2})?)(?![\d%])/iu;
+  /(?:rs\.?|inr|₹)?\s*(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d{3,}(?:\.\d{1,2})?|\d+(?:\.\d)?k)(?![\d%\p{L}])/iu;
 const DUE =
   /\b(?:kal|parso|aaj|today|tomorrow|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\s*tarikh|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*)\b/iu;
 
@@ -125,12 +136,16 @@ export function extractFollowups(msg: FollowupMessage): FollowupItem[] {
 
   for (const rule of RULES) {
     const hit = rule.re.exec(body);
-    if (!hit) continue;
+    if (!hit || (rule.needs && !rule.needs.test(body))) continue;
     if (rule.kind === "payment_promise" || rule.kind === "payment_report") {
       const amountHit = AMOUNT.exec(body);
       let amount: Field<number> = unknown();
       if (amountHit?.[1]) {
-        const parsed = parseAmountToMinor(amountHit[1], 2);
+        // "15k" is 15,000.
+        const k = /^(\d+(?:\.\d)?)k$/i.exec(amountHit[1]);
+        const parsed = k
+          ? parseAmountToMinor(String(Number(k[1]) * 1000), 2)
+          : parseAmountToMinor(amountHit[1], 2);
         const at = amountHit.index + amountHit[0].indexOf(amountHit[1]);
         amount = parsed.ok
           ? { value: parsed.minor, status: "ok", evidence: [span(m, at, at + amountHit[1].length)] }

@@ -5,6 +5,7 @@ import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
 import { formatEvalReport, type OrderDraft } from "@chatterpilot/orders";
 import type { ImportSummary } from "@chatterpilot/storage";
 import type { IntakePolicy } from "@chatterpilot/telegram-intake";
+import { evaluateFollowups, type FollowupCase } from "@chatterpilot/templates";
 import { terminalSafe } from "./format.ts";
 import { importExport } from "./import.ts";
 import {
@@ -81,7 +82,7 @@ const USAGE = `Usage (every command accepts --json for machine-readable output):
       Open the review app on http://127.0.0.1 (this computer only).
   chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
       Seed ${DEMO_WORKSPACE} with synthetic chats and a catalogue, then serve it. No network needed.
-  chatterpilot eval [--cases <file.json>] [--catalogue <dir>] [--tags] [--failures] [--json]
+  chatterpilot eval [--template followups] [--cases <file.json>] [--catalogue <dir>] [--tags] [--failures] [--json]
       Score the drafting rules against a labelled message set (default: the synthetic set in
       fixtures/eval). Nothing is stored. See docs/evaluation.md.
 
@@ -359,6 +360,32 @@ const commands: Record<string, Command> = {
   },
 
   async eval(args) {
+    if (args.includes("--template") && args[args.indexOf("--template") + 1] === "followups") {
+      const { values } = parseArgs({
+        args,
+        options: {
+          template: { type: "string" },
+          cases: { type: "string", default: `${FIXTURES_DIR}eval/followup-messages.json` },
+          json: asJson,
+        },
+      });
+      const report = evaluateFollowups(
+        JSON.parse(readFileSync(values.cases, "utf8")) as FollowupCase[],
+      );
+      if (values.json) return emit(report, 0);
+      console.log(`${report.exactMessages}/${report.cases} messages with exactly the right kinds.`);
+      for (const k of report.byKind) {
+        const pct = (x: number | null) =>
+          x === null ? "  –  " : `${(x * 100).toFixed(0).padStart(4)}%`;
+        console.log(
+          `  ${k.kind.padEnd(16)} precision ${pct(k.precision)}  recall ${pct(k.recall)}`,
+        );
+      }
+      console.log(
+        `Amounts: ${report.amounts.right}/${report.amounts.labelled} right, ${report.amounts.wrong} wrong.`,
+      );
+      return 0;
+    }
     const { values } = parseArgs({
       args,
       options: {

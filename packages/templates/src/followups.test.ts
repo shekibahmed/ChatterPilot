@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { scanExport } from "@chatterpilot/import-whatsapp";
 import { describe, expect, it } from "vitest";
 import { extractFollowups, linkFollowups, summariseFollowups } from "./followups.ts";
+import { evaluateFollowups, type FollowupCase } from "./followups-eval.ts";
 
 const msg = (id: string, body: string, author = "A", at = "2026-02-02T10:00:00") => ({
   id,
@@ -85,5 +86,19 @@ describe("synthetic follow-ups chat", () => {
       promisedMinor: 1845000,
       reportedPaidMinor: 1845000,
     });
+  });
+});
+
+describe("labelled follow-ups set", () => {
+  // fu-a was used to improve the rules; fu-b is held out (scored, not tuned on). docs/evaluation.md
+  const all = JSON.parse(
+    readFileSync(new URL("../../../fixtures/eval/followup-messages.json", import.meta.url), "utf8"),
+  ) as FollowupCase[];
+  const heldOut = evaluateFollowups(all.filter((c) => c.id.startsWith("fu-b")));
+
+  it("does not regress on the held-out half", () => {
+    expect(heldOut.exactMessages).toBeGreaterThanOrEqual(30);
+    expect(heldOut.byKind.every((k) => k.falsePositives === 0)).toBe(true);
+    expect(heldOut.amounts).toMatchObject({ right: 8, wrong: 0 });
   });
 });

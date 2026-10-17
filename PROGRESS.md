@@ -450,3 +450,11 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   summary with age to the last message; promised and reported money kept apart), synthetic chat
   `fixtures/synthetic/chats/android-followups.txt`, CLI `followups`, MCP `followups` (read-only),
   docs. Rule-based and not yet measured against a labelled set (unlike order drafting).
+
+## 2026-10-18 — Overnight run, slice 15: follow-ups tab and measurement
+- Follow-ups tab in the review app (`/api/followups`), e2e test.
+- Labelled set `fixtures/eval/followup-messages.json` (73; workflow `wf_df67bfda-8ed`, 4 Sonnet
+  agents). Rules broadened by phrase family using the `fu-a` half only (money-word gate for
+  payments; Devanagari; "15k" amounts). Held-out `fu-b`: exact 14/34 → 30/34, no false positives,
+  amounts 2/9 → 8/9. CLI `eval --template followups`; floors in tests.
+- Checks: `pnpm check` exit 0, 451 tests; `pnpm test:e2e` exit 0, 12 passed.

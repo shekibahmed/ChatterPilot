@@ -113,6 +113,24 @@ Export a chat you are allowed to process, pick 50–100 messages, and write the 
 messages to a public repository). Then run `pnpm chatterpilot eval --cases yours.json --catalogue
 your-catalogue/ --failures` and fix the misses with `lexicon.json` entries and catalogue aliases first.
 
+## Follow-ups template
+
+`pnpm chatterpilot eval --template followups` scores the follow-ups rules (delivery chases,
+complaints, payment promises and reports, quote requests, closing messages) against
+`fixtures/eval/followup-messages.json`: 73 messages in English, Hinglish and Devanagari written and
+label-checked by agents that did not see the code (workflow `wf_df67bfda-8ed`, 2026-10-18). The
+`fu-a` half (39) was used to broaden the rules; the `fu-b` half (34, deliberately harder) is held
+out and was scored before and after.
+
+| held-out `fu-b` | messages exactly right | false positives | amounts right |
+|---|---|---|---|
+| before | 14/34 | 0 | 2/9 |
+| after | 30/34 | 0 | 8/9 |
+
+After the change, per kind on the held-out half: precision 100% for every kind; recall 80% for
+delivery chases, 100% complaints, 100% payment promises, 60% payment reports, 67% quote requests and
+80% closing messages. The held-out half is small (34 messages); treat these as rough.
+
 ## Performance
 
 `pnpm bench [messages]` generates a synthetic Android export (default 100,000 messages, 6.2 MB) in
