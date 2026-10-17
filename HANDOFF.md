@@ -16,8 +16,8 @@
 ## Verified repository and code state
 - Repository: `shekibahmed/ChatterPilot` (GitHub visibility PRIVATE)
 - Branch: `build/v0.1`; look up the latest commit with `git log -1` (a file cannot contain its own SHA)
-- Last fully checked code: "Read follow-up payment amounts only from money" (`6d7d80a`):
-  `pnpm check` exit 0 (462 tests); last `pnpm test:e2e` exit 0 (12 passed) at `3651c4c`
+- Last fully checked code: "Show a real agent session against the MCP server" (`0d39d1d`):
+  `pnpm check` exit 0 (463 tests); `pnpm test:e2e` exit 0 (12 passed) at `0d39d1d`
 
 ## Working tree to preserve
 - Private planning packet: sibling folder `../ChatterPilot-private/`. Never copy it in.

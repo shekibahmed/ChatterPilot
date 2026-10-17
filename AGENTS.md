@@ -31,6 +31,12 @@ explicitly approves public release.
 - `pnpm install --frozen-lockfile` — install (Node >= 26, pnpm 12)
 - `pnpm check` — lint (Biome) + typecheck (TypeScript) + tests (Vitest)
 - `pnpm format` — apply Biome formatting
+- `pnpm test:e2e` — Playwright browser tests (demo, connector, follow-ups); run for UI/server changes
+- `pnpm chatterpilot eval` / `eval --cases fixtures/eval/order-messages.heldout.json` /
+  `eval --template followups` — accuracy on labelled synthetic sets. Tune only on the development
+  sets; held-out sets are scored, never tuned on (docs/evaluation.md)
+- `pnpm bench` — timings on a synthetic 100,000-message export
+- `node apps/local/src/agent-session.ts > docs/agent-session.md` — regenerate the recorded MCP session
 
 ## Layout
 See `DECISIONS.md` D001. Packages export TypeScript source directly (`exports: ./src/index.ts`); relative
