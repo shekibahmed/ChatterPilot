@@ -416,3 +416,10 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   on all 232 labelled messages); `pnpm bench` (synthetic generator + timings) with a generator test.
 - 100k messages: status 6.0 → 1.3 s, suggestions with previews 13.4 → 4.0 s, dashboard 6.1 → 1.3 s.
 - Checks: `pnpm check` exit 0, 425 tests; `pnpm test:e2e` exit 0, 10 passed.
+
+## 2026-10-17 — Overnight run, slice 11: dev container
+- Changes: `.devcontainer/devcontainer.json` (node:26-bookworm; pnpm via npm because Node 26 no
+  longer bundles corepack; forwards port 4317), README pointer.
+- Checks: in a clean `node:26-bookworm` container (Node 26.12.0) with the repository copied in:
+  `pnpm install --frozen-lockfile` ok, `pnpm check` exit 0 (425 tests), `pnpm bench 3000` ok.
+  VS Code "Reopen in Container" itself was not exercised.

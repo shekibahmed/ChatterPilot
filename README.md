@@ -47,6 +47,10 @@ pnpm install --frozen-lockfile
 pnpm demo
 ```
 
+No Node.js on your machine? Open the repository in a dev container (VS Code "Reopen in Container",
+or GitHub Codespaces once the repository is public): [.devcontainer](.devcontainer/devcontainer.json)
+installs everything and runs the checks; then run `pnpm demo` inside it.
+
 Open http://127.0.0.1:4317. The demo uses invented chats and an invented hardware-store catalogue
 (see [fixtures/synthetic](fixtures/synthetic)). Try drafting the Kumar Builders order, then link the
 "make it 45 bags" correction and exclude the old line.
