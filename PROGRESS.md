@@ -423,3 +423,11 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Checks: in a clean `node:26-bookworm` container (Node 26.12.0) with the repository copied in:
   `pnpm install --frozen-lockfile` ok, `pnpm check` exit 0 (425 tests), `pnpm bench 3000` ok.
   VS Code "Reopen in Container" itself was not exercised.
+
+## 2026-10-17 — Overnight run, slice 12: connector race (CI flake)
+- CI e2e failed once on `a0c25e7b` (docs-only commit): "Customer KB-01 does not exist in the
+  target". Cause: MockBooks fills customer/product lists after an async fetch; the connector
+  checked for the option immediately after page load. A real target behaves the same way.
+- Fix: the connector waits up to 5 s for expected headings/options before deciding they are absent.
+  New MockBooks fault `--slow-master` (lists arrive after 1.5 s) and an e2e test: without the fix it
+  fails with exactly the CI error; with it, `pnpm test:e2e` exit 0, 11 passed.

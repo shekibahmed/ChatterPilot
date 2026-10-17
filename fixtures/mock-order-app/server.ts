@@ -7,6 +7,7 @@
 // --layout-v2      the quantity field is labelled "Qty" (a layout change the connector must notice)
 // --lost-response     saving stores the draft but the confirmation never arrives
 // --reset-after-save  saving stores the draft, then the connection drops (browsers may retry the POST)
+// --slow-master    customers and products arrive 1.5 s after the page loads (like a slow real app)
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { parseArgs } from "node:util";
@@ -19,6 +20,7 @@ const { values } = parseArgs({
     "layout-v2": { type: "boolean", default: false },
     "lost-response": { type: "boolean", default: false },
     "reset-after-save": { type: "boolean", default: false },
+    "slow-master": { type: "boolean", default: false },
   },
 });
 
@@ -105,7 +107,13 @@ const server = createServer((req, res) => {
     res.writeHead(status, { "content-type": "application/json" });
     res.end(JSON.stringify(body));
   };
-  if (url.pathname === "/api/master") return json(200, master);
+  if (url.pathname === "/api/master") {
+    if (values["slow-master"]) {
+      setTimeout(() => json(200, master), 1500);
+      return;
+    }
+    return json(200, master);
+  }
   if (url.pathname === "/api/stats") return json(200, { drafts: drafts.size, submissions });
   if (url.pathname === "/api/drafts" && req.method === "GET") {
     const ref = url.searchParams.get("ref");

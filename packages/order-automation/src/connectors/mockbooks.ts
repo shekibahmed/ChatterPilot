@@ -57,6 +57,19 @@ export class MockBooksConnector implements Connector {
     }
   }
 
+  /**
+   * Exactly one match, allowing a short time for content the page fills in after loading (lists
+   * of customers, products and units come from the target's own API). Absent still means absent.
+   */
+  private async exactlyOne(locator: Locator, timeout = 5000): Promise<boolean> {
+    try {
+      await locator.first().waitFor({ state: "attached", timeout });
+    } catch {
+      return false;
+    }
+    return (await locator.count()) === 1;
+  }
+
   private async field(locator: Locator, name: string) {
     if ((await locator.count()) !== 1) {
       throw new ConnectorError(
@@ -70,14 +83,14 @@ export class MockBooksConnector implements Connector {
   async prepareDraft(payload: ExecutionPayload): Promise<{ remoteRef: string }> {
     await this.open("/");
     const page = this.page;
-    if ((await page.getByRole("heading", { name: "MockBooks — new proforma" }).count()) !== 1) {
+    if (!(await this.exactlyOne(page.getByRole("heading", { name: "MockBooks — new proforma" })))) {
       throw new ConnectorError("This is not the expected MockBooks form.", false);
     }
     const customer = await this.field(
       page.getByRole("combobox", { name: "Customer", exact: true }),
       "Customer",
     );
-    if ((await customer.locator(`option[value="${payload.customerId}"]`).count()) !== 1) {
+    if (!(await this.exactlyOne(customer.locator(`option[value="${payload.customerId}"]`)))) {
       throw new ConnectorError(
         `Customer ${payload.customerId} does not exist in the target.`,
         false,
@@ -98,8 +111,8 @@ export class MockBooksConnector implements Connector {
       const row = rows.nth(i);
       const product = row.getByRole("combobox", { name: "Product", exact: true });
       if (
-        (await product.count()) !== 1 ||
-        (await product.locator(`option[value="${line.productId}"]`).count()) !== 1
+        !(await this.exactlyOne(product)) ||
+        !(await this.exactlyOne(product.locator(`option[value="${line.productId}"]`)))
       ) {
         throw new ConnectorError(
           `Product ${line.productId} cannot be selected on line ${i + 1}.`,
@@ -114,7 +127,7 @@ export class MockBooksConnector implements Connector {
         row.getByRole("combobox", { name: "Unit", exact: true }),
         "Unit",
       );
-      if ((await unit.locator(`option[value="${line.unit}"]`).count()) !== 1) {
+      if (!(await this.exactlyOne(unit.locator(`option[value="${line.unit}"]`)))) {
         throw new ConnectorError(`Unit ${line.unit} is not offered for ${line.productId}.`, false);
       }
       await unit.selectOption(line.unit);

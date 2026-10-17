@@ -162,6 +162,15 @@ test("prepares two different orders with different line counts and stops before 
   ws.close();
 });
 
+test("waits for lists the target loads after the page (regression: CI flake on a0c25e7b)", async ({
+  page,
+}) => {
+  const ws = await workspace();
+  const { result } = await run(ws, page, 4335, kumarOrder(ws), "w1");
+  expect(result.state, result.message).toBe("awaiting_submit_approval");
+  ws.close();
+});
+
 test("blocks before saving when the target's prices differ", async ({ page }) => {
   const ws = await workspace();
   const before = await stats(4331);

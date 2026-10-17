@@ -46,6 +46,7 @@ export default defineConfig({
       [4332, "--layout-v2"],
       [4333, "--lost-response"],
       [4334, "--reset-after-save"],
+      [4335, "--slow-master"],
     ].map(([port, flag]) => ({
       command: `node fixtures/mock-order-app/server.ts --port ${port} ${flag}`,
       cwd: root,
