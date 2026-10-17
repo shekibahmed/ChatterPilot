@@ -7,6 +7,9 @@ import {
   toLocalDateTime,
 } from "./timestamp.ts";
 
+/** Bumped whenever scanner output for the same input can change. Stored with each import. */
+export const SCANNER_VERSION = "1";
+
 export type ExportFormat = "android" | "ios";
 export type MessageKind = "text" | "media" | "system" | "deleted";
 export type MessageStatus = "ok" | "needs_date_order" | "invalid_timestamp";
@@ -115,7 +118,7 @@ const EXTENSION_TYPES: Record<string, MediaType> = {
   vcf: "contact",
 };
 
-function mediaTypeOf(fileName: string): MediaType {
+export function mediaTypeOf(fileName: string): MediaType {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
   if (fileName.includes("-STICKER-") || ext === "was") return "sticker";
   return EXTENSION_TYPES[ext] ?? "unknown";

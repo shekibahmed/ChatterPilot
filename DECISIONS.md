@@ -49,3 +49,23 @@ their replacement. No secrets, customer data or private transcripts.
 - Chosen: the owner performs a short `npx playwright codegen` session against the synthetic mock order
   form; the raw recording is kept with a provenance note and then parameterised. Hand-written connector
   code is never labelled as recorded.
+
+## D004 — Import safety policy and raw-evidence storage
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S2 scope; revisit on owner request)
+- Context: PLAN §5 requires safe ZIP handling, preserved raw evidence, idempotent imports and
+  confirmation of ambiguous dates.
+- Chosen:
+  - **Whole archive refused** (nothing stored) for: path traversal/absolute/backslash names, symlinks,
+    encrypted entries, entry/total/compression-ratio/entry-count/archive-size limits, lying sizes,
+    no or several candidate chat texts. Limits default to PLAN §5 values (100 MiB archive, 500 MiB
+    expanded, 10,000 entries) plus 64 MiB per entry and ratio 200; all configurable, not yet benchmarked.
+  - **Entry skipped and reported** (archive still imported): nested archives and unsupported file types.
+  - Media content is compared with the extension's signature; mismatches are flagged, never executed.
+  - Archive entry names are labels only. Files are stored content-addressed by SHA-256.
+  - The chat text bytes are stored unchanged (raw evidence). The ZIP itself is not kept; its SHA-256 is.
+  - Identical source files (same SHA-256) are a no-op. Overlapping exports are handled in S6.
+  - Ambiguous day/month order blocks the import until declared; nothing is stored meanwhile.
+  - Database writes are one transaction. Blobs written by a failed import are deleted unless referenced.
+  - Media links use the exact exported file name only when exactly one message names that file.
+- Consequences: imports never guess dates or links; users may need to re-run with `--date-order`.

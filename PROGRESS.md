@@ -45,3 +45,30 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   - A continuation line typed in exactly the header format would start a new message.
   - Day/month order cannot be declared per chat inside a mixed file.
 - Next: S2 storage + import (SQLite migrations, file-hash idempotency, safe ZIP).
+
+## 2026-10-17 — S2 storage and safe import (WP1 / P1)
+- Tool / active writer: Claude Code
+- Approved scope: outline approval 2026-10-17, slice S2; D004 recorded
+- Starting branch / HEAD: `build/v0.1` @ `2f56f44bcd98b0f7165ba774aef3498cda678b35` (GitHub CI: success)
+- Outcome: completed
+- Changes:
+  - `packages/storage`: `Workspace` (better-sqlite3 13.0.3, WAL, foreign keys, `user_version`
+    migrations, STRICT tables for import_batch/message/attachment/skipped_entry/workspace_meta),
+    content-addressed `BlobStore`, atomic `recordImport`, exact-file-name media linking, `importSummary`.
+  - `packages/import-whatsapp`: `openWhatsAppArchive` (yauzl 3.4.0; validates all entries before
+    extraction; symlink/encryption/size/ratio/count/path checks; streaming byte caps; content
+    signature check). Test-only ZIP writer exported as `@chatterpilot/import-whatsapp/testing`.
+  - `apps/local`: `importExport` pipeline (SHA-256 dedupe, date-order gate, failed-import blob
+    cleanup) and CLI `init` / `import`.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, code state = S2 working tree before commit):
+  - `rm -rf node_modules apps/*/node_modules packages/*/node_modules && pnpm install --frozen-lockfile` — exit 0
+  - `pnpm check` — exit 0; 7 test files, 105 tests passed (incl. 13 hostile-archive cases and
+    import tests for byte-identical raw text, duplicate no-op, ambiguous-date refusal, cleanup)
+  - Manual CLI run in a scratch workspace: `init`, `import` of both fixtures, duplicate re-import
+    ("nothing changed"), ambiguous file refused with exit 1
+- Bugs found and fixed during the slice: better-sqlite3 rejects numbered `?1` placeholders when
+  values are passed positionally (switched to named `@params`); the cleanup path could hide the
+  original error (now guarded).
+- Not done (by design, later slices): overlap/backfill reconciliation (S6), deletion/export of
+  workspaces, timezone-aware UTC conversion (local wall-clock + workspace zone stored for now).
+- Next: S3 catalogue CSV + order draft with typed field provenance.
