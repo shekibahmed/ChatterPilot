@@ -69,3 +69,31 @@ their replacement. No secrets, customer data or private transcripts.
   - Database writes are one transaction. Blobs written by a failed import are deleted unless referenced.
   - Media links use the exact exported file name only when exactly one message names that file.
 - Consequences: imports never guess dates or links; users may need to re-run with `--date-order`.
+
+## D005 — Catalogue contract, `orders` package and deterministic drafting rules
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S3 scope; catalogue columns open to owner revision)
+- Context: PLAN §4/§16 and C04 require a versioned owner catalogue, typed field provenance, exact
+  totals and no invented prices; the order-execution module must stay separate from drafting.
+- Chosen:
+  - Package `@chatterpilot/orders` holds catalogue validation, line extraction, matching and
+    draft building (all read-only). Approval/connector execution will live in a separate
+    `order-automation` package (OA0), so drafting never performs actions. Deviation from the PLAN §6
+    layout, which put catalogue validation in `order-automation`.
+  - Catalogue = folder with `products.csv` (product_id, name, aliases `|`-separated, unit,
+    alt_units like `box:16`, price, currency, price_effective_from, price_confirmed_on,
+    tax_rate_percent), `customers.csv` (customer_id, name, aliases) and optional `catalogue.json`
+    (maintainer, stalePriceDays, default 30). Version = first 16 hex chars of a SHA-256 over all files.
+  - Errors (bad IDs/units/prices/currency/dates/tax, duplicate IDs, malformed CSV) make the catalogue
+    unusable; missing price/tax, unconfirmed prices and shared aliases are warnings.
+  - Extraction is conservative regex over quantity + unit + product phrases. Product matching needs
+    every word of a name/alias; the most specific wins; ties are `ambiguous`; one-edit typos on
+    5+ letter words are `fuzzy` and always need review. Units are only defaulted for products sold
+    per piece.
+  - Arithmetic is integer minor units with half-up rounding (`order-draft/1`); line tax
+    `round(amount × rate)`; totals are unknown if any input is unknown or currencies differ.
+  - Prices are `needs_review` when unconfirmed, older than `stalePriceDays` at the order date, or not
+    yet effective.
+- Known limitations: English/ASCII digits only (Devanagari digits and Hindi unit words abstain);
+  delivery dates are not extracted; corrections in later messages appear as separate suggestions
+  until review linking (S4).

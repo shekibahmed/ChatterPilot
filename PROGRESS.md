@@ -72,3 +72,29 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Not done (by design, later slices): overlap/backfill reconciliation (S6), deletion/export of
   workspaces, timezone-aware UTC conversion (local wall-clock + workspace zone stored for now).
 - Next: S3 catalogue CSV + order draft with typed field provenance.
+
+## 2026-10-17 — S3 catalogue CSV and order drafts (WP3/WP4 contracts, C04)
+- Tool / active writer: Claude Code
+- Approved scope: outline approval 2026-10-17, slice S3; D005 recorded
+- Starting branch / HEAD: `build/v0.1` @ `0853e3f1226851e4dcaab9f0eb84102338aaf159`
+- Outcome: completed
+- Changes:
+  - `packages/core`: strict RFC 4180 `parseCsv`, `divideRoundHalfUp`/`toSafeMinor`, typed
+    `Provenance`/`Field` (message, catalogue, computed, human).
+  - `packages/orders`: `loadCatalogue` (validation, versioning, stale-price policy), unit synonyms,
+    `extractOrderLines`, `matchRecord` (resolved/fuzzy/ambiguous/unresolved), `buildOrderDraft`
+    with per-field provenance and blocking issues.
+  - `apps/local`: `suggestOrderMessages`, CLI `catalogue check` and `draft`.
+  - `fixtures/synthetic/catalogue/`: synthetic products/customers/catalogue.json.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, code state = S3 working tree before commit):
+  - `pnpm check` — exit 0; 204 tests passed, incl. 54 adversarial order lines, catalogue validation
+    matrix, exact hand-computed totals for both chat fixtures (plumbing subtotal 2,790.00 equals the
+    total quoted in the chat), provenance of every critical field
+  - Manual: `catalogue check fixtures/synthetic/catalogue` exit 0 with 3 expected warnings;
+    `draft` over a scratch workspace lists 4 suggestions with sources per value
+- Bugs found and fixed during the slice (found by probing and tests): thousands separators split
+  into fake lines; unit words read as products; size-led products ("2x2 tiles", "8mm rod") lost
+  their unit; WhatsApp "<This message was edited>" leaked into product text; customer evidence
+  used a guessed offset instead of a located span.
+- GitHub CI for S2 push (`0853e3f1`): see HANDOFF.
+- Next: S4 review UI + CSV/JSON export + `pnpm demo`.

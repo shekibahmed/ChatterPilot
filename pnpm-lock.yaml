@@ -181,9 +181,15 @@ importers:
 
   apps/local:
     dependencies:
+      '@chatterpilot/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@chatterpilot/import-whatsapp':
         specifier: workspace:*
         version: link:../../packages/import-whatsapp
+      '@chatterpilot/orders':
+        specifier: workspace:*
+        version: link:../../packages/orders
       '@chatterpilot/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -202,6 +208,16 @@ importers:
       whatsapp-chat-parser:
         specifier: 4.0.2
         version: 4.0.2
+
+  packages/orders:
+    dependencies:
+      '@chatterpilot/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@chatterpilot/import-whatsapp':
+        specifier: workspace:*
+        version: link:../import-whatsapp
 
   packages/storage:
     dependencies:

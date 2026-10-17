@@ -5,7 +5,9 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@chatterpilot/core": "workspace:*",
     "@chatterpilot/import-whatsapp": "workspace:*",
+    "@chatterpilot/orders": "workspace:*",
     "@chatterpilot/storage": "workspace:*"
   }
 }

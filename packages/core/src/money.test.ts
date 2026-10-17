@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMinor, parseAmountToMinor } from "./money.ts";
+import { divideRoundHalfUp, formatMinor, parseAmountToMinor } from "./money.ts";
 
 describe("parseAmountToMinor", () => {
   it.each([
@@ -52,5 +52,22 @@ describe("formatMinor", () => {
     [2400, 0, "2400"],
   ])("formats %d at scale %d as %s", (minor, scale, text) => {
     expect(formatMinor(minor, scale)).toBe(text);
+  });
+});
+
+describe("divideRoundHalfUp", () => {
+  it.each([
+    [10n, 4n, 3n], // 2.5 -> 3
+    [9n, 4n, 2n], // 2.25 -> 2
+    [11n, 4n, 3n], // 2.75 -> 3
+    [8n, 4n, 2n],
+    [0n, 7n, 0n],
+  ])("%d / %d = %d", (n, d, q) => {
+    expect(divideRoundHalfUp(n, d)).toBe(q);
+  });
+
+  it("rejects negative or zero inputs it does not support", () => {
+    expect(() => divideRoundHalfUp(1n, 0n)).toThrow(RangeError);
+    expect(() => divideRoundHalfUp(-1n, 2n)).toThrow(RangeError);
   });
 });

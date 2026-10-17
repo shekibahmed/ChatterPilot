@@ -65,3 +65,21 @@ export function formatMinor(minor: number, scale = 2): string {
   const fraction = scale > 0 ? `.${digits.slice(digits.length - scale)}` : "";
   return `${negative ? "-" : ""}${whole}${fraction}`;
 }
+
+/**
+ * Exact (numerator / denominator) rounded half away from zero, for non-negative inputs used in
+ * money arithmetic. Inputs are bigint so intermediate products never lose precision.
+ */
+export function divideRoundHalfUp(numerator: bigint, denominator: bigint): bigint {
+  if (denominator <= 0n) throw new RangeError("denominator must be positive");
+  if (numerator < 0n) throw new RangeError("numerator must be non-negative");
+  return (numerator * 2n + denominator) / (denominator * 2n);
+}
+
+/** Convert a bigint minor-unit amount to a number, refusing values beyond exact range. */
+export function toSafeMinor(value: bigint): number {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER) || value < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new RangeError("amount exceeds the exactly representable range");
+  }
+  return Number(value);
+}
