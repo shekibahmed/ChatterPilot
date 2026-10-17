@@ -373,3 +373,10 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   test), README link, `apps/local/src/docs.test.ts` (every test name quoted in the guide must exist;
   every relative link in README and docs/ must resolve).
 - Checks: `pnpm check` exit 0, 403 tests.
+
+## 2026-10-17 — Overnight run, slice 6: community files
+- Starting HEAD: `1b0566fc34381e0a540928b7bc18782b0e31b80e`
+- Changes: CONTRIBUTING (no-real-data rule, first contributions, what will not be merged), SECURITY
+  (private reporting, scope), CODE_OF_CONDUCT (Contributor Covenant 2.1 by reference), issue forms
+  (bug, export format/order words, idea) with a privacy checkbox, PR template; link test covers them.
+- Owner to do: enable private vulnerability reporting in repository settings when the repo is public.

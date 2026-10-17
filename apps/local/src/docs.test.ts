@@ -21,6 +21,9 @@ const testSources = [
 
 const docs = [
   "README.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "AGENTS.md",
   ...readdirSync(join(root, "docs"))
     .filter((n) => n.endsWith(".md"))
     .map((n) => `docs/${n}`),

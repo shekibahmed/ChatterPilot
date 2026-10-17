@@ -1,0 +1,33 @@
+name: Export format, language or order words
+description: A chat export that does not parse, or order wording that is not understood.
+labels: [format]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Replace every name and number with invented ones. Keep the punctuation, spaces and order of parts exactly as in your export.
+  - type: input
+    id: app
+    attributes:
+      label: WhatsApp version and phone (Android/iOS), phone language and region
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Three to five invented lines in exactly your export's format
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should ChatterPilot read from them?
+      description: For order words, say which language/region and what each word means (e.g. "peti = case of 24").
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: The sample is invented and contains no real names, numbers or prices.
+          required: true
