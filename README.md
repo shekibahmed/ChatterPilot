@@ -136,6 +136,11 @@ pnpm check      # lint + typecheck + unit/integration tests
 pnpm test:e2e   # browser test of the demo (Playwright)
 ```
 
+## Roadmap and helping
+
+What comes next and what each step is waiting for (pilots, real test companies, native speakers) is
+in [docs/roadmap.md](docs/roadmap.md). Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licence
 
 MIT © 2026 Shekib Ahmed. See [LICENSE](LICENSE). Third-party packages keep their own licences; see
