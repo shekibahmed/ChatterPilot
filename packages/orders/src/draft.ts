@@ -8,7 +8,7 @@ import {
 } from "@chatterpilot/core";
 import { type Catalogue, type Customer, matchKey, type Product } from "./catalogue.ts";
 import { type ExtractedLine, extractOrderLines } from "./extract.ts";
-import { compileLexicon } from "./lexicon.ts";
+import { type CompiledLexicon, compileLexicon, normaliseDigits } from "./lexicon.ts";
 import { matchRecord } from "./match.ts";
 import { canonicalUnit } from "./units.ts";
 
@@ -47,7 +47,9 @@ export type IssueCode =
   | "tax_rate_missing"
   | "mixed_currency"
   | "amount_out_of_range"
-  | "quantity_in_words";
+  | "quantity_in_words"
+  | "product_partial"
+  | "correction_in_message";
 
 export interface DraftIssue {
   readonly code: IssueCode;
@@ -237,6 +239,33 @@ function daysBetween(fromIsoDate: string, toIsoDate: string): number {
 }
 
 const productKeys = (p: Product) => [p.name, ...p.aliases];
+
+// Small words that never name a product ("cement ka", "elbow bhi", "the white tiles").
+const NEUTRAL_WORDS = new Set(
+  "a an the of for and aur ka ki ke wala wale wali bhi wo woh vo ye yeh se me mein new fresh same more extra".split(
+    " ",
+  ),
+);
+
+/**
+ * Words in the chat's product phrase that the matched product's name and aliases do not explain,
+ * e.g. "white" in "white cement" matched through the alias "cement". Such a match may be a
+ * different product (another brand or variant) and needs a person's eye.
+ */
+function unexplainedWords(text: string, product: Product, words: CompiledLexicon): string[] {
+  const known = new Set(productKeys(product).flatMap((k) => matchKey(k).split(" ")));
+  return matchKey(text)
+    .split(" ")
+    .filter(
+      (t) =>
+        t.length >= 3 &&
+        !/\p{N}/u.test(t) &&
+        !known.has(t) &&
+        !NEUTRAL_WORDS.has(t) &&
+        words.canonicalUnit(t) === null &&
+        words.wordsToNumber(t) === null,
+    );
+}
 const customerKeys = (c: Customer) => [c.name, ...c.aliases];
 
 function formatQuantity(milli: number): string {
@@ -247,10 +276,69 @@ function formatQuantity(milli: number): string {
   return fraction ? `${whole}.${fraction}` : String(whole);
 }
 
+/** Words that change or cancel something earlier in the same message. */
+const CORRECTION =
+  /(?<![\p{L}])(?:make (?:it|that|them)|change (?:it |that )?to|actually|sorry|correction|cancel|instead|nahi nahi|nahin nahin|no no|mat bhej\p{L}*|hata do|hatao|galti se)(?![\p{L}])/iu;
+/** A corrected quantity: "make it 45", "sorry 25", "nahi nahi 15 kar do". */
+const CORRECTED_NUMBER =
+  /(?<![\p{L}])(?:make (?:it|that|them)|change (?:it |that )?to|actually|sorry|correction|nahi nahi|nahin nahin|no no)\D{0,20}?(\d+(?:\.\d+)?)/iu;
+
+interface Correction {
+  readonly hasCorrection: boolean;
+  /** The corrected quantity when the message has exactly one line and a number follows it. */
+  readonly quantity: { readonly text: string; readonly start: number; readonly end: number } | null;
+}
+
+/**
+ * Look for a correction written after the first order line ("40 bags cement … make it 45").
+ * A correction before any line ("Sorry make it 45 bags cement") is the line itself. A line that
+ * starts with a correction word ("actually make it 45 bags") is the correction, not a new line.
+ */
+function findCorrection(
+  body: string,
+  extracted: readonly ExtractedLine[],
+): { lines: ExtractedLine[]; correction: Correction } {
+  const text = normaliseDigits(body);
+  const first = extracted[0];
+  if (!first) return { lines: [], correction: { hasCorrection: false, quantity: null } };
+  const re = new RegExp(CORRECTION.source, "giu");
+  const later = [...text.matchAll(re)].filter((m) => m.index >= first.span.end);
+  if (later.length === 0)
+    return { lines: [...extracted], correction: { hasCorrection: false, quantity: null } };
+  // A line introduced by a correction word on the same text line ("… nahi nahi 15 kar do",
+  // "actually make it 45 bags") restates a quantity; it is the correction, not a new line.
+  const lines = extracted.filter((l, i) => {
+    const previousEnd = extracted[i - 1]?.span.end ?? -1;
+    return (
+      i === 0 ||
+      !later.some(
+        (m) =>
+          m.index > previousEnd &&
+          m.index <= l.productSpan.start &&
+          !text.slice(m.index, l.span.start).includes("\n"),
+      )
+    );
+  });
+  const startAt = later[0]?.index ?? first.span.end;
+  const m = lines.length === 1 ? CORRECTED_NUMBER.exec(text.slice(startAt)) : null;
+  const value = m?.[1];
+  if (!m || value === undefined)
+    return { lines, correction: { hasCorrection: true, quantity: null } };
+  const start = startAt + m.index + m[0].length - value.length;
+  return {
+    lines,
+    correction: {
+      hasCorrection: true,
+      quantity: { text: value, start, end: start + value.length },
+    },
+  };
+}
+
 interface LineContext {
   readonly catalogue: Catalogue;
   readonly msg: SourceMessage;
   readonly extracted: ExtractedLine;
+  readonly correction: Correction;
   readonly index: number;
   readonly orderDateText: string | null;
   readonly overrides: LineOverrides;
@@ -258,7 +346,7 @@ interface LineContext {
 
 /** Resolve, price and tax one extracted line, applying any reviewer overrides. */
 function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } {
-  const { catalogue, msg, extracted, index, orderDateText, overrides: ov } = ctx;
+  const { catalogue, msg, extracted, index, orderDateText, overrides: ov, correction } = ctx;
   const issues: DraftIssue[] = [];
   const path = (f: string) => `lines[${index}].${f}`;
   const issue = (code: IssueCode, field: keyof LineOverrides, message: string) => {
@@ -275,7 +363,21 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
   const match = matchRecord(extracted.productText, catalogue.products, productKeys);
   let p: Product | null = match.record;
   let product: Field<ProductRef>;
-  if (p && match.status === "resolved") {
+  const extra =
+    p && match.status === "resolved"
+      ? unexplainedWords(extracted.productText, p, compileLexicon(catalogue.lexicon))
+      : [];
+  if (p && match.status === "resolved" && extra.length > 0) {
+    product = review({ productId: p.id, name: p.name }, [
+      productEvidence,
+      catalogueEvidence(catalogue, p, matchedColumn(p, match.matchedKey)),
+    ]);
+    issue(
+      "product_partial",
+      "product",
+      `"${extracted.productText}" matched ${p.name}, but "${extra.join(" ")}" is not part of its name or aliases; confirm it is the same product.`,
+    );
+  } else if (p && match.status === "resolved") {
     product = ok({ productId: p.id, name: p.name }, [
       productEvidence,
       catalogueEvidence(catalogue, p, matchedColumn(p, match.matchedKey)),
@@ -330,6 +432,26 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
   } else {
     quantity = review<Quantity>(null, [lineEvidence]);
     issue("quantity_invalid", "quantity", `Quantity "${extracted.quantityText}" is not usable.`);
+  }
+  // A later correction in the same message ("make it 45") wins, but a person must confirm it.
+  const corrected = correction.quantity ? parseAmountToMinor(correction.quantity.text, 3) : null;
+  if (correction.quantity && corrected?.ok && corrected.minor > 0) {
+    quantity = review({ milli: corrected.minor, text: correction.quantity.text }, [
+      messageEvidence(msg, correction.quantity.start, correction.quantity.end),
+      lineEvidence,
+    ]);
+    issue(
+      "correction_in_message",
+      "quantity",
+      `The message corrects "${extracted.quantityText}" to ${correction.quantity.text}; confirm the quantity.`,
+    );
+  } else if (correction.hasCorrection) {
+    if (quantity.value) quantity = review(quantity.value, [...quantity.evidence]);
+    issue(
+      "correction_in_message",
+      "quantity",
+      "The message changes or cancels something; check every line against it.",
+    );
   }
   if (ov.quantity) {
     if (!Number.isSafeInteger(ov.quantity.value) || ov.quantity.value <= 0) {
@@ -622,12 +744,17 @@ export function buildOrderDraft(
 
   const lines: DraftLine[] = [];
   for (const msg of messages) {
-    for (const extracted of extractOrderLines(msg.body, compileLexicon(catalogue.lexicon))) {
+    const { lines: extractedLines, correction } = findCorrection(
+      msg.body,
+      extractOrderLines(msg.body, compileLexicon(catalogue.lexicon)),
+    );
+    for (const extracted of extractedLines) {
       const index = lines.length;
       const built = buildLine({
         catalogue,
         msg,
         extracted,
+        correction,
         index,
         orderDateText,
         overrides: overrides.lines?.[index] ?? {},

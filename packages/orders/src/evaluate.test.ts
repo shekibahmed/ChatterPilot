@@ -68,8 +68,9 @@ describe("synthetic evaluation set (development split)", () => {
   });
 
   it("does not regress", () => {
-    expect(overall.recall ?? 0).toBeGreaterThanOrEqual(0.817);
-    expect(overall.precision ?? 0).toBeGreaterThanOrEqual(0.85);
-    expect(overall.silentErrors).toBeLessThanOrEqual(11);
+    expect(overall.recall ?? 0).toBeGreaterThanOrEqual(0.903);
+    expect(overall.precision ?? 0).toBeGreaterThanOrEqual(0.93);
+    expect(overall.silentErrors).toBe(0);
+    expect(overall.nonOrderDetection.rejected).toBe(overall.nonOrderDetection.nonOrders);
   });
 });

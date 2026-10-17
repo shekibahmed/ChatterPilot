@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadCatalogue } from "./catalogue.ts";
 import { buildOrderDraft, type SourceMessage } from "./draft.ts";
 import { looksLikeNonOrder } from "./extract.ts";
+import { syntheticCatalogue } from "./fixtures.ts";
 import { compileLexicon } from "./lexicon.ts";
 
 // Synthetic catalogue with generic (non-brand) products sold by Indian distributors.
@@ -154,7 +155,6 @@ describe("synthetic Hinglish chat export", () => {
   it("drafts every order line and skips rate questions and payment notes", async () => {
     const { readFileSync } = await import("node:fs");
     const { scanExport } = await import("@chatterpilot/import-whatsapp");
-    const { syntheticCatalogue } = await import("./fixtures.ts");
     const cat = syntheticCatalogue();
     const text = readFileSync(
       new URL("../../../fixtures/synthetic/chats/android-hinglish-orders.txt", import.meta.url),
@@ -193,5 +193,95 @@ describe("synthetic Hinglish chat export", () => {
       [6, true, [], null],
       [7, false, [["PVC-E1", 18000]], null],
     ]);
+  });
+});
+
+describe("orders versus questions, reports and complaints", () => {
+  it.each([
+    "40 bori cement bhej doge kya?",
+    "can you send 40 bags cement?",
+    "kal tak 20 bag rockset bhej sakte ho?",
+  ])("still drafts the polite order %j", (text) => {
+    expect(looksLikeNonOrder(text)).toBe(false);
+  });
+
+  it("known limit: a new order in the same message as a delivery report is not suggested", () => {
+    // Documented in docs/evaluation.md; a person can still draft the message by hand.
+    expect(looksLikeNonOrder("last order mil gaya, ab 5 box white tiles bhejo")).toBe(true);
+  });
+
+  it.each([
+    "do you have 50 bags ultrabond in stock?",
+    "kal 40 bag bheje the but sirf 35 mile",
+    "2 box tile toot gaye delivery me",
+    "pichle hafte 10 bori ultrabond bheja tha wo bill chahiye",
+    "क्या ५० बोरी रॉकसेट मिल जाएगी आज?",
+  ])("does not suggest %j as a new order", (text) => {
+    expect(looksLikeNonOrder(text)).toBe(true);
+  });
+});
+
+describe("corrections, partial matches and lists", () => {
+  const cat = syntheticCatalogue();
+  const draft = (body: string) =>
+    buildOrderDraft(
+      [
+        {
+          id: "m",
+          startLine: 1,
+          endLine: 1,
+          timestampText: "x",
+          localDateTime: "2026-01-12T10:00:00",
+          body,
+        },
+      ],
+      cat,
+    );
+  const codes = (d: ReturnType<typeof draft>) => d.issues.map((i) => i.code);
+
+  it("applies a later 'make it N' to a single line, cites it, and asks a person to confirm", () => {
+    const d = draft("40 bags ultrabond cement\nmake it 45");
+    expect(d.lines).toHaveLength(1);
+    expect(d.lines[0]?.quantity).toMatchObject({ value: { milli: 45000 }, status: "needs_review" });
+    expect(d.lines[0]?.quantity.evidence[0]).toMatchObject({
+      kind: "message",
+      text: "45",
+      startLine: 2,
+    });
+    expect(codes(d)).toContain("correction_in_message");
+  });
+
+  it("reads 'nahi nahi 15 kar do' as a correction, not a new line", () => {
+    const d = draft("10 bori ultrabond bhejna\nnahi nahi 15 kar do");
+    expect(d.lines.map((l) => l.quantity.value?.milli)).toEqual([15000]);
+  });
+
+  it("flags every line when a multi-line message cancels something", () => {
+    const d = draft("20 bags rockset\n50 elbows\nactually cancel the elbows");
+    expect(d.lines).toHaveLength(2);
+    expect(d.issues.filter((i) => i.code === "correction_in_message")).toHaveLength(2);
+  });
+
+  it("keeps an apology before the line as part of the line", () => {
+    expect(codes(draft("Sorry make it 45 bags cement"))).not.toContain("correction_in_message");
+  });
+
+  it("flags a product match that leaves words unexplained", () => {
+    const d = draft("10 bori white cement chahiye");
+    expect(d.lines[0]?.product).toMatchObject({
+      value: { productId: "CEM-UB50" },
+      status: "needs_review",
+    });
+    expect(codes(d)).toContain("product_partial");
+    expect(codes(draft("10 bori ultrabond cement chahiye"))).not.toContain("product_partial");
+  });
+
+  it("splits product-first lists and treats '8 mm' like '8mm'", () => {
+    const d = draft("white tiles 10 box, ivory tiles 4 box");
+    expect(d.lines.map((l) => [l.product.value?.productId, l.baseQuantity.value?.milli])).toEqual([
+      ["TIL-22W", 160000],
+      ["TIL-22I", 64000],
+    ]);
+    expect(draft("tmt 8 mm 200 kg").lines[0]?.product.value?.productId).toBe("TMT-08");
   });
 });

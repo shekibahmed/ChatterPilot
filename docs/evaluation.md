@@ -50,7 +50,27 @@ Baseline, 2026-10-17, commit after the lexicon slice (115 messages, 114 expected
 | Hinglish | 63 | 87.7% | 89.3% | 4 | 11/21 |
 | Devanagari | 5 | 60.0% | 75.0% | 0 | 0/1 |
 
-Largest gaps: corrections inside one message ("40 bags … make it 45") are drafted with the first
+After the first round of rule changes (same day; tuned on this set, so optimistic):
+
+| | cases | recall | precision | silent errors | non-orders rejected |
+|---|---|---|---|---|---|
+| overall | 115 | 90.4% | 93.1% | 0 | 37/37 |
+| English | 47 | 94.6% | 94.6% | 0 | 15/15 |
+| Hinglish | 63 | 91.2% | 92.9% | 0 | 21/21 |
+| Devanagari | 5 | 70.0% | 87.5% | 0 | 1/1 |
+
+What changed: corrections in the same message are applied (single line) or flagged (several
+lines); a product match that leaves words unexplained ("**white** cement" via the alias "cement")
+is flagged `product_partial`; stock questions, delivery reports, complaints and past-order
+cancellations are not suggested as orders; product-first lists split at commas; "8 mm" matches
+"8mm"; Devanagari unit and number words were added. Polite orders phrased as questions ("bhej doge
+kya?") are still suggested (tested).
+
+Known limits after this round: a new order in the same message as a delivery report ("last order
+mil gaya, ab 5 box bhejo") is not suggested; an order without a quantity ("rockset bhej dena") has
+no line; a line without a unit ("2 pvc pipe") is flagged rather than assumed to be in the base unit.
+
+Baseline gaps (fixed above): corrections inside one message ("40 bags … make it 45") are drafted with the first
 quantity and no flag; complaints and delivery updates that mention quantities are suggested as
 orders; product names not in the catalogue are sometimes matched to a near alias.
 

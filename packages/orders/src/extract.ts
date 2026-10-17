@@ -38,12 +38,21 @@ const TAIL = String.raw`(?:\s+${TAIL_WORD})*`;
 const NON_ORDER =
   /^\s*(?:paid|payment|delivered|dispatched|received|quote|quotation|rate|price|prices|bhav)\b|\b(?:paid|payment (?:done|made|received|sent)|has been delivered|delivered today|dispatched|payment kar diya|paise bhej diye)\b/i;
 
+/**
+ * Questions about stock, reports about past deliveries and complaints often quote quantities
+ * ("do you have 50 bags?", "40 bheje the, 35 mile", "2 box toot gaye") but ask for nothing new.
+ */
+const NOT_A_NEW_ORDER =
+  /\b(?:do you have|available\?|in stock\?|stock (?:me|mein|hai) kya|milega kya|milegi kya|mil (?:jayega|jaayega|jaega|jayegi|jaayegi|jaegi|sakta|sakti)|delivered only|\d+ (?:short|missing|kam)|(?:only|sirf) \d+ (?:aaye|aaya|mile|mila|aayi)|kam (?:tha|the|thi|aaya|aaye|aayi|hai)|bhej(?:a|e|i) (?:tha|the|thi)|aa(?:ya|ye|yi) (?:tha|the|thi)|mil gaya|mil gaye|sahi aaye|reached|received|toot|tut gaye|broken|damaged|cancel[^.?!\n]{0,30}\border\b|replace karo|replace kar do|wapas|return karna|bill chahiye|bill bhejo|invoice|baki hai|baaki hai|kab tak doge|kuch nahi chahiye|abhi nahi chahiye|band rahegi|happy (?:diwali|holi|new year))(?!\p{L})|(?:मिल जाएगी|मिल जाएगा|मिलेगा क्या|मिलेगी क्या)/iu;
+
 export function looksLikeNonOrder(
   body: string,
   lexicon: CompiledLexicon = DEFAULT_COMPILED,
 ): boolean {
   const text = normaliseDigits(body);
-  return NON_ORDER.test(text) || (lexicon.nonOrder?.test(text) ?? false);
+  return (
+    NON_ORDER.test(text) || NOT_A_NEW_ORDER.test(text) || (lexicon.nonOrder?.test(text) ?? false)
+  );
 }
 
 interface Patterns {
@@ -108,6 +117,9 @@ function patternsFor(lex: CompiledLexicon): Patterns {
   return patterns;
 }
 
+// A comma between digits ("10,000") is a thousands separator, not a break.
+const LOOSE_BREAK = /\s*(?:(?<!\d),|,(?!\d)|;|\+|&|\band\b|\baur\b)\s*/giu;
+
 function segments(body: string, breaks: RegExp): { text: string; start: number }[] {
   const out: { text: string; start: number }[] = [];
   let lineStart = 0;
@@ -147,7 +159,7 @@ export function extractOrderLines(
     /\p{L}/u.test(text) && lexicon.canonicalUnit(text) === null;
   const lines: ExtractedLine[] = [];
 
-  for (const seg of segments(normalised, p.segmentBreak)) {
+  const extractSegment = (seg: { text: string; start: number }): boolean => {
     const trimmedStart = seg.text.length - seg.text.trimStart().length;
     const text = seg.text.trim();
     const base = seg.start + trimmedStart;
@@ -180,14 +192,14 @@ export function extractOrderLines(
       const pf = p.productFirst.exec(text) ?? p.times.exec(text);
       if (pf) {
         const [whole, product = "", qty = "", longUnit, shortUnit] = pf;
-        if (push(whole, base, qty, null, longUnit ?? shortUnit ?? null, product, base)) continue;
+        if (push(whole, base, qty, null, longUnit ?? shortUnit ?? null, product, base)) return true;
       }
     }
     const pw = p.productWords.exec(text);
     if (pw) {
       const [whole, product = "", qty = "", unit = ""] = pw;
       const value = lexicon.wordsToNumber(qty);
-      if (value !== null && push(whole, base, qty, value, unit, product, base)) continue;
+      if (value !== null && push(whole, base, qty, value, unit, product, base)) return true;
     }
 
     // Quantity-first forms: take the earliest candidate (digits or words) whose product phrase does
@@ -240,7 +252,18 @@ export function extractOrderLines(
     if (/\d/.test(text)) collect(p.qtyFirst, false);
     collect(p.wordsFirst, true);
     candidates.sort((a, b) => a.index - b.index);
-    for (const c of candidates) if (c.run()) break;
+    for (const c of candidates) if (c.run()) return true;
+    return false;
+  };
+
+  for (const seg of segments(normalised, p.segmentBreak)) {
+    if (extractSegment(seg)) continue;
+    // Nothing found in the whole segment: try its comma/"and"/"+" parts on their own, for lists
+    // such as "white tiles 10 box, ivory tiles 4 box" where a product name follows the comma.
+    const parts = segments(seg.text, LOOSE_BREAK);
+    if (parts.length > 1) {
+      for (const part of parts) extractSegment({ text: part.text, start: seg.start + part.start });
+    }
   }
-  return lines;
+  return lines.sort((a, b) => a.span.start - b.span.start);
 }

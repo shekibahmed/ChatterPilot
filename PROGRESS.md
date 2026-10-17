@@ -388,3 +388,13 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Changes: `evaluate.ts` (+ tests), CLI `eval [--tags] [--failures] [--json]`, docs/evaluation.md.
 - Baseline: recall 81.7%, precision 85.0%, 11 silent errors, 23/37 non-orders rejected.
 - Checks: `pnpm check` exit 0, 407 tests.
+
+## 2026-10-17 — Overnight run, slice 8: drafting rules, round 1 (development set)
+- Starting HEAD: `f279e20258b4c0f0d1f04b3e9199c6efd9a35845`
+- Changes: in-message corrections (`correction_in_message`; single-line value applied with review),
+  `product_partial` for unexplained words, non-order patterns for stock questions/complaints/past
+  deliveries (polite question-orders kept, tested), list fallback split, size normalisation in
+  `matchKey`, Devanagari units and numbers.
+- Dev set: recall 81.7% → 90.4%, precision 85.0% → 93.1%, silent errors 11 → 0, non-orders 23/37 →
+  37/37. Tuned on the same set: a held-out set is next.
+- Checks: `pnpm check` exit 0, 422 tests; `pnpm test:e2e` exit 0, 10 passed.

@@ -105,11 +105,15 @@ const splitList = (text: string) =>
 /** Lowercase, punctuation-insensitive key used for alias collision checks and matching. */
 export function matchKey(text: string): string {
   // Letters, combining marks and digits of any script (Devanagari vowel signs are marks).
-  return text
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
-    .trim();
+  return (
+    text
+      .normalize("NFKC")
+      .toLowerCase()
+      // "8 mm" and "8mm" are the same size.
+      .replace(/(\p{N})\s+(mm|cm|inch|in|ft|mtr|m)(?![\p{L}\p{N}])/gu, "$1$2")
+      .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
+      .trim()
+  );
 }
 
 type Table<C extends string> = { rows: { values: Record<C, string>; row: number }[] } | null;

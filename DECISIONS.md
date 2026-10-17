@@ -356,3 +356,16 @@ their replacement. No secrets, customer data or private transcripts.
 - Plan: improve rules on this set, then author a separate held-out set the same way and report it
   without tuning on it.
 - Not claimed: accuracy on real chats.
+
+## D021 — Flag, don't guess: corrections, partial matches, non-orders
+- Date: 2026-10-17 (+05:30)
+- Status: accepted
+- Chosen: (1) a correction word after the first line ("make it", "actually", "sorry", "nahi nahi",
+  "cancel", …) raises `correction_in_message` on every line of that message; when the message has
+  one line and a number follows, that number becomes the quantity (cited, needs review). (2) A
+  resolved product whose phrase has extra words not in its name/aliases is `product_partial`
+  (needs review). (3) Message-level patterns for stock questions, delivery reports, complaints and
+  past-order cancellations stop a suggestion; generic "kya …?" is deliberately not one, because
+  Hindi polite orders are phrased as questions.
+- Trade-off: (3) can hide a new order written in the same message as a report; documented and
+  tested as a known limit. A person can always draft any message by hand.

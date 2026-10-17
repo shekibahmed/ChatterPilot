@@ -65,7 +65,7 @@ export interface EvalReport {
   readonly cases: readonly CaseResult[];
 }
 
-const EXTRACTION_ISSUE = /^(?:product_|quantity_|unit_)/;
+const EXTRACTION_ISSUE = /^(?:product_|quantity_|unit_|correction_)/;
 const SPECIAL = new Set(["AMBIGUOUS", "UNKNOWN"]);
 
 function lineFlags(draft: OrderDraft): boolean[] {
