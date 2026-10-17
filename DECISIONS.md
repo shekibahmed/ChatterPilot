@@ -123,3 +123,16 @@ their replacement. No secrets, customer data or private transcripts.
   - CSV export quotes every text cell and neutralises formula leaders (= + - @ tab CR LF and their
     full-width forms) with a leading apostrophe.
 - Known limitations: catalogue upload is CLI-only (`catalogue load`); single reviewer per workspace.
+
+## D007 — Review UI, demo and browser tests
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S4 scope)
+- Chosen: Vite 8.3.2 + React 19.3.0 single-page app in `apps/local/web`, built to
+  `apps/local/dist/web` (gitignored) and served by the loopback API. Hash routing, plain CSS with
+  system fonts and light/dark themes, no third-party assets, no `dangerouslySetInnerHTML`.
+  Reviewer name is kept in `localStorage` (convenience only). `pnpm demo` seeds `workspaces/demo`
+  from synthetic fixtures and serves it. `@playwright/test` 1.63.0 is a root dev dependency (a single
+  copy, so the runner and tests agree); `pnpm test:e2e` drives the demo in Chromium and asserts no
+  request leaves 127.0.0.1. README screenshots (`docs/images`) are produced by the same test with
+  `CHATTERPILOT_SCREENSHOTS=1` and contain synthetic data only. CI gains an e2e job.
+- All new dependency versions were released at least two weeks before 2026-10-17.

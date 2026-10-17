@@ -12,12 +12,16 @@
     "chatterpilot": "node apps/local/src/cli.ts",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p apps/local/web/tsconfig.json",
     "test": "vitest run",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "build:web": "vite build --config apps/local/web/vite.config.ts",
+    "demo": "pnpm build:web && node apps/local/src/cli.ts demo",
+    "test:e2e": "pnpm build:web && playwright test --config apps/local/e2e/playwright.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "1.63.0",
     "@types/node": "26.6.5",
     "typescript": "7.0.2",
     "vitest": "5.0.5"

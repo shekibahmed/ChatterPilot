@@ -1,0 +1,36 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { defineConfig, devices } from "@playwright/test";
+
+const PORT = 4320;
+// A fresh, throwaway demo workspace per run (synthetic data only).
+const workspace = join(mkdtempSync(join(tmpdir(), "chatterpilot-e2e-")), "ws");
+const root = new URL("../../../", import.meta.url).pathname;
+
+export default defineConfig({
+  testDir: ".",
+  fullyParallel: false,
+  workers: 1,
+  reporter: [["list"]],
+  outputDir: join(tmpdir(), "chatterpilot-e2e-results"),
+  use: {
+    baseURL: `http://127.0.0.1:${PORT}`,
+    trace: "off",
+    screenshot: "off",
+    video: "off",
+  },
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1360, height: 900 } },
+    },
+  ],
+  webServer: {
+    command: `node apps/local/src/cli.ts demo --port ${PORT} --workspace ${workspace}`,
+    cwd: root,
+    url: `http://127.0.0.1:${PORT}/api/status`,
+    reuseExistingServer: false,
+    timeout: 30_000,
+  },
+});

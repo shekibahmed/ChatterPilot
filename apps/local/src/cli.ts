@@ -29,7 +29,7 @@ const USAGE = `Usage:
       Validate and store a catalogue version in the workspace (used for new drafts).
   chatterpilot serve [--workspace <dir>] [--port ${DEFAULT_PORT}]
       Open the review app on http://127.0.0.1 (this computer only).
-  chatterpilot demo [--port ${DEFAULT_PORT}]
+  chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
       Seed ${DEMO_WORKSPACE} with synthetic chats and a catalogue, then serve it. No network needed.
   chatterpilot draft --catalogue <dir> [--workspace <dir>]
       Suggest order messages and show draft orders with the source of every value.
@@ -258,15 +258,19 @@ async function serveCommand(args: string[]): Promise<number> {
 async function demoCommand(args: string[]): Promise<number> {
   const { values } = parseArgs({
     args,
-    options: { port: { type: "string", default: String(DEFAULT_PORT) } },
+    options: {
+      port: { type: "string", default: String(DEFAULT_PORT) },
+      workspace: { type: "string", default: DEMO_WORKSPACE },
+    },
   });
-  if (!Workspace.exists(DEMO_WORKSPACE)) {
-    Workspace.create(DEMO_WORKSPACE, {
+  const dir = values.workspace;
+  if (!Workspace.exists(dir)) {
+    Workspace.create(dir, {
       name: "ChatterPilot demo (synthetic data)",
       timezone: "Asia/Kolkata",
     }).close();
   }
-  const ws = Workspace.open(DEMO_WORKSPACE);
+  const ws = Workspace.open(dir);
   try {
     await loadCatalogueIntoWorkspace(ws, `${FIXTURES}catalogue`);
     for (const chat of ["android-dmy-hardware-orders.txt", "ios-mdy-plumbing-orders.txt"]) {
@@ -275,8 +279,8 @@ async function demoCommand(args: string[]): Promise<number> {
   } finally {
     ws.close();
   }
-  console.log(`Demo workspace ready in ${DEMO_WORKSPACE} (synthetic chats and catalogue).`);
-  return serveCommand(["--workspace", DEMO_WORKSPACE, "--port", values.port]);
+  console.log(`Demo workspace ready in ${dir} (synthetic chats and catalogue).`);
+  return serveCommand(["--workspace", dir, "--port", values.port]);
 }
 
 function catalogueCommand(args: string[]): number | Promise<number> {

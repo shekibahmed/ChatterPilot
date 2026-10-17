@@ -122,3 +122,23 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   - Manual: `serve` on 127.0.0.1:4399 — `/api/status` 200 (old scratch workspace auto-migrated to
     schema v2); spoofed `Host: evil.example` → 403; web UI not yet built → 503 message as designed
 - Next: S4b React review UI, `pnpm demo`, Playwright e2e, README screenshot.
+
+## 2026-10-17 — S4b review web app, demo and end-to-end test (WP4/WP7 showcase)
+- Tool / active writer: Claude Code (autonomous run)
+- Approved scope: slice S4 (part b); D007
+- Starting branch / HEAD: `build/v0.1` @ `f3ada6559c93ede3a9ee0ae9e89c235af446b3e9`
+- Outcome: completed
+- Changes: `apps/local/web` (Overview, Imports with upload + date-order prompt + source viewer,
+  Orders with suggestions and drafts, Draft review with provenance chips that highlight the exact
+  chat words, inline edits with reasons, exclude/include, link correction, accept/reject/reopen,
+  history, Export); `pnpm build:web`, `pnpm demo`, `pnpm test:e2e`; e2e specs; CI e2e job; README
+  rewritten with real screenshots and honest support matrix; `docs/why.md`, `docs/catalogue.md`.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, Chromium rev 1243, code state = S4b working tree):
+  - `pnpm check` — exit 0; 236 tests passed
+  - `pnpm test:e2e` — exit 0; 2 passed: full demo review (draft 28,355.20 → link correction →
+    exclude superseded line → 30,979.20 → accept → CSV contains 45.000 and not 40.000) with zero
+    requests outside 127.0.0.1; ambiguous upload asks for the date order
+  - Bundle scan: only inert URL strings (React error docs, XML namespaces); nothing fetched
+- Issues found and fixed: two Playwright copies (global 1.64 runner vs project 1.63); test expected
+  the quantity chip but clicked the product chip; monospace leak and chip wrapping in the UI.
+- Next: S5 deterministic dashboard with coverage and drill-down.
