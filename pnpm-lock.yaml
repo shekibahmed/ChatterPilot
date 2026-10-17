@@ -199,6 +199,9 @@ importers:
       '@chatterpilot/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@chatterpilot/telegram-intake':
+        specifier: workspace:*
+        version: link:../../packages/telegram-intake
       '@chatterpilot/templates':
         specifier: workspace:*
         version: link:../../packages/templates
@@ -281,6 +284,12 @@ importers:
       '@types/better-sqlite3':
         specifier: 9.6.0
         version: 9.6.0
+
+  packages/telegram-intake:
+    devDependencies:
+      '@chatterpilot/storage':
+        specifier: workspace:*
+        version: link:../storage
 
   packages/templates:
     dependencies:

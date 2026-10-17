@@ -241,3 +241,16 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   `pnpm chatterpilot transcribe --all` line made the skill test fail as intended; file restored.
 - Not run: installing the skill into a separate clean agent environment (PLAN WP7 test).
 - Next: OA1 offline Telegram intake (synthetic updates, no bot, no network).
+
+## 2026-10-17 — OA1 offline Telegram intake
+- Tool / active writer: Claude Code (autonomous run)
+- Starting branch / HEAD: `build/v0.1` @ `3d37d47d7e6cac871e97941616cbd670c8477238`
+- Outcome: completed for offline scope (D012); live bot not started (needs owner authority)
+- Changes: `packages/telegram-intake` (rules + 8 tests); storage migration 5 + `IntakeStore`;
+  `fixtures/synthetic/telegram/{updates.jsonl,policy.json}` (11 synthetic updates incl. outsider,
+  bot, re-forward, edit, voice, injection text, bad callbacks, replay); CLI `intake`.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0): `pnpm check` — exit 0; 324 tests passed.
+  Manual CLI: all 11 updates classified as expected; accepted and edited forwards resolve to
+  catalogue products; refused content not stored.
+- Next: independent multi-agent review of the branch (owner asked to use workflows with Sonnet/Haiku
+  agents), then P4 offline (transcript import, provider interface without any real provider).

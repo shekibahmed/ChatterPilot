@@ -174,4 +174,38 @@ export const MIGRATIONS: readonly string[] = [
   CREATE TRIGGER execution_event_no_delete BEFORE DELETE ON execution_event
   BEGIN SELECT RAISE(ABORT, 'execution history is append-only'); END;
   `,
+  `
+  -- OA1 Telegram intake (offline-tested): accepted envelopes, refusals without content, and
+  -- durable polling state.
+  CREATE TABLE intake_envelope (
+    id TEXT PRIMARY KEY,
+    update_id INTEGER NOT NULL UNIQUE,
+    chat_id INTEGER NOT NULL,
+    message_id INTEGER NOT NULL,
+    sender_id INTEGER NOT NULL,
+    received_at TEXT NOT NULL,
+    forward_origin TEXT,
+    forward_date TEXT,
+    text TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('accepted', 'possible_repeat', 'edit', 'media_only')),
+    repeat_of TEXT REFERENCES intake_envelope (id),
+    edit_of TEXT REFERENCES intake_envelope (id)
+  ) STRICT;
+  CREATE INDEX intake_envelope_hash ON intake_envelope (content_hash);
+  CREATE INDEX intake_envelope_message ON intake_envelope (chat_id, message_id);
+
+  -- Updates handled without an envelope (refusals, callbacks): outcome and note only, no content.
+  CREATE TABLE intake_log (
+    update_id INTEGER PRIMARY KEY,
+    at TEXT NOT NULL,
+    outcome TEXT NOT NULL CHECK (outcome IN ('refused', 'callback_valid', 'callback_refused')),
+    note TEXT NOT NULL
+  ) STRICT;
+
+  CREATE TABLE intake_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  ) STRICT;
+  `,
 ];

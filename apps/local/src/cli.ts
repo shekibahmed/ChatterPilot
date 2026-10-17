@@ -3,13 +3,20 @@ import { parseArgs } from "node:util";
 import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
 import { type DateOrder, decodeExportBytes, scanExport } from "@chatterpilot/import-whatsapp";
 import type { OrderDraft } from "@chatterpilot/orders";
+import { buildOrderDraft } from "@chatterpilot/orders";
 import { type ImportSummary, isValidTimeZone, Workspace } from "@chatterpilot/storage";
+import {
+  type IntakePolicy,
+  intakeGapWarning,
+  processUpdate,
+  type TgUpdate,
+} from "@chatterpilot/telegram-intake";
 import { loadVehicles } from "@chatterpilot/templates";
 import { draftFor, readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
 import { fleetEvents } from "./fleet.ts";
 import { terminalSafe } from "./format.ts";
 import { ImportError, importExport } from "./import.ts";
-import { loadCatalogueIntoWorkspace } from "./review.ts";
+import { activeCatalogue, loadCatalogueIntoWorkspace } from "./review.ts";
 import { DEFAULT_PORT, startServer } from "./server.ts";
 
 const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
@@ -32,6 +39,9 @@ const USAGE = `Usage:
       Validate and store a catalogue version in the workspace (used for new drafts).
   chatterpilot events --vehicles <vehicles.csv> [--chat <name>] [--workspace <dir>]
       Fleet/travel template: bookings, faults, quotes and reported payments with their links.
+  chatterpilot intake --updates <updates.jsonl> --policy <policy.json> [--workspace <dir>]
+      Offline Telegram intake: apply sender/chat allowlists, dedupe and repeat checks to saved
+      Bot API updates (one JSON object per line) and show draft lines. No bot or network is used.
   chatterpilot serve [--workspace <dir>] [--port ${DEFAULT_PORT}]
       Open the review app on http://127.0.0.1 (this computer only).
   chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
@@ -458,6 +468,75 @@ function eventsCommand(args: string[]): number {
   }
 }
 
+function intakeCommand(args: string[]): number {
+  const { values } = parseArgs({
+    args,
+    options: {
+      updates: { type: "string" },
+      policy: { type: "string" },
+      workspace: { type: "string", default: DEFAULT_WORKSPACE },
+    },
+  });
+  if (!values.updates || !values.policy) {
+    console.error(USAGE);
+    return 2;
+  }
+  const policy = JSON.parse(readFileSync(values.policy, "utf8")) as IntakePolicy;
+  const updates = readFileSync(values.updates, "utf8")
+    .split("\n")
+    .filter((l) => l.trim())
+    .map((l) => JSON.parse(l) as TgUpdate);
+  if (!Workspace.exists(values.workspace)) {
+    console.error(`No workspace in ${values.workspace}.`);
+    return 1;
+  }
+  const ws = Workspace.open(values.workspace);
+  try {
+    const now = new Date();
+    const gap = intakeGapWarning(ws.intake.lastSeenAt(), now);
+    if (gap) console.log(`Warning: ${gap}`);
+    const resolver = {
+      acceptedSnapshot: (id: string) => {
+        const d = ws.reviews.draft(id);
+        if (d?.status !== "accepted") return null;
+        const accept = [...ws.reviews.decisions(id)].reverse().find((x) => x.action === "accept");
+        return (accept?.payload as { snapshotSha256?: string } | undefined)?.snapshotSha256 ?? null;
+      },
+    };
+    const catalogue = activeCatalogue(ws);
+    for (const u of updates) {
+      const r = processUpdate(ws.intake, u, policy, resolver, now);
+      const detail = "reason" in r ? `: ${r.reason}` : "";
+      console.log(`update ${r.updateId}  ${r.outcome}${detail}`);
+      if ((r.outcome === "accepted" || r.outcome === "edit") && catalogue) {
+        const env = ws.intake.envelopes().find((e) => e.id === r.envelopeId);
+        if (!env) continue;
+        const draft = buildOrderDraft(
+          [
+            {
+              id: env.id,
+              startLine: 1,
+              endLine: 1,
+              timestampText: env.forwardDate ?? env.receivedAt,
+              localDateTime: null,
+              body: env.text,
+            },
+          ],
+          catalogue,
+        );
+        for (const line of draft.lines) {
+          console.log(
+            `    ${terminalSafe(line.sourceText, 40).padEnd(40)} → ${line.product.value?.name ?? "unknown product"}`,
+          );
+        }
+      }
+    }
+    return 0;
+  } finally {
+    ws.close();
+  }
+}
+
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command === "parse") return parseCommand(rest);
@@ -467,6 +546,7 @@ async function main(argv: string[]): Promise<number> {
   if (command === "draft") return draftCommand(rest);
   if (command === "serve") return serveCommand(rest);
   if (command === "events") return eventsCommand(rest);
+  if (command === "intake") return intakeCommand(rest);
   if (command === "demo") return demoCommand(rest);
   console.error(USAGE);
   return 2;

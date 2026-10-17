@@ -222,3 +222,20 @@ their replacement. No secrets, customer data or private transcripts.
 - Found during testing: dropping the connection after a save made Chromium retry the POST, creating
   two drafts in the target; reconciliation correctly refused to pick one. Kept as a regression test.
 - Not included: real targets, submit/send, Telegram intake (OA1), UI for approvals.
+
+## D012 — OA1 Telegram intake, offline only
+- Date: 2026-10-17 (+05:30)
+- Status: accepted for offline processing; **live bot not authorised** (needs owner decision, token,
+  operator/chat ids and data-transfer consent)
+- Chosen: `@chatterpilot/telegram-intake` processes Bot API-shaped updates (from a JSON-lines file;
+  no bot, no network). Rules: human sender required; numeric chat and sender allowlists; refused
+  updates keep only the reason (`intake_log`), never content; transport dedupe by `update_id` with a
+  durable offset (migration 5) so replays after a restart are ignored; business-level identity =
+  SHA-256 of forward origin, original date and text, so a re-forward is `possible_repeat` (flagged,
+  not merged); edits become new versions linked to the original; voice/files are `media_only`
+  (download needs getFile, standard limit 20 MB, not built); approval buttons are only valid from
+  allowlisted approvers with `approve:<draftId>:<12 hex of the accepted snapshot>`, and even then
+  only record intent (no action); a warning appears after more than 24 h without updates (Telegram's
+  retention limit). Forwarded text, including injected instructions, is stored as data.
+- Planned for a live pilot: grammY long polling (MIT, checked 2026-10-17), secure token storage,
+  privacy-mode documentation.
