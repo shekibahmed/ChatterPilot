@@ -23,6 +23,20 @@ Use it as it is, or point Claude Code, Codex, Cursor or your own agent at it to 
 words, your billing tool and your workflow. The tests keep the safety rules in place while you
 change things. See [docs/harnesses.md](docs/harnesses.md).
 
+## How it works
+
+```mermaid
+flowchart LR
+  A["WhatsApp export<br/>(TXT/ZIP you choose)"] --> B["Import<br/>every line kept"]
+  C["Your catalogue<br/>products, prices, words"] --> D
+  B --> D["Draft<br/>each value cites its source<br/>unknown stays unknown"]
+  D --> E{"A person reviews<br/>fixes, accepts"}
+  E -->|accepted snapshot| F["Export<br/>CSV/JSON, Tally, ERPNext,<br/>Zoho, UBL files"]
+  E -->|accepted snapshot| G["Dashboard<br/>with stated coverage"]
+  H["Your coding agent<br/>(MCP)"] -.->|import, draft, propose edits| D
+  H -.-x|cannot accept| E
+```
+
 ## What it does today
 
 | Step | What happens | Safeguards |
