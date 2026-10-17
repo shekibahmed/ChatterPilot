@@ -52,7 +52,10 @@ To show the product without any real data: `pnpm demo`, then open http://127.0.0
    human edit). Accepting, editing and rejecting are the **user's** decisions in the app; never
    accept on their behalf.
 6. **Export** accepted orders from the app's Export tab (CSV or JSON). Only accepted orders appear.
-7. **Fleet/travel chats** (optional): `pnpm chatterpilot events --vehicles <vehicles.csv>` lists
+7. **Voice notes** (optional): if the user already has a transcript of a voice note, attach it with
+   `pnpm chatterpilot transcript add --audio <exported file name> --text-file <file> --by <name>`.
+   Never invent or paraphrase a transcript; the person supplies the text.
+8. **Fleet/travel chats** (optional): `pnpm chatterpilot events --vehicles <vehicles.csv>` lists
    bookings, faults, quotes and reported payments. Reported payments are not verified payments.
 
 ## Outputs to give the user
@@ -61,7 +64,8 @@ To show the product without any real data: `pnpm demo`, then open http://127.0.0
   overlap counts and warnings, all copied from the command output.
 - Draft results: customer, lines, totals, and the open issues that block acceptance.
 - Limits, stated plainly: imported chats are an incomplete record; English text and Western digits
-  only for order lines; no voice transcription yet; trends need full coverage.
+  only for order lines; no automatic voice transcription (only person-supplied transcripts); trends
+  need full coverage.
 
 ## Extending safely
 

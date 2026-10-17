@@ -26,7 +26,13 @@ import { draftFor, readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
 import { fleetEvents } from "./fleet.ts";
 import { terminalSafe } from "./format.ts";
 import { ImportError, importExport } from "./import.ts";
-import { activeCatalogue, getDraft, loadCatalogueIntoWorkspace } from "./review.ts";
+import {
+  activeCatalogue,
+  addTranscript,
+  getDraft,
+  loadCatalogueIntoWorkspace,
+  ReviewError,
+} from "./review.ts";
 import { DEFAULT_PORT, startServer } from "./server.ts";
 
 const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
@@ -52,6 +58,8 @@ const USAGE = `Usage:
   chatterpilot intake --updates <updates.jsonl> --policy <policy.json> [--workspace <dir>]
       Offline Telegram intake: apply sender/chat allowlists, dedupe and repeat checks to saved
       Bot API updates (one JSON object per line) and show draft lines. No bot or network is used.
+  chatterpilot transcript add --audio <exported file name> --text-file <file> --by <name> [--language <code>] [--workspace <dir>]
+      Attach a transcript you already have to a voice-note message (no AI, nothing leaves the computer).
   chatterpilot fill-form --draft <id> --operator <name> --approve [--target http://127.0.0.1:4330] [--workspace <dir>]
       Type an ACCEPTED draft into the synthetic MockBooks form on this computer, read it back, and
       stop before Submit. --approve is your approval of exactly the document shown (15 minutes).
@@ -347,6 +355,8 @@ function sourceTag(p: Provenance): string {
       return p.startLine === p.endLine
         ? `chat L${p.startLine}`
         : `chat L${p.startLine}-${p.endLine}`;
+    case "transcript":
+      return `voice note L${p.startLine} (${p.origin} transcript)`;
     case "catalogue":
       return `${p.table}.csv:${p.row} ${p.column}`;
     case "computed":
@@ -645,6 +655,58 @@ async function fillFormCommand(args: string[]): Promise<number> {
   }
 }
 
+function transcriptCommand(args: string[]): number {
+  const [sub, ...rest] = args;
+  const { values } = parseArgs({
+    args: rest,
+    options: {
+      audio: { type: "string" },
+      "text-file": { type: "string" },
+      by: { type: "string" },
+      language: { type: "string" },
+      workspace: { type: "string", default: DEFAULT_WORKSPACE },
+    },
+  });
+  if (sub !== "add" || !values.audio || !values["text-file"] || !values.by) {
+    console.error(USAGE);
+    return 2;
+  }
+  if (!Workspace.exists(values.workspace)) {
+    console.error(`No workspace in ${values.workspace}.`);
+    return 1;
+  }
+  const ws = Workspace.open(values.workspace);
+  try {
+    const matches = ws.db
+      .prepare("SELECT id FROM message WHERE media_file_name = ? AND duplicate_of IS NULL")
+      .all(values.audio) as { id: string }[];
+    if (matches.length !== 1 || !matches[0]) {
+      console.error(
+        matches.length === 0
+          ? `No voice-note message names ${values.audio}.`
+          : `${matches.length} messages name ${values.audio}; it is ambiguous.`,
+      );
+      return 1;
+    }
+    const t = addTranscript(ws, {
+      messageId: matches[0].id,
+      text: readFileSync(values["text-file"], "utf8").trim(),
+      language: values.language ?? null,
+      by: values.by,
+    });
+    console.log(`Added transcript version ${t.version} to ${terminalSafe(values.audio, 80)}.`);
+    return 0;
+  } catch (err) {
+    if (err instanceof ReviewError) {
+      console.error(err.message);
+      return 1;
+    }
+    throw err;
+  } finally {
+    ws.close();
+  }
+}
+
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command === "parse") return parseCommand(rest);
@@ -656,6 +718,7 @@ async function main(argv: string[]): Promise<number> {
   if (command === "events") return eventsCommand(rest);
   if (command === "intake") return intakeCommand(rest);
   if (command === "fill-form") return fillFormCommand(rest);
+  if (command === "transcript") return transcriptCommand(rest);
   if (command === "demo") return demoCommand(rest);
   console.error(USAGE);
   return 2;

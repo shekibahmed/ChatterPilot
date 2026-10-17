@@ -12,6 +12,8 @@ export type {
   StoredMessage,
 } from "./reviews.ts";
 export { ReviewStore } from "./reviews.ts";
+export type { TranscriptRecord } from "./transcripts.ts";
+export { TranscriptStore } from "./transcripts.ts";
 export type {
   AttachmentInput,
   ImportSummary,

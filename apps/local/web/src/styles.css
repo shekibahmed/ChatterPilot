@@ -550,3 +550,8 @@ mark {
 .table.compact th {
   padding: 4px 8px;
 }
+.transcript {
+  border-left: 3px solid var(--chip-human);
+  padding-left: 8px;
+  margin-top: 4px;
+}

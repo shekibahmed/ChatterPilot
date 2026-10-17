@@ -296,3 +296,17 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   - `pnpm check` — exit 0; 357 tests passed (new regression tests for each fix)
   - `pnpm test:e2e` — exit 0; 9 passed (adds the `fill-form` CLI flow: no `--approve` sends
     nothing; with it, one MockBooks draft and 0 submissions)
+
+## 2026-10-17 — P4b person-supplied transcripts
+- Tool / active writer: Claude Code (autonomous run)
+- Starting branch / HEAD: `build/v0.1` @ `f18db7181bdef5c97255e5acc6ad683aee52d3d4`
+- Outcome: completed (D015)
+- Changes: `transcript` provenance kind (core), `SourceMessage.transcript` (orders), migration 6 +
+  `TranscriptStore`, review service `addTranscript` and transcript-aware drafting/suggestions/CSV,
+  CLI `transcript add`, UI transcript block with highlighting; e2e config shares one workspace path
+  across Playwright workers (the config is re-evaluated per worker).
+- Checks (Node 26.10.0, pnpm 12.14.0, Chromium rev 1243):
+  - `pnpm check` — exit 0; 360 tests passed (draftable after transcript, provenance kind, CSV
+    source, versioning, edit refusal, audio-only)
+  - `pnpm test:e2e` — exit 0; 10 passed (new: CLI adds a transcript to the demo voice note, the UI
+    drafts it at 4,908.80 and highlights "5 boxes white tiles" inside the transcript)

@@ -22,7 +22,10 @@ export interface SourceMessage {
   readonly timestampText: string;
   /** Floating local date-time from the export ("2026-01-12T10:04:00"), or null. */
   readonly localDateTime: string | null;
+  /** Typed text, or the transcript text of a voice note (see `transcript`). */
   readonly body: string;
+  /** Set when `body` is a voice-note transcript rather than typed chat. */
+  readonly transcript?: { readonly id: string; readonly origin: "manual" | "provider" };
 }
 
 export type IssueCode =
@@ -157,7 +160,8 @@ function human<T>(
   };
 }
 
-const chatEvidence = (f: Field<unknown>) => f.evidence.filter((e) => e.kind === "message");
+const chatEvidence = (f: Field<unknown>) =>
+  f.evidence.filter((e) => e.kind === "message" || e.kind === "transcript");
 
 /** A bigint money/quantity value as a number, or null when it is beyond exact range. */
 function inRange(value: bigint): number | null {
@@ -173,6 +177,18 @@ const matchedColumn = (record: { name: string }, key: string | null) =>
   key !== null && matchKey(record.name) === key ? "name" : "aliases";
 
 function messageEvidence(msg: SourceMessage, start: number, end: number): Provenance {
+  if (msg.transcript) {
+    return {
+      kind: "transcript",
+      messageId: msg.id,
+      transcriptId: msg.transcript.id,
+      origin: msg.transcript.origin,
+      startLine: msg.startLine,
+      endLine: msg.endLine,
+      span: { start, end },
+      text: msg.body.slice(start, end),
+    };
+  }
   const line = msg.startLine + (msg.body.slice(0, start).match(/\n/g)?.length ?? 0);
   const endLine = msg.startLine + (msg.body.slice(0, end).match(/\n/g)?.length ?? 0);
   return {

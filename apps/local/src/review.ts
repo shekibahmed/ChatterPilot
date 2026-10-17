@@ -129,13 +129,20 @@ export interface DraftView {
   readonly acceptedSnapshotSha256: string | null;
 }
 
+/** The text a draft is built from: typed text, or the latest transcript of a voice note. */
+const draftText = (m: StoredMessage) =>
+  m.kind === "media" && m.transcriptText !== null ? m.transcriptText : m.body;
+
 const toSource = (m: StoredMessage): SourceMessage => ({
   id: m.id,
   startLine: m.startLine,
   endLine: m.endLine,
   timestampText: m.timestampText,
   localDateTime: m.localDateTime,
-  body: m.body,
+  body: draftText(m),
+  ...(m.kind === "media" && m.transcriptId && m.transcriptOrigin
+    ? { transcript: { id: m.transcriptId, origin: m.transcriptOrigin } }
+    : {}),
 });
 
 /** Fold the decision log into overrides and linked messages. Later decisions win. */
@@ -433,7 +440,12 @@ function usedMessageIds(ws: Workspace): Set<string> {
 
 /** One message can feed only one live draft, and only canonical text messages are drafted. */
 function assertDraftable(ws: Workspace, m: StoredMessage): void {
-  if (m.kind !== "text") throw new ReviewError(400, "Only text messages can become order drafts.");
+  if (m.kind !== "text" && !(m.kind === "media" && m.transcriptId)) {
+    throw new ReviewError(
+      400,
+      "Only text messages and transcribed voice notes can become order drafts.",
+    );
+  }
   if (m.duplicateOf) {
     throw new ReviewError(
       409,
@@ -450,7 +462,7 @@ export function suggestions(ws: Workspace): StoredMessage[] {
   if (!catalogue) return [];
   const used = usedMessageIds(ws);
   return ws.reviews.allTextMessages().filter((m) => {
-    if (used.has(m.id) || looksLikeNonOrder(m.body)) return false;
+    if (used.has(m.id) || looksLikeNonOrder(draftText(m))) return false;
     const draft = buildOrderDraft([toSource(m)], catalogue);
     return draft.lines.some((l) => l.product.value !== null);
   });
@@ -512,7 +524,9 @@ export function exportCsv(ws: Workspace): string {
         line.unitPrice,
         line.taxRate,
       ];
-      const chat = line.quantity.evidence.find((e) => e.kind === "message");
+      const chat = line.quantity.evidence.find(
+        (e) => e.kind === "message" || e.kind === "transcript",
+      );
       const edits = fields.flatMap((f) =>
         f.evidence.flatMap((e) => (e.kind === "human" ? [`${e.reviewer}: ${e.reason}`] : [])),
       );
@@ -536,7 +550,9 @@ export function exportCsv(ws: Workspace): string {
         line.tax.value === null ? null : formatMinor(line.tax.value),
         chat?.kind === "message"
           ? `${sourceName.get(chat.messageId) ?? ""} line ${chat.startLine}: ${chat.text}`
-          : null,
+          : chat?.kind === "transcript"
+            ? `${sourceName.get(chat.messageId) ?? ""} line ${chat.startLine} (voice note, ${chat.origin} transcript): ${chat.text}`
+            : null,
         edits.join("; ") || null,
         draft.catalogueVersion,
         draft.formulaVersion,
@@ -588,5 +604,37 @@ export function dashboard(ws: Workspace, scope: MetricScope): Dashboard {
       .drafts()
       .map((d) => ({ id: d.id, status: d.status, draft: getDraft(ws, d.id).draft })),
     scope,
+  });
+}
+
+// ---------------------------------------------------------------------------------------------
+// Transcripts (no key needed: a person supplies the text)
+
+/** Attach a person-supplied transcript to a voice-note message (a new version each time). */
+export function addTranscript(
+  ws: Workspace,
+  input: {
+    messageId: string;
+    text: string;
+    language?: string | null;
+    by: string;
+    note?: string | null;
+  },
+) {
+  const by = requireText(input.by, "Name", 80);
+  const text = requireText(input.text, "Transcript text", 20_000);
+  const [m] = ws.reviews.messages([input.messageId]);
+  if (!m) throw new ReviewError(404, "Unknown message.");
+  if (m.kind !== "media" || !["audio", "unknown"].includes(m.mediaType ?? "unknown")) {
+    throw new ReviewError(400, "Transcripts can only be added to voice-note (audio) messages.");
+  }
+  return ws.transcripts.add({
+    messageId: m.id,
+    text,
+    language: input.language?.trim() || null,
+    origin: "manual",
+    createdBy: by,
+    note: input.note ?? null,
+    at: now(),
   });
 }

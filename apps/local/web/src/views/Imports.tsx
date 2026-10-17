@@ -2,20 +2,53 @@ import { useEffect, useState } from "react";
 import { ApiError, api, type Status, type StoredMessage } from "../api.ts";
 import { shortTime } from "../format.ts";
 
+export interface TextHighlight {
+  readonly start: number;
+  readonly end: number;
+  /** Which text the span refers to: the typed message or its voice-note transcript. */
+  readonly target: "body" | "transcript";
+}
+
+function Highlighted({
+  text,
+  span,
+}: {
+  text: string;
+  span: { start: number; end: number } | null;
+}) {
+  if (!span || span.end <= span.start) return <p className="body">{text}</p>;
+  return (
+    <p className="body">
+      {text.slice(0, span.start)}
+      <mark>{text.slice(span.start, span.end)}</mark>
+      {text.slice(span.end)}
+    </p>
+  );
+}
+
 export function MessageBody({
   message,
   highlight,
 }: {
   message: StoredMessage;
-  highlight?: { start: number; end: number } | null;
+  highlight?: TextHighlight | null;
 }) {
-  if (!highlight || highlight.end <= highlight.start) return <p className="body">{message.body}</p>;
   return (
-    <p className="body">
-      {message.body.slice(0, highlight.start)}
-      <mark>{message.body.slice(highlight.start, highlight.end)}</mark>
-      {message.body.slice(highlight.end)}
-    </p>
+    <>
+      <Highlighted text={message.body} span={highlight?.target === "body" ? highlight : null} />
+      {message.transcriptText !== null && (
+        <div className="transcript">
+          <span className="badge">
+            voice-note transcript (
+            {message.transcriptOrigin === "manual" ? "person-supplied" : "provider"})
+          </span>
+          <Highlighted
+            text={message.transcriptText}
+            span={highlight?.target === "transcript" ? highlight : null}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -24,7 +57,7 @@ export function MessageCard({
   highlight,
 }: {
   message: StoredMessage;
-  highlight?: { start: number; end: number } | null;
+  highlight?: TextHighlight | null;
 }) {
   const lines =
     message.startLine === message.endLine

@@ -52,6 +52,10 @@ export interface StoredMessage {
   /** "duplicate" = same message as one from an earlier export of this chat (see duplicateOf). */
   readonly overlap: "new" | "duplicate" | "uncertain";
   readonly duplicateOf: string | null;
+  /** Latest transcript of a voice-note message, if one was added. */
+  readonly transcriptId: string | null;
+  readonly transcriptText: string | null;
+  readonly transcriptOrigin: "manual" | "provider" | null;
 }
 
 const MESSAGE_SELECT = `
@@ -59,10 +63,13 @@ const MESSAGE_SELECT = `
          m.start_line AS startLine, m.end_line AS endLine, m.timestamp_text AS timestampText,
          m.local_datetime AS localDateTime, m.status, m.author, m.body, m.kind, m.edited,
          m.media_state AS mediaState, m.media_file_name AS mediaFileName, m.media_type AS mediaType,
-         a.id AS attachmentId, m.overlap, m.duplicate_of AS duplicateOf
+         a.id AS attachmentId, m.overlap, m.duplicate_of AS duplicateOf,
+         t.id AS transcriptId, t.text AS transcriptText, t.origin AS transcriptOrigin
   FROM message m
   JOIN import_batch b ON b.id = m.import_batch_id
-  LEFT JOIN attachment a ON a.message_id = m.id`;
+  LEFT JOIN attachment a ON a.message_id = m.id
+  LEFT JOIN transcript t ON t.message_id = m.id
+    AND t.version = (SELECT MAX(version) FROM transcript WHERE message_id = m.id)`;
 
 type MessageRow = Omit<StoredMessage, "edited"> & { edited: number };
 const toMessage = (r: MessageRow): StoredMessage => ({ ...r, edited: r.edited === 1 });
@@ -121,11 +128,13 @@ export class ReviewStore {
     ).map(toMessage);
   }
 
+  /** Canonical messages that can be drafted: typed text, and voice notes that have a transcript. */
   allTextMessages(): StoredMessage[] {
     return (
       this.db
         .prepare(
-          `${MESSAGE_SELECT} WHERE m.kind = 'text' AND m.duplicate_of IS NULL
+          `${MESSAGE_SELECT} WHERE m.duplicate_of IS NULL
+             AND (m.kind = 'text' OR (m.kind = 'media' AND t.id IS NOT NULL))
            ORDER BY b.imported_at, m.position`,
         )
         .all() as MessageRow[]

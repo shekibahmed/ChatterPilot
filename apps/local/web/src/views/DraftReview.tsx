@@ -11,7 +11,12 @@ import {
 import { money, percent, quantity, shortTime, sourceDetail, sourceLabel } from "../format.ts";
 import { MessageCard } from "./Imports.tsx";
 
-type Highlight = { messageId: string; start: number; end: number } | null;
+type Highlight = {
+  messageId: string;
+  start: number;
+  end: number;
+  target: "body" | "transcript";
+} | null;
 type LineField = "product" | "quantity" | "unit" | "unitPrice" | "taxRate";
 
 const FIELD_LABELS: Record<LineField, string> = {
@@ -200,8 +205,13 @@ export function DraftReview({ id, reviewer }: { id: string; reviewer: string }) 
   };
 
   const onSource = (p: Provenance) => {
-    if (p.kind !== "message") return;
-    setHighlight({ messageId: p.messageId, start: p.span.start, end: p.span.end });
+    if (p.kind !== "message" && p.kind !== "transcript") return;
+    setHighlight({
+      messageId: p.messageId,
+      start: p.span.start,
+      end: p.span.end,
+      target: p.kind === "message" ? "body" : "transcript",
+    });
     document.querySelector(`[data-message-id="${CSS.escape(p.messageId)}"]`)?.scrollIntoView({
       behavior: "smooth",
       block: "nearest",

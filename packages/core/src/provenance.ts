@@ -15,6 +15,20 @@ export type Provenance =
       readonly text: string;
     }
   | {
+      /** Words from a voice-note transcript (not typed chat). */
+      readonly kind: "transcript";
+      readonly messageId: string;
+      readonly transcriptId: string;
+      /** Who produced the text: a person ("manual") or a provider. */
+      readonly origin: "manual" | "provider";
+      /** Lines of the voice-note message in the export. */
+      readonly startLine: number;
+      readonly endLine: number;
+      /** Character offsets within the transcript text, end exclusive. */
+      readonly span: { readonly start: number; readonly end: number };
+      readonly text: string;
+    }
+  | {
       readonly kind: "catalogue";
       readonly catalogueVersion: string;
       readonly table: "products" | "customers" | "vehicles";

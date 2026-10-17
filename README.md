@@ -20,6 +20,7 @@ It runs on your computer. The core needs no account, no API key and no internet 
 | Step | What happens | Safeguards |
 |---|---|---|
 | Import | Reads WhatsApp TXT or ZIP exports (Android and iOS formats). | Every line is accounted for; ambiguous day/month order must be confirmed; hostile ZIPs (path tricks, symlinks, zip bombs) are refused; identical re-imports change nothing; the original text is kept byte-for-byte. |
+| Voice notes | `chatterpilot transcript add` attaches a transcript you already have to a voice note; it is versioned and can then be drafted like text. | Values from a transcript are labelled "voice note", never passed off as typed chat. No automatic transcription yet. |
 | Suggest | Messages mentioning products from your catalogue become order suggestions. | Suggestions only. Messages that read as payments, deliveries or quotes (English keyword rules) are not suggested. A message can belong to only one live draft. |
 | Draft | Products, quantities and units are matched to your `products.csv`; prices and tax come only from the catalogue; totals use exact integer arithmetic. | Unknown values stay unknown. Typos, ambiguous names, stale or missing prices and incompatible units are flagged, never guessed. |
 | Review | A person can set the customer, fix any field, exclude a line or link a later correction. | Every edit needs a reason and is kept in an append-only history. A draft with open issues cannot be accepted. |
@@ -69,7 +70,7 @@ Only import chats you have the right to process. Workspaces live in `workspaces/
   words are skipped rather than guessed. Regional-language support needs proper evaluation first.
 - **Telegram:** `chatterpilot intake` applies the staff-only intake rules to saved Telegram updates
   offline. There is no live bot yet.
-- **Not included:** live WhatsApp connection, a live Telegram bot, voice-note transcription, AI
+- **Not included:** live WhatsApp connection, a live Telegram bot, automatic voice-note transcription, AI
   extraction (only the offline consent/validation boundary exists), any real (non-synthetic) target
   system, and document submission. These are planned as separate, opt-in,
   permission-gated steps.

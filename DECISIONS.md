@@ -266,3 +266,14 @@ their replacement. No secrets, customer data or private transcripts.
   reason, which moves it to `rejected` and frees the document key. Read-back requires target status
   "draft". `chatterpilot fill-form` exposes OA0 for the synthetic MockBooks form only (loopback
   targets), with an explicit `--approve` per run.
+
+## D015 — Person-supplied transcripts (P4b, no key)
+- Date: 2026-10-17 (+05:30)
+- Status: accepted
+- Chosen: migration 6 `transcript` (append-only versions per voice-note message, origin
+  manual/provider, creator, language, note; UPDATE refused by trigger). `chatterpilot transcript add`
+  finds the voice note by its exact exported file name (must be unique among canonical messages).
+  Transcribed voice notes join suggestions and drafts using the latest version; evidence uses a new
+  `transcript` provenance kind (message id, transcript id, origin, span), shown as "Voice note line N"
+  in the UI and "(voice note, manual transcript)" in the CSV. Works even when the audio file is not in
+  the export (TXT-only). Automatic transcription stays behind the P4 provider boundary (D013).

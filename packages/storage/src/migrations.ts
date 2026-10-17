@@ -208,4 +208,24 @@ export const MIGRATIONS: readonly string[] = [
     value TEXT NOT NULL
   ) STRICT;
   `,
+  `
+  -- Voice-note transcripts supplied by a person (or later a provider). Versions are appended,
+  -- never overwritten; the latest version is used for drafting.
+  CREATE TABLE transcript (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES message (id),
+    version INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    language TEXT,
+    origin TEXT NOT NULL CHECK (origin IN ('manual', 'provider')),
+    provider TEXT,
+    model TEXT,
+    created_at TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    note TEXT,
+    UNIQUE (message_id, version)
+  ) STRICT;
+  CREATE TRIGGER transcript_no_update BEFORE UPDATE ON transcript
+  BEGIN SELECT RAISE(ABORT, 'transcripts are versioned, not edited'); END;
+  `,
 ];

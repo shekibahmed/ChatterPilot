@@ -78,6 +78,46 @@ test("demo: review a chat order end to end without any outbound request", async 
   expect(outbound).toEqual([]);
 });
 
+test("a voice-note transcript can be drafted and its words highlighted", async ({ page }) => {
+  // The CLI adds a person-supplied transcript to the demo's voice note, then the UI drafts it.
+  const { execFileSync } = await import("node:child_process");
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const file = join(mkdtempSync(join(tmpdir(), "cp-transcript-")), "t.txt");
+  writeFileSync(file, "For Kumar Builders, also 5 boxes white tiles please");
+  const workspace = process.env.CHATTERPILOT_E2E_WORKSPACE ?? "";
+  execFileSync(
+    process.execPath,
+    [
+      "apps/local/src/cli.ts",
+      "transcript",
+      "add",
+      "--audio",
+      "PTT-20260112-WA0003.opus",
+      "--text-file",
+      file,
+      "--by",
+      "Anita",
+      "--workspace",
+      workspace,
+    ],
+    {
+      cwd: new URL("../../../", import.meta.url).pathname,
+    },
+  );
+  await page.goto("/#/orders");
+  const voice = page.locator(".suggestion", { hasText: "PTT-20260112-WA0003.opus" });
+  await voice.getByRole("button", { name: "Draft order" }).click();
+  await expect(page.getByTestId("draft-total")).toHaveText("INR 4,908.80");
+  await page
+    .getByTestId("line-0")
+    .getByRole("button", { name: "Voice note line 10" })
+    .nth(1)
+    .click();
+  await expect(page.locator(".transcript mark")).toHaveText("5 boxes white tiles");
+});
+
 test("an ambiguous upload asks for the date order", async ({ page }) => {
   await page.goto("/#/imports");
   await page.getByLabel("WhatsApp export file").setInputFiles({

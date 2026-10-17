@@ -8,6 +8,7 @@ import { ExecutionStore } from "./executions.ts";
 import { IntakeStore } from "./intake.ts";
 import { MIGRATIONS } from "./migrations.ts";
 import { ReviewStore } from "./reviews.ts";
+import { TranscriptStore } from "./transcripts.ts";
 
 export interface WorkspaceInfo {
   readonly name: string;
@@ -194,6 +195,7 @@ export class Workspace {
   readonly reviews: ReviewStore;
   readonly executions: ExecutionStore;
   readonly intake: IntakeStore;
+  readonly transcripts: TranscriptStore;
 
   private constructor(dir: string, db: Database.Database) {
     this.dir = dir;
@@ -202,6 +204,7 @@ export class Workspace {
     this.reviews = new ReviewStore(db);
     this.executions = new ExecutionStore(db);
     this.intake = new IntakeStore(db);
+    this.transcripts = new TranscriptStore(db);
   }
 
   static exists(dir: string): boolean {

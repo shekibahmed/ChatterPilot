@@ -5,7 +5,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 4320;
 // A fresh, throwaway demo workspace per run (synthetic data only).
-const workspace = join(mkdtempSync(join(tmpdir(), "chatterpilot-e2e-")), "ws");
+// The config is evaluated again in each worker; create the workspace once and share it via env.
+process.env.CHATTERPILOT_E2E_WORKSPACE ??= join(mkdtempSync(join(tmpdir(), "chatterpilot-e2e-")), "ws");
+const workspace = process.env.CHATTERPILOT_E2E_WORKSPACE;
 const root = new URL("../../../", import.meta.url).pathname;
 
 export default defineConfig({

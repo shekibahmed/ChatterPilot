@@ -29,6 +29,8 @@ export function sourceLabel(p: Provenance): string {
       return p.startLine === p.endLine
         ? `Chat line ${p.startLine}`
         : `Chat lines ${p.startLine}–${p.endLine}`;
+    case "transcript":
+      return `Voice note line ${p.startLine}`;
     case "catalogue":
       return `${p.table}.csv row ${p.row}`;
     case "computed":
@@ -42,6 +44,8 @@ export function sourceDetail(p: Provenance): string {
   switch (p.kind) {
     case "message":
       return p.text ? `“${p.text}”` : "Message timestamp";
+    case "transcript":
+      return `“${p.text}” from a ${p.origin === "manual" ? "person-supplied" : "provider"} transcript`;
     case "catalogue":
       return `Catalogue ${p.catalogueVersion}, ${p.recordId}, column ${p.column}`;
     case "computed":
