@@ -321,4 +321,8 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   (possible coincidental real names in fixtures; "private" wording; build-only MPL-2.0 lightningcss).
 - Changes: `THIRD_PARTY_NOTICES.md` (from `pnpm -r licenses list --prod`: MIT + Apache-2.0
   Playwright; React bundled), `docs/release-checklist.md`, README licence link.
-- Checks: `pnpm check` — see commit; no code changed.
+- Checks: `pnpm check` initially FAILED (Biome formatting of `apps/local/e2e/playwright.config.ts`,
+  edited after the last format run in P4b); the P4b commit `956ec4d1` and the notices commit
+  `cc650b54` were pushed with that lint failure (GitHub CI for `956ec4d1`: failure). Fixed by
+  formatting in the next commit; `pnpm check` then exit 0, 360 tests passed. Lesson: never chain a
+  commit after `pnpm check` without checking its exit status.
