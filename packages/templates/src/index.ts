@@ -18,3 +18,17 @@ export {
   loadVehicles,
   summariseFleet,
 } from "./fleet.ts";
+export type {
+  FollowupItem,
+  FollowupKind,
+  FollowupLink,
+  FollowupMessage,
+  FollowupSummary,
+  OpenLoop,
+} from "./followups.ts";
+export {
+  extractFollowups,
+  FOLLOWUPS_TEMPLATE_VERSION,
+  linkFollowups,
+  summariseFollowups,
+} from "./followups.ts";

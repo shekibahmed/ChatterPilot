@@ -57,6 +57,9 @@ To show the product without any real data: `pnpm demo`, then open http://127.0.0
    Never invent or paraphrase a transcript; the person supplies the text.
 8. **Fleet/travel chats** (optional): `pnpm chatterpilot events --vehicles <vehicles.csv>` lists
    bookings, faults, quotes and reported payments. Reported payments are not verified payments.
+9. **Open follow-ups** (optional): `pnpm chatterpilot followups` lists deliveries being chased,
+   complaints, payment promises and reports, and quote requests that are still open. Links between
+   messages are inferred; present them as "to check", and never call a payment verified.
 
 ## Outputs to give the user
 

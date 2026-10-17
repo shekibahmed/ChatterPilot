@@ -443,3 +443,10 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   a missing `--map` file is an error); `export --output` file/folder ambiguity.
 - Held-out set (scored, not tuned on): recall 72.8% → 75.0%, precision 87.0% → 87.3%.
 - Checks: `pnpm check` exit 0, 435 tests; `pnpm test:e2e` exit 0, 11 passed.
+
+## 2026-10-18 — Overnight run, slice 14: follow-ups template
+- Changes: `packages/templates/src/followups.ts` (delivery chases, complaints, payment promises/
+  reports, quote requests, closing messages; repeat/resolution links always `needs_review`; open-loop
+  summary with age to the last message; promised and reported money kept apart), synthetic chat
+  `fixtures/synthetic/chats/android-followups.txt`, CLI `followups`, MCP `followups` (read-only),
+  docs. Rule-based and not yet measured against a labelled set (unlike order drafting).

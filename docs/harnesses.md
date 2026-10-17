@@ -92,7 +92,7 @@ config and the raw stdio protocol are exercised by this repository's tests.
 
 | Tool | Effect |
 |---|---|
-| `workspace_status`, `parse_export`, `check_catalogue`, `list_suggestions`, `list_drafts`, `get_draft`, `export_orders`, `dashboard`, `fleet_events` | Read only |
+| `workspace_status`, `parse_export`, `check_catalogue`, `list_suggestions`, `list_drafts`, `get_draft`, `export_orders`, `dashboard`, `fleet_events`, `followups` | Read only |
 | `import_export`, `load_catalogue` | Store a file from the allowed folder in the local workspace |
 | `create_draft`, `revise_draft` | Create a draft or propose a change; recorded as `agent:<name>` with a reason |
 

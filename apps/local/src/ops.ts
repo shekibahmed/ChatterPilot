@@ -52,7 +52,7 @@ import {
 } from "@chatterpilot/telegram-intake";
 import { type FleetEvent, type FleetSummary, loadVehicles } from "@chatterpilot/templates";
 import { readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
-import { fleetEvents } from "./fleet.ts";
+import { fleetEvents, followupItems } from "./fleet.ts";
 import { ImportError, type ImportOutcome, importExport } from "./import.ts";
 import {
   acceptedOrders,
@@ -474,6 +474,11 @@ export function fleet(options: {
     registryIssues: registry.issues,
     ...fleetEvents(ws, registry, options.chat?.toLowerCase()),
   }));
+}
+
+/** Open loops in a workspace's chats: deliveries chased, complaints, payments, quote requests. */
+export function followups(options: { workspace: string; chat?: string | undefined }) {
+  return withWorkspace(options.workspace, (ws) => followupItems(ws, options.chat?.toLowerCase()));
 }
 
 export interface IntakeRun {

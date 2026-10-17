@@ -86,7 +86,9 @@ pnpm chatterpilot serve                                  # http://127.0.0.1:4317
 Other commands: `parse` (preview an export without storing it), `draft` (print suggested drafts
 in the terminal) and `events --vehicles vehicles.csv` (a second, fleet/travel template: bookings,
 changes, cancellations, vehicle faults, repair quotes and reported payments, with links between
-them; see [fixtures/synthetic/fleet](fixtures/synthetic/fleet)). Run `pnpm chatterpilot` for help. The catalogue format is described in
+them; see [fixtures/synthetic/fleet](fixtures/synthetic/fleet)) and `followups` (a third template:
+deliveries being chased, short or damaged supplies, payment promises and reports, quote requests,
+and what is still open). Run `pnpm chatterpilot` for help. The catalogue format is described in
 [docs/catalogue.md](docs/catalogue.md).
 
 Only import chats you have the right to process. Workspaces live in `workspaces/` (ignored by Git).

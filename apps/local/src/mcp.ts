@@ -22,6 +22,7 @@ import {
   draftsList,
   exportOrdersAs,
   fleet,
+  followups,
   importFile,
   loadCatalogue,
   OpError,
@@ -309,6 +310,17 @@ export function createMcpServer(options: McpOptions): McpServer {
     },
     ({ vehiclesCsv, chat }) =>
       guard(() => fleet({ workspace, vehiclesCsv: allowedPath(root, vehiclesCsv), chat })),
+  );
+
+  server.registerTool(
+    "followups",
+    {
+      title: "Open follow-ups",
+      description: `Open loops in the imported chats: delivery chases, complaints, payment promises and reports, quote requests, and closing messages, with evidence spans. Links are inferred and marked needs_review; payments are reported, never verified. Read-only. ${UNTRUSTED_NOTE}`,
+      inputSchema: z.object({ chat: z.string().optional() }),
+      annotations: READ_ONLY,
+    },
+    ({ chat }) => guard(() => followups({ workspace, chat })),
   );
 
   return server;

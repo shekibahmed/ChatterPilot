@@ -18,6 +18,7 @@ import {
   exportOrdersAs,
   fillForm,
   fleet,
+  followups,
   importFile,
   initWorkspace,
   intake,
@@ -65,6 +66,9 @@ const USAGE = `Usage (every command accepts --json for machine-readable output):
       Deterministic metrics with coverage and exclusions.
   chatterpilot events --vehicles <vehicles.csv> [--chat <name>] [--workspace <dir>] [--json]
       Fleet/travel template: bookings, faults, quotes and reported payments with their links.
+  chatterpilot followups [--chat <name>] [--workspace <dir>] [--json]
+      Follow-ups template: deliveries being chased, complaints, payment promises and reports,
+      quote requests, and what is still open (links are inferred; check them).
   chatterpilot intake --updates <updates.jsonl> --policy <policy.json> [--workspace <dir>] [--json]
       Offline Telegram intake: apply sender/chat allowlists, dedupe and repeat checks to saved
       Bot API updates (one JSON object per line) and show draft lines. No bot or network is used.
@@ -483,6 +487,31 @@ const commands: Record<string, Command> = {
     );
     for (const i of d.openIssues.value)
       console.log(`Open work:  ${i.count} × ${i.code.replaceAll("_", " ")}`);
+    return 0;
+  },
+
+  async followups(args) {
+    const { values } = parseArgs({
+      args,
+      options: { chat: { type: "string" }, workspace: ws, json: asJson },
+    });
+    const r = await followups({ workspace: values.workspace, chat: values.chat });
+    if (values.json) return emit(r, 0);
+    console.log(`Open follow-ups (ages up to the last message, ${r.summary.asOf ?? "unknown"}):`);
+    for (const o of r.summary.open) {
+      const age =
+        o.ageHours === null
+          ? "?"
+          : o.ageHours >= 48
+            ? `${Math.round(o.ageHours / 24)} d`
+            : `${o.ageHours} h`;
+      console.log(
+        `  ${o.kind.replaceAll("_", " ").padEnd(15)} ${terminalSafe(o.author ?? "?", 24).padEnd(24)} ${age.padStart(5)}  ${o.repeats > 0 ? `chased ${o.repeats + 1}x  ` : ""}"${terminalSafe(o.text ?? "", 60)}"`,
+      );
+    }
+    console.log(
+      `${r.summary.resolved} resolved (inferred; check). Promised ${formatMinor(r.summary.promisedMinor)}; reported paid ${formatMinor(r.summary.reportedPaidMinor)} (neither is verified).`,
+    );
     return 0;
   },
 
