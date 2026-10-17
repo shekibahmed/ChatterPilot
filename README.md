@@ -13,7 +13,9 @@ It runs on your computer. The core needs no account, no API key and no internet 
 
 > **Status: early private prototype.** The parts below are built and tested on synthetic data.
 > Nothing has been piloted with a real business yet, and no time-saving claims are made.
-> See [docs/why.md](docs/why.md) for the problem and the design principles.
+> See [docs/why.md](docs/why.md) for the problem and the design principles, and
+> [docs/patterns.md](docs/patterns.md) for the ten patterns behind it, each with its source and
+> the test that proves it.
 
 **A starting kit for your coding agent.** ChatterPilot is small, tested, readable code for a
 pattern many businesses need: messy messages in, checked records out, with a person in charge.

@@ -366,3 +366,10 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Checks: `pnpm check` exit 0, 401 tests. Manual: `claude mcp get chatterpilot` reads the project
   config (pending approval, as designed); the server answers initialize/workspace_status from
   another working directory and exits 0 on stdin close.
+
+## 2026-10-17 — Overnight run, slice 5: patterns guide
+- Starting HEAD: `208d9047dd4fe2003de1da68a4b7563759479e24`
+- Changes: `docs/patterns.md` (ten patterns: problem, primary source, where implemented, proving
+  test), README link, `apps/local/src/docs.test.ts` (every test name quoted in the guide must exist;
+  every relative link in README and docs/ must resolve).
+- Checks: `pnpm check` exit 0, 403 tests.
