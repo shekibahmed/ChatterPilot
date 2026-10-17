@@ -18,6 +18,8 @@ Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) a
 > See [docs/why.md](docs/why.md) for the problem and the design principles, and
 > [docs/patterns.md](docs/patterns.md) for the ten patterns behind it, each with its source and
 > the test that proves it.
+> [docs/how-it-was-built.md](docs/how-it-was-built.md) describes the method: research, small
+> tested slices, independent evaluation sets and adversarial review with AI agents.
 
 **A starting kit for your coding agent.** ChatterPilot is small, tested, readable code for a
 pattern many businesses need: messy messages in, checked records out, with a person in charge.
