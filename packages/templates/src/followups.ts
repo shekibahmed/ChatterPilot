@@ -207,7 +207,7 @@ export interface OpenLoop {
   readonly kind: FollowupKind;
   readonly author: string | null;
   readonly since: string | null;
-  /** Hours from the first message to the last message in the data (not to "now"). */
+  /** Hours from this item to the latest follow-up item found (not to "now"). */
   readonly ageHours: number | null;
   readonly repeats: number;
   readonly text: string | null;
@@ -220,7 +220,7 @@ export interface FollowupSummary {
   readonly promisedMinor: number;
   readonly reportedPaidMinor: number;
   readonly itemsByKind: Readonly<Record<string, number>>;
-  /** Last message time in the data; ages are measured to this point. */
+  /** Time of the latest follow-up item; ages are measured to this point. */
   readonly asOf: string | null;
 }
 

@@ -497,7 +497,9 @@ const commands: Record<string, Command> = {
     });
     const r = await followups({ workspace: values.workspace, chat: values.chat });
     if (values.json) return emit(r, 0);
-    console.log(`Open follow-ups (ages up to the last message, ${r.summary.asOf ?? "unknown"}):`);
+    console.log(
+      `Open follow-ups (ages up to the latest follow-up found, ${r.summary.asOf ?? "unknown"}):`,
+    );
     for (const o of r.summary.open) {
       const age =
         o.ageHours === null

@@ -8,6 +8,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { followupItems } from "./fleet.ts";
 import { ImportError, importExport } from "./import.ts";
 import { exportOrdersAs, OpError } from "./ops.ts";
 import {
@@ -168,6 +169,7 @@ export function createApp(ws: Workspace, options: AppOptions): Hono {
   app.get("/api/dashboard", (c) =>
     c.json(dashboard(ws, c.req.query("scope") === "all" ? "all" : "accepted")),
   );
+  app.get("/api/followups", (c) => c.json(followupItems(ws)));
   app.get("/api/drafts", (c) => c.json(listDrafts(ws)));
   app.post("/api/drafts", async (c) => {
     const body = (await c.req.json()) as { messageIds?: unknown; reviewer?: unknown };

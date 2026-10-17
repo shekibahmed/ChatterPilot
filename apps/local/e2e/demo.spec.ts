@@ -91,6 +91,14 @@ test("demo: review a chat order end to end without any outbound request", async 
   expect(outbound).toEqual([]);
 });
 
+test("follow-ups show what is still open, as checks rather than facts", async ({ page }) => {
+  await page.goto("/#/followups");
+  const open = page.getByTestId("open-followups");
+  await expect(open).toContainText("Quote requested");
+  await expect(open).toContainText("Meera Shah");
+  await expect(page.getByText(/Neither is a verified payment/)).toBeVisible();
+});
+
 test("a voice-note transcript can be drafted and its words highlighted", async ({ page }) => {
   // The CLI adds a person-supplied transcript to the demo's voice note, then the UI drafts it.
   const { execFileSync } = await import("node:child_process");

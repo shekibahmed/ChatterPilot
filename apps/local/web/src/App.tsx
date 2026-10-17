@@ -3,6 +3,7 @@ import { api, type Status } from "./api.ts";
 import { Dashboard } from "./views/Dashboard.tsx";
 import { DraftReview } from "./views/DraftReview.tsx";
 import { ExportView } from "./views/Export.tsx";
+import { Followups } from "./views/Followups.tsx";
 import { Imports } from "./views/Imports.tsx";
 import { Orders } from "./views/Orders.tsx";
 import { Overview } from "./views/Overview.tsx";
@@ -13,6 +14,7 @@ type Route =
   | { view: "orders" }
   | { view: "draft"; id: string }
   | { view: "dashboard" }
+  | { view: "followups" }
   | { view: "export" };
 
 function parseRoute(hash: string): Route {
@@ -22,6 +24,7 @@ function parseRoute(hash: string): Route {
   if (view === "draft" && id) return { view, id: decodeURIComponent(id) };
   if (view === "export") return { view };
   if (view === "dashboard") return { view };
+  if (view === "followups") return { view };
   return { view: "overview" };
 }
 
@@ -74,6 +77,7 @@ export function App() {
     ["imports", "Imports", "#/imports"],
     ["orders", "Orders", "#/orders"],
     ["dashboard", "Dashboard", "#/dashboard"],
+    ["followups", "Follow-ups", "#/followups"],
     ["export", "Export", "#/export"],
   ];
   const active = route.view === "draft" ? "orders" : route.view;
@@ -116,6 +120,7 @@ export function App() {
         {route.view === "orders" && <Orders reviewer={reviewer} status={status} />}
         {route.view === "draft" && <DraftReview id={route.id} reviewer={reviewer} />}
         {route.view === "dashboard" && <Dashboard />}
+        {route.view === "followups" && <Followups />}
         {route.view === "export" && <ExportView />}
       </main>
       <footer className="footer muted">
