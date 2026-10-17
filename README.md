@@ -8,6 +8,8 @@ proposes order drafts using your own price catalogue, shows exactly where every 
 and lets a person correct and accept them before anything is exported.
 
 It runs on your computer. The core needs no account, no API key and no internet connection.
+Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) and
+[docs/privacy.md](docs/privacy.md).
 
 ![Reviewing an order draft: every value links to a chat line, a catalogue row, a calculation or a human edit](docs/images/draft-review.png)
 
