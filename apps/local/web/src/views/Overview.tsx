@@ -57,7 +57,8 @@ export function Overview({ status }: { status: Status | null }) {
           catalogue, a calculation or your edit. Unknowns stay unknown.
         </li>
         <li>
-          <strong>Export</strong> accepted orders as CSV or JSON for your billing or ERP tool.
+          <strong>Export</strong> accepted orders as CSV or JSON, or as an import file for Tally,
+          ERPNext, Zoho Books or UBL.
         </li>
       </ol>
     </section>

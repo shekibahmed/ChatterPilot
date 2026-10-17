@@ -54,6 +54,8 @@ flowchart LR
 
 ![Dashboard with coverage banner, reviewed-only order value and a refused week-on-week trend](docs/images/dashboard.png)
 
+![Export tab: CSV/JSON plus experimental import files; Tally refuses until every name is mapped](docs/images/export.png)
+
 ## Try the demo
 
 Requires Node.js 26+ and pnpm 12.

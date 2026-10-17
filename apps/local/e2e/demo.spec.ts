@@ -65,6 +65,17 @@ test("demo: review a chat order end to end without any outbound request", async 
   expect(text).toContain('"45.000"');
   expect(text).not.toContain('"40.000"');
 
+  // Import files for other tools: Zoho prepares a file; Tally refuses until names are mapped.
+  const zoho = page.locator(".panel").filter({ hasText: "Zoho Books" });
+  await zoho.getByRole("button", { name: "Prepare file" }).click();
+  await expect(
+    zoho.getByRole("link", { name: /Download chatterpilot-sales-orders-zoho\.csv/ }),
+  ).toBeVisible();
+  const tally = page.locator(".panel").filter({ hasText: "Tally Prime" });
+  await tally.getByRole("button", { name: "Prepare file" }).click();
+  await expect(tally.getByText(/export-map\.json/).last()).toBeVisible();
+  if (SCREENSHOTS) await page.screenshot({ path: `${shot}export.png`, fullPage: true });
+
   // Dashboard: reviewed-only money metrics, explicit coverage, no invented trend.
   await page.getByRole("link", { name: "Dashboard", exact: true }).click();
   // Three synthetic chats cover Jan 12-15 and Jan 20-21; the gap is shown, not hidden.
