@@ -49,6 +49,9 @@ export interface StoredMessage {
   readonly mediaFileName: string | null;
   readonly mediaType: string | null;
   readonly attachmentId: string | null;
+  /** "duplicate" = same message as one from an earlier export of this chat (see duplicateOf). */
+  readonly overlap: "new" | "duplicate" | "uncertain";
+  readonly duplicateOf: string | null;
 }
 
 const MESSAGE_SELECT = `
@@ -56,7 +59,7 @@ const MESSAGE_SELECT = `
          m.start_line AS startLine, m.end_line AS endLine, m.timestamp_text AS timestampText,
          m.local_datetime AS localDateTime, m.status, m.author, m.body, m.kind, m.edited,
          m.media_state AS mediaState, m.media_file_name AS mediaFileName, m.media_type AS mediaType,
-         a.id AS attachmentId
+         a.id AS attachmentId, m.overlap, m.duplicate_of AS duplicateOf
   FROM message m
   JOIN import_batch b ON b.id = m.import_batch_id
   LEFT JOIN attachment a ON a.message_id = m.id`;
@@ -121,7 +124,10 @@ export class ReviewStore {
   allTextMessages(): StoredMessage[] {
     return (
       this.db
-        .prepare(`${MESSAGE_SELECT} WHERE m.kind = 'text' ORDER BY b.imported_at, m.position`)
+        .prepare(
+          `${MESSAGE_SELECT} WHERE m.kind = 'text' AND m.duplicate_of IS NULL
+           ORDER BY b.imported_at, m.position`,
+        )
         .all() as MessageRow[]
     ).map(toMessage);
   }

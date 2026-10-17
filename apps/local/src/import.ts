@@ -15,7 +15,12 @@ import {
   SCANNER_VERSION,
   scanExport,
 } from "@chatterpilot/import-whatsapp";
-import type { ImportSummary, StoredBlob, Workspace } from "@chatterpilot/storage";
+import {
+  chatKeyFromName,
+  type ImportSummary,
+  type StoredBlob,
+  type Workspace,
+} from "@chatterpilot/storage";
 
 export type ImportErrorCode =
   | "unsupported_file"
@@ -46,6 +51,8 @@ export type ImportOutcome =
 
 export interface ImportOptions {
   readonly dateOrder?: DateOrder;
+  /** Chat name for overlap checks; defaults to one derived from the file name. */
+  readonly chat?: string;
   readonly limits?: ArchiveLimits;
   readonly now?: Date;
 }
@@ -133,6 +140,7 @@ export async function importExport(
     const media: ExtractedMedia[] = archive ? await archive.extractMedia(store) : [];
 
     const summary = workspace.recordImport({
+      chatKey: chatKeyFromName(options.chat?.trim() || basename(filePath)),
       sourceSha256,
       sourceName: basename(filePath),
       sourceKind: zip ? "zip" : "txt",

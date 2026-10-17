@@ -39,6 +39,22 @@ export function MessageCard({
         {message.kind !== "text" && <span className="badge">{message.kind}</span>}
         {message.edited && <span className="badge">edited</span>}
         {message.status !== "ok" && <span className="badge warn">{message.status}</span>}
+        {message.overlap === "duplicate" && (
+          <span
+            className="badge"
+            title="Same as a message from an earlier export of this chat; counted once"
+          >
+            repeat
+          </span>
+        )}
+        {message.overlap === "uncertain" && (
+          <span
+            className="badge warn"
+            title="Overlaps an earlier export but differs (edited or deleted?)"
+          >
+            check: changed?
+          </span>
+        )}
       </header>
       <MessageBody message={message} highlight={highlight ?? null} />
       {message.mediaState === "attached" &&
@@ -56,6 +72,7 @@ export function MessageCard({
 function Upload({ onImported }: { onImported: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [dateOrder, setDateOrder] = useState("");
+  const [chat, setChat] = useState("");
   const [needsOrder, setNeedsOrder] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -65,7 +82,7 @@ function Upload({ onImported }: { onImported: () => void }) {
     setBusy(true);
     setMessage(null);
     try {
-      const result = await api.upload(file, dateOrder || undefined);
+      const result = await api.upload(file, dateOrder || undefined, chat || undefined);
       setMessage(
         result.status === "duplicate"
           ? "This exact file was already imported; nothing changed."
@@ -108,6 +125,12 @@ function Upload({ onImported }: { onImported: () => void }) {
             </select>
           </label>
         )}
+        <input
+          aria-label="Chat name (optional)"
+          placeholder="Chat name (optional)"
+          value={chat}
+          onChange={(e) => setChat(e.target.value)}
+        />
         <button type="button" className="primary" disabled={!file || busy} onClick={submit}>
           {busy ? "Importing…" : "Import"}
         </button>
@@ -165,6 +188,7 @@ export function Imports({
             <th>Messages</th>
             <th>Covers</th>
             <th>Timestamps</th>
+            <th>Overlap</th>
             <th>Media</th>
             <th>Warnings</th>
           </tr>
@@ -191,6 +215,13 @@ export function Imports({
                 {(i.byStatus.invalid_timestamp ?? 0) > 0 && (
                   <span className="badge warn">{i.byStatus.invalid_timestamp} invalid</span>
                 )}
+              </td>
+              <td>
+                {i.overlap.new} new, {i.overlap.duplicate} repeated
+                {i.overlap.uncertain > 0 && (
+                  <span className="badge warn">{i.overlap.uncertain} changed</span>
+                )}
+                <div className="muted small">chat “{i.chatKey}”</div>
               </td>
               <td>
                 {i.media.linked} linked, {i.media.missingFiles} missing, {i.media.omitted} omitted

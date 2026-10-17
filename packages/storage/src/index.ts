@@ -15,4 +15,4 @@ export type {
   RecordImportInput,
   WorkspaceInfo,
 } from "./workspace.ts";
-export { isValidTimeZone, Workspace } from "./workspace.ts";
+export { chatKeyFromName, isValidTimeZone, messageFingerprint, Workspace } from "./workspace.ts";

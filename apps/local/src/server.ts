@@ -134,6 +134,7 @@ export function createApp(ws: Workspace, options: AppOptions): Hono {
     const form = await c.req.formData();
     const file = form.get("file");
     const dateOrder = form.get("dateOrder");
+    const chat = form.get("chat");
     if (!(file instanceof File)) return c.json({ error: "Choose a WhatsApp export file." }, 400);
     if (dateOrder !== null && (typeof dateOrder !== "string" || !DATE_ORDERS.has(dateOrder))) {
       return c.json({ error: "Unknown date order." }, 400);
@@ -143,11 +144,10 @@ export function createApp(ws: Workspace, options: AppOptions): Hono {
     const path = join(dir, safeFileName(file.name));
     try {
       writeFileSync(path, Buffer.from(await file.arrayBuffer()));
-      const outcome = await importExport(
-        ws,
-        path,
-        dateOrder ? { dateOrder: dateOrder as DateOrder } : {},
-      );
+      const outcome = await importExport(ws, path, {
+        ...(dateOrder ? { dateOrder: dateOrder as DateOrder } : {}),
+        ...(typeof chat === "string" && chat.trim() ? { chat: chat.slice(0, 120) } : {}),
+      });
       return c.json(outcome);
     } catch (err) {
       if (err instanceof ImportError) {

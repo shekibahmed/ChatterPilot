@@ -70,10 +70,11 @@ export const api = {
     fetch(`/api/imports/${encodeURIComponent(batchId)}/messages`).then((r) =>
       handle<StoredMessage[]>(r),
     ),
-  upload: (file: File, dateOrder?: string) => {
+  upload: (file: File, dateOrder?: string, chat?: string) => {
     const form = new FormData();
     form.set("file", file);
     if (dateOrder) form.set("dateOrder", dateOrder);
+    if (chat) form.set("chat", chat);
     return fetch("/api/imports", { method: "POST", headers: WRITE_HEADERS, body: form }).then((r) =>
       handle<{ status: "imported" | "duplicate" }>(r),
     );

@@ -151,3 +151,26 @@ their replacement. No secrets, customer data or private transcripts.
   a table view; bar colours `#0d9488` (light) / `#1aa596` (dark) pass the dataviz palette checks.
 - Not included: forecasting, anomaly detection, staff/productivity measures (PLAN §7 forbids
   equating message counts with productivity).
+
+## D009 — Reconciling overlapping exports (C05)
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S6 scope, PLAN §5)
+- Chosen:
+  - Each import belongs to a chat identity (`chat_key`): from the file name ("WhatsApp Chat with X
+    (1).txt" -> "x") or an explicit `--chat` / upload field. Overlap is only checked within one chat.
+  - Message fingerprint = SHA-256 of [author, local time (or raw timestamp), kind, body]; not unique.
+  - New messages are aligned with the chat's stored canonical messages inside the shared time window
+    by longest common subsequence (`reconcileSequences` in core): matched → `duplicate` (points at
+    the stored message, counted once); outside the window → `new`; unmatched inside → `uncertain`,
+    kept and flagged (edited/deleted). Stored messages stay canonical, so drafts never lose sources.
+    Genuine repeats survive because LCS matches pairwise in order. Window edges: unmatched messages
+    after the stored side's last message (same minute) are new.
+  - Suggestions, activity metrics and drafting use canonical messages only.
+  - Safety net: if at least half (and at least 5) of a new import's messages already exist in a
+    different chat, the import warns that the file may be a renamed copy and names the chat to use.
+  - Byte-identical files remain a workspace-wide no-op (PLAN §5 exact file hash).
+  - Old workspaces are upgraded in place (migration 3 + fingerprint/chat-key backfill on open).
+- Limits: exact LCS is used up to 25M comparisons per overlap window, then prefix/suffix only
+  (the unmatched middle is kept as uncertain, never dropped). Not yet benchmarked at 50,000 messages.
+- Not done: a UI to resolve "uncertain" messages (merge or mark as replacement); they are visible
+  with a badge and in the import summary.

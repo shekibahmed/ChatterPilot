@@ -539,7 +539,8 @@ export function dashboard(ws: Workspace, scope: MetricScope): Dashboard {
   const perDay = ws.db
     .prepare(
       `SELECT substr(local_datetime, 1, 10) AS date, COUNT(*) AS count FROM message
-       WHERE kind = 'text' AND local_datetime IS NOT NULL GROUP BY date ORDER BY date`,
+       WHERE kind = 'text' AND local_datetime IS NOT NULL AND duplicate_of IS NULL
+       GROUP BY date ORDER BY date`,
     )
     .all() as { date: string; count: number }[];
   return computeDashboard({

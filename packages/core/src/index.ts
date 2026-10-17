@@ -1,3 +1,5 @@
+export type { IncomingItem, Reconciliation, StoredItem } from "./align.ts";
+export { reconcileSequences } from "./align.ts";
 export type { CsvParseResult } from "./csv.ts";
 export { neutraliseCell, parseCsv, toCsv } from "./csv.ts";
 export type { AmountParseFailure, AmountParseResult } from "./money.ts";

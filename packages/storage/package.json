@@ -8,6 +8,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@chatterpilot/core": "workspace:*",
     "better-sqlite3": "13.0.3"
   },
   "devDependencies": {

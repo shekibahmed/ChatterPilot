@@ -110,4 +110,15 @@ export const MIGRATIONS: readonly string[] = [
   CREATE TRIGGER draft_decision_no_delete BEFORE DELETE ON draft_decision
   BEGIN SELECT RAISE(ABORT, 'review history is append-only'); END;
   `,
+  `
+  -- Overlapping exports of the same chat: chat identity per import, content fingerprint per
+  -- message, and how each message relates to messages already stored for that chat.
+  ALTER TABLE import_batch ADD COLUMN chat_key TEXT NOT NULL DEFAULT '';
+  ALTER TABLE message ADD COLUMN fingerprint TEXT NOT NULL DEFAULT '';
+  ALTER TABLE message ADD COLUMN overlap TEXT NOT NULL DEFAULT 'new'
+    CHECK (overlap IN ('new', 'duplicate', 'uncertain'));
+  ALTER TABLE message ADD COLUMN duplicate_of TEXT REFERENCES message (id);
+  CREATE INDEX message_canonical ON message (duplicate_of, local_datetime);
+  CREATE INDEX import_batch_chat ON import_batch (chat_key);
+  `,
 ];

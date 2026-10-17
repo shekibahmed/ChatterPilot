@@ -162,3 +162,24 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   to a compiler bug); a scripted rename damaged UI text ("comparable d."), caught by the e2e test.
   Lesson recorded: read complete typecheck output; avoid blind text substitution in UI files.
 - Next: S6 overlap/backfill reimport reconciliation.
+
+## 2026-10-17 — S6 overlapping re-import reconciliation (WP2 / C05)
+- Tool / active writer: Claude Code (autonomous run)
+- Approved scope: slice S6; D009
+- Starting branch / HEAD: `build/v0.1` @ `6f1831d83e41d45ee20909431bf0ec76516a147e`
+- Outcome: completed
+- Changes: `packages/core/src/align.ts` (`reconcileSequences`, 7 tests); storage migration 3
+  (chat_key, fingerprint, overlap, duplicate_of), reconciliation inside the import transaction,
+  renamed-file warning, backfill on open, overlap counts in summaries; canonical-only suggestions
+  and activity; CLI `--chat`, upload chat field, overlap column and repeat/changed badges in the UI;
+  `apps/local/src/overlap.test.ts` (9 scenarios).
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, code state = S6 working tree):
+  - `pnpm check` — exit 0; 264 tests passed (superset re-export, mid-history partial, backfill,
+    edited message kept as uncertain, cross-chat isolation + renamed-file warning, same name different
+    period, `--chat` override, no double counting in suggestions/dashboard, v2→v3 upgrade)
+  - `pnpm test:e2e` — exit 0; 2 passed
+  - Manual CLI: re-importing a later export reports "1 new, 15 already imported, 0 changed"
+- Found while testing: four of my first expectations were wrong (miscounted messages, byte-identical
+  file deduplicated before chat logic, invented activity counts); the probe also exposed the
+  renamed-file risk, now covered by the warning.
+- Next: S7 fleet/travel template smoke test.

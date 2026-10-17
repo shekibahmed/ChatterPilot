@@ -1,6 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { reconcileSequences } from "@chatterpilot/core";
 import Database from "better-sqlite3";
 import { BlobStore, type StoredBlob } from "./blobs.ts";
 import { MIGRATIONS } from "./migrations.ts";
@@ -41,6 +42,8 @@ export interface AttachmentInput {
 }
 
 export interface RecordImportInput {
+  /** Identity of the chat this export belongs to; overlap is only checked within one chat. */
+  readonly chatKey: string;
   readonly sourceSha256: string;
   readonly sourceName: string;
   readonly sourceKind: "txt" | "zip";
@@ -83,10 +86,41 @@ export interface ImportSummary {
     readonly omitted: number;
   };
   readonly skippedEntries: number;
+  readonly chatKey: string;
+  /** How this import's messages relate to messages already stored for the same chat. */
+  readonly overlap: {
+    readonly new: number;
+    readonly duplicate: number;
+    readonly uncertain: number;
+  };
   readonly warnings: readonly string[];
 }
 
 const DB_FILE = "workspace.db";
+
+/** Content fingerprint of a message (who, when, what); not unique on its own. */
+export function messageFingerprint(m: {
+  author: string | null;
+  localDateTime: string | null;
+  timestampText: string;
+  kind: string;
+  body: string;
+}): string {
+  return createHash("sha256")
+    .update(JSON.stringify([m.author, m.localDateTime ?? m.timestampText, m.kind, m.body]))
+    .digest("hex");
+}
+
+/** Normalise an export's file name into a chat identity ("WhatsApp Chat with X (1).zip" -> "x"). */
+export function chatKeyFromName(name: string): string {
+  return name
+    .replace(/\.(txt|zip)$/i, "")
+    .replace(/\s*\(\d+\)$/, "")
+    .replace(/^WhatsApp Chat (?:with |- )/i, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
 
 export function isValidTimeZone(timezone: string): boolean {
   try {
@@ -111,6 +145,35 @@ function migrate(db: Database.Database): number {
     })();
   });
   return MIGRATIONS.length;
+}
+
+/** Fill chat keys and fingerprints for rows created before schema v3. */
+function backfill(db: Database.Database): void {
+  const batches = db
+    .prepare("SELECT id, source_name FROM import_batch WHERE chat_key = ''")
+    .all() as {
+    id: string;
+    source_name: string;
+  }[];
+  const setKey = db.prepare("UPDATE import_batch SET chat_key = ? WHERE id = ?");
+  const rows = db
+    .prepare(
+      `SELECT id, author, local_datetime AS localDateTime, timestamp_text AS timestampText, kind, body
+       FROM message WHERE fingerprint = ''`,
+    )
+    .all() as {
+    id: string;
+    author: string | null;
+    localDateTime: string | null;
+    timestampText: string;
+    kind: string;
+    body: string;
+  }[];
+  const setFp = db.prepare("UPDATE message SET fingerprint = ? WHERE id = ?");
+  db.transaction(() => {
+    for (const b of batches) setKey.run(chatKeyFromName(b.source_name), b.id);
+    for (const r of rows) setFp.run(messageFingerprint(r), r.id);
+  })();
 }
 
 function connect(dir: string): Database.Database {
@@ -159,6 +222,7 @@ export class Workspace {
     if (!Workspace.exists(dir)) throw new Error(`no workspace in ${dir}`);
     const db = connect(dir);
     migrate(db);
+    backfill(db);
     return new Workspace(dir, db);
   }
 
@@ -223,18 +287,61 @@ export class Workspace {
       }
     }
 
+    // Align with messages already stored for this chat (canonical ones only).
+    const fingerprints = input.messages.map((m) => messageFingerprint(m));
+    const stored = this.db
+      .prepare(
+        `SELECT m.id, m.fingerprint, m.local_datetime AS time
+         FROM message m JOIN import_batch b ON b.id = m.import_batch_id
+         WHERE b.chat_key = ? AND m.duplicate_of IS NULL
+         ORDER BY m.local_datetime, b.imported_at, b.rowid, m.position`,
+      )
+      .all(input.chatKey) as { id: string; fingerprint: string; time: string | null }[];
+    const reconciled = reconcileSequences(
+      stored,
+      input.messages.map((m, i) => ({
+        fingerprint: fingerprints[i] as string,
+        time: m.localDateTime,
+      })),
+    );
+    // A renamed file would hide the overlap: warn when most messages already exist in another chat.
+    const otherChat = this.db.prepare(
+      `SELECT b.chat_key AS chatKey FROM message m JOIN import_batch b ON b.id = m.import_batch_id
+       WHERE m.fingerprint = ? AND b.chat_key <> ? AND m.duplicate_of IS NULL LIMIT 1`,
+    );
+    const elsewhere = new Map<string, number>();
+    for (const fp of fingerprints) {
+      const hit = otherChat.get(fp, input.chatKey) as { chatKey: string } | undefined;
+      if (hit) elsewhere.set(hit.chatKey, (elsewhere.get(hit.chatKey) ?? 0) + 1);
+    }
+    for (const [chatKey, n] of elsewhere) {
+      if (n >= 5 && n >= fingerprints.length / 2) {
+        warnings.push(
+          `${n} of ${fingerprints.length} messages already exist in the chat "${chatKey}". If this is the same chat under another file name, re-import it with the chat name "${chatKey}" so the overlap is counted once.`,
+        );
+      }
+    }
+
+    const uncertain = reconciled.filter((r) => r.status === "uncertain").length;
+    if (uncertain > 0) {
+      warnings.push(
+        `${uncertain} message(s) overlap an earlier export of this chat but do not match it exactly (edited or deleted?); both versions are kept for review.`,
+      );
+    }
+
     const insertBatch = this.db.prepare(`
       INSERT INTO import_batch (
         id, source_sha256, source_name, source_kind, chat_text_sha256, chat_entry_name, parser_version,
         imported_at, encoding, had_bom, line_count, detected_date_order, applied_date_order,
         first_local_datetime, last_local_datetime, unattached_start_line, unattached_end_line,
-        unattached_text, warnings_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        unattached_text, warnings_json, chat_key
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     const insertMessage = this.db.prepare(`
       INSERT INTO message (
         id, import_batch_id, position, start_line, end_line, format, timestamp_text, local_datetime,
-        status, author, body, kind, edited, media_state, media_file_name, media_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        status, author, body, kind, edited, media_state, media_file_name, media_type,
+        fingerprint, overlap, duplicate_of
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     const insertAttachment = this.db.prepare(`
       INSERT INTO attachment (
         id, import_batch_id, file_name, blob_sha256, size_bytes, media_type, content_check,
@@ -265,8 +372,10 @@ export class Workspace {
         input.unattached?.endLine ?? null,
         input.unattached?.text ?? null,
         JSON.stringify(warnings),
+        input.chatKey,
       );
-      for (const m of input.messages) {
+      input.messages.forEach((m, i) => {
+        const r = reconciled[i] ?? { status: "new" as const };
         insertMessage.run(
           messageId(m.index),
           batchId,
@@ -284,8 +393,11 @@ export class Workspace {
           m.media?.state ?? null,
           m.media?.fileName ?? null,
           m.media?.mediaType ?? null,
+          fingerprints[i] as string,
+          r.status,
+          r.status === "duplicate" ? r.of : null,
         );
-      }
+      });
       for (const a of input.attachments) {
         const positions = referencedBy.get(a.name) ?? [];
         const linked = positions.length === 1 ? messageId(positions[0] as number) : null;
@@ -320,7 +432,8 @@ export class Workspace {
     const batch = this.db
       .prepare(
         `SELECT source_name AS sourceName, imported_at AS importedAt, line_count AS lineCount,
-                first_local_datetime AS first, last_local_datetime AS last, warnings_json AS warnings
+                first_local_datetime AS first, last_local_datetime AS last, warnings_json AS warnings,
+                chat_key AS chatKey
          FROM import_batch WHERE id = ?`,
       )
       .get(batchId) as
@@ -331,6 +444,7 @@ export class Workspace {
           first: string | null;
           last: string | null;
           warnings: string;
+          chatKey: string;
         }
       | undefined;
     if (!batch) throw new Error(`unknown import batch ${batchId}`);
@@ -346,6 +460,12 @@ export class Workspace {
       );
     const count = (sql: string) =>
       (this.db.prepare(sql).get({ batch: batchId }) as { n: number }).n;
+    const overlapCount = (status: string) =>
+      (
+        this.db
+          .prepare("SELECT COUNT(*) AS n FROM message WHERE import_batch_id = ? AND overlap = ?")
+          .get(batchId, status) as { n: number }
+      ).n;
     const byKind = grouped("kind");
     return {
       batchId,
@@ -375,6 +495,12 @@ export class Workspace {
       skippedEntries: count(
         "SELECT COUNT(*) AS n FROM skipped_entry WHERE import_batch_id = @batch",
       ),
+      chatKey: batch.chatKey,
+      overlap: {
+        new: overlapCount("new"),
+        duplicate: overlapCount("duplicate"),
+        uncertain: overlapCount("uncertain"),
+      },
       warnings: JSON.parse(batch.warnings) as string[],
     };
   }

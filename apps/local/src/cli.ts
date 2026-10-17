@@ -21,8 +21,9 @@ const USAGE = `Usage:
       Preview how every line of a TXT export is interpreted. Stores nothing.
   chatterpilot init --timezone <IANA zone> [--name <name>] [--workspace <dir>]
       Create a local workspace (default ${DEFAULT_WORKSPACE}).
-  chatterpilot import <export.txt|export.zip> [--date-order dmy|mdy|ymd] [--workspace <dir>]
-      Import a WhatsApp export into the workspace. Re-importing the same file changes nothing.
+  chatterpilot import <export.txt|export.zip> [--date-order dmy|mdy|ymd] [--chat <name>] [--workspace <dir>]
+      Import a WhatsApp export into the workspace. Re-importing the same file changes nothing;
+      a later export of the same chat (same file name or --chat) only adds what is new.
   chatterpilot catalogue check <dir>
       Validate products.csv, customers.csv and catalogue.json in a catalogue folder.
   chatterpilot catalogue load <dir> [--workspace <dir>]
@@ -137,6 +138,10 @@ function printSummary(summary: ImportSummary): void {
   console.log(
     `Media:        ${m.linked} linked, ${m.missingFiles} named but not in export, ${m.omitted} omitted by WhatsApp, ${m.unlinkedFiles} unlinked files`,
   );
+  const o = summary.overlap;
+  console.log(
+    `Overlap:      chat "${summary.chatKey}": ${o.new} new, ${o.duplicate} already imported, ${o.uncertain} changed (kept for review)`,
+  );
   if (summary.skippedEntries > 0)
     console.log(`Skipped:      ${summary.skippedEntries} unsupported archive entries`);
   for (const warning of summary.warnings)
@@ -149,6 +154,7 @@ async function importCommand(args: string[]): Promise<number> {
     allowPositionals: true,
     options: {
       "date-order": { type: "string" },
+      chat: { type: "string" },
       workspace: { type: "string", default: DEFAULT_WORKSPACE },
     },
   });
@@ -164,11 +170,10 @@ async function importCommand(args: string[]): Promise<number> {
   }
   const ws = Workspace.open(values.workspace);
   try {
-    const outcome = await importExport(
-      ws,
-      file,
-      dateOrder === undefined ? {} : { dateOrder: dateOrder as DateOrder },
-    );
+    const outcome = await importExport(ws, file, {
+      ...(dateOrder === undefined ? {} : { dateOrder: dateOrder as DateOrder }),
+      ...(values.chat ? { chat: values.chat } : {}),
+    });
     if (outcome.status === "duplicate") {
       console.log(`Already imported on ${outcome.importedAt}; nothing changed.`);
     } else {
