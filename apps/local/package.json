@@ -9,6 +9,7 @@
     "@chatterpilot/import-whatsapp": "workspace:*",
     "@chatterpilot/orders": "workspace:*",
     "@chatterpilot/storage": "workspace:*",
+    "@chatterpilot/templates": "workspace:*",
     "@hono/node-server": "2.1.3",
     "hono": "4.13.12"
   },

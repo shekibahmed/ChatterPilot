@@ -4,7 +4,9 @@ import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
 import { type DateOrder, decodeExportBytes, scanExport } from "@chatterpilot/import-whatsapp";
 import type { OrderDraft } from "@chatterpilot/orders";
 import { type ImportSummary, isValidTimeZone, Workspace } from "@chatterpilot/storage";
+import { loadVehicles } from "@chatterpilot/templates";
 import { draftFor, readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
+import { fleetEvents } from "./fleet.ts";
 import { terminalSafe } from "./format.ts";
 import { ImportError, importExport } from "./import.ts";
 import { loadCatalogueIntoWorkspace } from "./review.ts";
@@ -28,6 +30,8 @@ const USAGE = `Usage:
       Validate products.csv, customers.csv and catalogue.json in a catalogue folder.
   chatterpilot catalogue load <dir> [--workspace <dir>]
       Validate and store a catalogue version in the workspace (used for new drafts).
+  chatterpilot events --vehicles <vehicles.csv> [--chat <name>] [--workspace <dir>]
+      Fleet/travel template: bookings, faults, quotes and reported payments with their links.
   chatterpilot serve [--workspace <dir>] [--port ${DEFAULT_PORT}]
       Open the review app on http://127.0.0.1 (this computer only).
   chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
@@ -401,6 +405,59 @@ function draftCommand(args: string[]): number {
   }
 }
 
+function eventsCommand(args: string[]): number {
+  const { values } = parseArgs({
+    args,
+    options: {
+      vehicles: { type: "string" },
+      chat: { type: "string" },
+      workspace: { type: "string", default: DEFAULT_WORKSPACE },
+    },
+  });
+  if (!values.vehicles) {
+    console.error(USAGE);
+    return 2;
+  }
+  const registry = loadVehicles(readFileSync(values.vehicles, "utf8"));
+  for (const i of registry.issues)
+    console.log(`Warning: vehicles.csv line ${i.row ?? "?"}: ${i.message}`);
+  if (!Workspace.exists(values.workspace)) {
+    console.error(`No workspace in ${values.workspace}.`);
+    return 1;
+  }
+  const ws = Workspace.open(values.workspace);
+  try {
+    const { events, summary } = fleetEvents(ws, registry, values.chat?.toLowerCase());
+    for (const e of events) {
+      const parts = [
+        e.occurredAt ?? "time unknown",
+        e.type.replaceAll("_", " ").padEnd(20),
+        e.bookingRef.value ?? "",
+        e.vehicle.value?.registration ?? "",
+        e.amount.value
+          ? `${e.amount.value.kind === "quoted" ? "quoted" : "reported paid"} ${formatMinor(e.amount.value.minor)}`
+          : "",
+        ...e.relations.map(
+          (r) => `${r.type} ${r.eventId}${r.strength === "needs_review" ? " (check)" : ""}`,
+        ),
+        ...e.notes,
+      ].filter(Boolean);
+      console.log(`${e.id.padEnd(48)} ${terminalSafe(parts.join("  "), 200)}`);
+    }
+    console.log("");
+    for (const b of summary.bookings)
+      console.log(`Booking ${b.ref}: ${b.status} (${b.eventIds.length} messages)`);
+    for (const f of summary.faults)
+      console.log(`Fault on ${f.vehicle ?? "unknown vehicle"}: ${f.status}`);
+    console.log(
+      `Quoted ${formatMinor(summary.quotedMinor)}; reported paid ${formatMinor(summary.reportedPaidMinor)} (reports, not verified payments).`,
+    );
+    return 0;
+  } finally {
+    ws.close();
+  }
+}
+
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command === "parse") return parseCommand(rest);
@@ -409,6 +466,7 @@ async function main(argv: string[]): Promise<number> {
   if (command === "catalogue") return catalogueCommand(rest);
   if (command === "draft") return draftCommand(rest);
   if (command === "serve") return serveCommand(rest);
+  if (command === "events") return eventsCommand(rest);
   if (command === "demo") return demoCommand(rest);
   console.error(USAGE);
   return 2;

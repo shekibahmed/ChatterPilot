@@ -183,3 +183,22 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   file deduplicated before chat logic, invented activity counts); the probe also exposed the
   renamed-file risk, now covered by the warning.
 - Next: S7 fleet/travel template smoke test.
+
+## 2026-10-17 — S7 fleet/travel template smoke test (PLAN §2B)
+- Tool / active writer: Claude Code (autonomous run)
+- Approved scope: slice S7; D010
+- Starting branch / HEAD: `build/v0.1` @ `67ac066fa1b1b991db5ea55a8be819a62be5f36b`
+- Outcome: completed
+- Changes: `packages/templates` (fleet rules, linking, summary, vehicle registry; 17 tests);
+  `fixtures/synthetic/chats/android-fleet-ops.txt` (ambiguous dates on purpose) and
+  `fixtures/synthetic/fleet/vehicles.csv`; `apps/local/src/fleet.ts` + integration test; CLI
+  `events`; `Provenance` catalogue table gains "vehicles"; README mention.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, code state = S7 working tree):
+  - `pnpm check` — exit 0; 282 tests passed (PLAN §4 example: "BUS-07 reported a tyre issue. Repair
+    quoted at 2,400" → fault + linked quote, no expense; "Paid 2,400 for that repair" → separate
+    payment report with a needs-review link; bookings counted once through change/cancel; later
+    export re-import adds only the new booking and leaves money totals unchanged)
+  - Manual CLI: import refused until `--date-order dmy`; `events` lists all 13 events with links
+- Found while testing: the dash in registrations was never made optional (escaper does not escape
+  "-"); the fixture's dates are ambiguous, which correctly left times unknown until declared.
+- Next: OA0 synthetic order form and connector (needs the owner's Codegen recording; see D003).

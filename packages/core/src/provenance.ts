@@ -17,7 +17,7 @@ export type Provenance =
   | {
       readonly kind: "catalogue";
       readonly catalogueVersion: string;
-      readonly table: "products" | "customers";
+      readonly table: "products" | "customers" | "vehicles";
       readonly recordId: string;
       /** 1-based CSV line of the record. */
       readonly row: number;

@@ -174,3 +174,21 @@ their replacement. No secrets, customer data or private transcripts.
   (the unmatched middle is kept as uncertain, never dropped). Not yet benchmarked at 50,000 messages.
 - Not done: a UI to resolve "uncertain" messages (merge or mark as replacement); they are visible
   with a badge and in the import summary.
+
+## D010 — Fleet/travel template as a reuse smoke test
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S7 scope; deliberately narrow)
+- Context: PLAN §2B keeps fleet/travel as a second, lightweight template proving the core is reusable,
+  not a second full product.
+- Chosen: `@chatterpilot/templates` `fleet/1`: deterministic rules over canonical messages (shared
+  scanner, storage, overlap reconciliation, `Field`/`Provenance`, exact money parsing) produce
+  events: booking request/confirmation/change/cancellation, fault report, repair quote, repair done,
+  payment report. Vehicles come from an owner `vehicles.csv` (versioned by hash; registrations match
+  with or without dash/space). Lifecycle links: later booking events `update_of`/`cancels` the first
+  event for the same reference, so a booking is counted once; a quote in the same message as a fault
+  is `quote_for` it (supported); a later quote for the same vehicle is linked as needs-review; a
+  payment is linked to a quote only with the same vehicle and amount (supported) or, when it names no
+  vehicle but says "that repair", the same amount by the same person within 48 h (needs review).
+  Quoted and reported-paid amounts are summed separately and never presented as verified expenses.
+  Links that depend on time are not drawn when message times are unknown.
+- Not included: UI for fleet events (CLI `events` only), fleet dashboard, route/trip metrics.
