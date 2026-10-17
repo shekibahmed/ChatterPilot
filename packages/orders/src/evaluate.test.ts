@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { buildOrderDraft, suggestsOrder } from "./draft.ts";
 import { type EvalCase, evaluate, validateEvalCases } from "./evaluate.ts";
 import { syntheticCatalogue } from "./fixtures.ts";
 
@@ -91,5 +92,34 @@ describe("synthetic evaluation set (held-out split)", () => {
     expect(overall.recall ?? 0).toBeGreaterThanOrEqual(0.727);
     expect(overall.precision ?? 0).toBeGreaterThanOrEqual(0.869);
     expect(overall.silentErrors).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("suggestsOrder", () => {
+  it("agrees with a full draft on every labelled message", () => {
+    const all = ["order-messages.json", "order-messages.heldout.json"].flatMap(
+      (f) =>
+        JSON.parse(
+          readFileSync(new URL(`../../../fixtures/eval/${f}`, import.meta.url), "utf8"),
+        ) as EvalCase[],
+    );
+    for (const c of all) {
+      const draft = buildOrderDraft(
+        [
+          {
+            id: c.id,
+            startLine: 1,
+            endLine: 1,
+            timestampText: "x",
+            localDateTime: "2026-01-12T10:00:00",
+            body: c.text,
+          },
+        ],
+        catalogue,
+      );
+      expect(suggestsOrder(c.text, catalogue), c.id).toBe(
+        draft.lines.some((l) => l.product.value !== null),
+      );
+    }
   });
 });

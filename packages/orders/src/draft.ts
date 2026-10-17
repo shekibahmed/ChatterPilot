@@ -334,6 +334,22 @@ function findCorrection(
   };
 }
 
+/**
+ * Whether a message would draft at least one line with a product: the same extraction and
+ * matching as `buildOrderDraft`, without pricing, customers or provenance. For counting and
+ * listing suggestions over large chats.
+ */
+export function suggestsOrder(body: string, catalogue: Catalogue): boolean {
+  const { lines } = findCorrection(
+    body,
+    extractOrderLines(body, compileLexicon(catalogue.lexicon)),
+  );
+  return lines.some((l) => {
+    const status = matchRecord(l.productText, catalogue.products, productKeys).status;
+    return status === "resolved" || status === "fuzzy";
+  });
+}
+
 interface LineContext {
   readonly catalogue: Catalogue;
   readonly msg: SourceMessage;

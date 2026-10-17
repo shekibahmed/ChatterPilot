@@ -111,3 +111,20 @@ Export a chat you are allowed to process, pick 50–100 messages, and write the 
 (your coding agent can draft labels from your catalogue for you to correct; never commit real
 messages to a public repository). Then run `pnpm chatterpilot eval --cases yours.json --catalogue
 your-catalogue/ --failures` and fix the misses with `lexicon.json` entries and catalogue aliases first.
+
+## Performance
+
+`pnpm bench [messages]` generates a synthetic Android export (default 100,000 messages, 6.2 MB) in
+a temporary folder and times each step in-process. On the development laptop (Node 26.10,
+2026-10-17):
+
+| Step | Time |
+|---|---|
+| import | 2.6 s |
+| identical re-import | 0.04 s |
+| status (counts suggestions) | 1.3 s (was 6.0 s before caching normalised aliases and a light suggestion check) |
+| suggestions with preview drafts | 4.0 s (was 13.4 s) |
+| dashboard | 1.3 s (was 6.1 s) |
+
+The workspace database is about 44 MB for 100,000 messages. Numbers vary by machine; compare runs
+on the same machine.

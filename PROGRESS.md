@@ -408,3 +408,11 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Benchmark (synthetic 100,000-message Android export, 6.2 MB, this laptop): import 2.8 s,
   identical re-import 0.23 s, suggestions with preview drafts 13.4 s (45,454 suggestions),
   dashboard 6.1 s, status 6.0 s. Workspace DB 45 MB. Status/dashboard cost noted for follow-up.
+
+## 2026-10-17 — Overnight run, slice 10: performance
+- Starting HEAD: `fc522e7ad76733ea064e9f9586222fea7a67fc93`
+- Changes: matcher caches normalised alias tokens per catalogue; `suggestsOrder` (extraction +
+  product match only) replaces full drafts when listing/counting suggestions (equivalence tested
+  on all 232 labelled messages); `pnpm bench` (synthetic generator + timings) with a generator test.
+- 100k messages: status 6.0 → 1.3 s, suggestions with previews 13.4 → 4.0 s, dashboard 6.1 → 1.3 s.
+- Checks: `pnpm check` exit 0, 425 tests; `pnpm test:e2e` exit 0, 10 passed.

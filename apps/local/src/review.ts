@@ -20,6 +20,7 @@ import {
   type OrderDraft,
   OverrideError,
   type SourceMessage,
+  suggestsOrder,
 } from "@chatterpilot/orders";
 import type {
   DecisionRecord,
@@ -471,11 +472,10 @@ export function suggestions(ws: Workspace): StoredMessage[] {
   const catalogue = activeCatalogue(ws);
   if (!catalogue) return [];
   const used = usedMessageIds(ws);
+  const lexicon = compileLexicon(catalogue.lexicon);
   return ws.reviews.allTextMessages().filter((m) => {
-    if (used.has(m.id) || looksLikeNonOrder(draftText(m), compileLexicon(catalogue.lexicon)))
-      return false;
-    const draft = buildOrderDraft([toSource(m)], catalogue);
-    return draft.lines.some((l) => l.product.value !== null);
+    const text = draftText(m);
+    return !used.has(m.id) && !looksLikeNonOrder(text, lexicon) && suggestsOrder(text, catalogue);
   });
 }
 

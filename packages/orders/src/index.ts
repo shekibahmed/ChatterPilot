@@ -21,7 +21,7 @@ export type {
   Quantity,
   SourceMessage,
 } from "./draft.ts";
-export { buildOrderDraft, DRAFT_FORMULA_VERSION, OverrideError } from "./draft.ts";
+export { buildOrderDraft, DRAFT_FORMULA_VERSION, OverrideError, suggestsOrder } from "./draft.ts";
 export type { CaseResult, EvalCase, EvalReport, LineResult, Scores } from "./evaluate.ts";
 export { evaluate, formatEvalReport, scoreCase, validateEvalCases } from "./evaluate.ts";
 export type { ExtractedLine } from "./extract.ts";

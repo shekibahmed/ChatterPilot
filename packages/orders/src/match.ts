@@ -14,7 +14,7 @@ export interface MatchResult<T> {
 
 interface Keyed<T> {
   readonly record: T;
-  readonly keys: readonly string[];
+  readonly keys: readonly { readonly key: string; readonly tokens: readonly string[] }[];
 }
 
 function editDistanceAtMostOne(a: string, b: string): boolean {
@@ -49,8 +49,7 @@ function best<T>(
   for (const { record, keys } of keyed) {
     let recordScore = 0;
     let recordKey = "";
-    for (const key of keys) {
-      const tokens = key.split(" ").filter(Boolean);
+    for (const { key, tokens } of keys) {
       if (tokens.length === 0 || !tokens.every(tokenMatches)) continue;
       // Prefer the most specific key: more tokens, then more characters.
       const keyScore = tokens.length * 1000 + key.length;
@@ -70,6 +69,31 @@ function best<T>(
   return { score, hits };
 }
 
+// Normalised keys per record list (a catalogue's products or customers), computed once.
+const keyCache = new WeakMap<object, WeakMap<object, readonly Keyed<unknown>[]>>();
+
+function keyedRecords<T>(
+  records: readonly T[],
+  keysOf: (record: T) => readonly string[],
+): readonly Keyed<T>[] {
+  let byFn = keyCache.get(records);
+  if (!byFn) {
+    byFn = new WeakMap();
+    keyCache.set(records, byFn);
+  }
+  const cached = byFn.get(keysOf) as readonly Keyed<T>[] | undefined;
+  if (cached) return cached;
+  const keyed = records.map((record) => ({
+    record,
+    keys: keysOf(record).map((k) => {
+      const key = matchKey(k);
+      return { key, tokens: key.split(" ").filter(Boolean) };
+    }),
+  }));
+  byFn.set(keysOf, keyed);
+  return keyed;
+}
+
 /**
  * Match free text against record names/aliases. A key matches when all of its words occur in the
  * text; the most specific key wins; equally specific matches on different records are ambiguous.
@@ -82,7 +106,7 @@ export function matchRecord<T>(
 ): MatchResult<T> {
   const tokens = matchKey(text).split(" ").filter(Boolean);
   const tokenSet = new Set(tokens);
-  const keyed = records.map((record) => ({ record, keys: keysOf(record).map(matchKey) }));
+  const keyed = keyedRecords(records, keysOf);
 
   const exact = best(keyed, (t) => tokenSet.has(t));
   const fromHits = (status: MatchStatus, hits: { record: T; key: string }[]): MatchResult<T> => {

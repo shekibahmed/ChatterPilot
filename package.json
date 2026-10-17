@@ -17,7 +17,8 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "build:web": "vite build --config apps/local/web/vite.config.ts",
     "demo": "pnpm build:web && node apps/local/src/cli.ts demo",
-    "test:e2e": "pnpm build:web && playwright test --config apps/local/e2e/playwright.config.ts"
+    "test:e2e": "pnpm build:web && playwright test --config apps/local/e2e/playwright.config.ts",
+    "bench": "node apps/local/src/bench.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
