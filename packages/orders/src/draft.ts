@@ -7,7 +7,7 @@ import {
   unknownField,
 } from "@chatterpilot/core";
 import type { Catalogue, Customer, Product } from "./catalogue.ts";
-import { extractOrderLines } from "./extract.ts";
+import { type ExtractedLine, extractOrderLines } from "./extract.ts";
 import { matchRecord } from "./match.ts";
 import { canonicalUnit } from "./units.ts";
 
@@ -66,8 +66,41 @@ export interface Quantity {
   readonly text: string;
 }
 
+/** A reviewer's replacement for one machine-proposed value. */
+export interface Override<T> {
+  readonly value: T;
+  readonly reviewer: string;
+  readonly at: string;
+  readonly reason: string;
+}
+
+export interface LineOverrides {
+  readonly product?: Override<string>;
+  readonly quantity?: Override<number>;
+  readonly unit?: Override<string>;
+  readonly unitPrice?: Override<number>;
+  readonly taxRate?: Override<number>;
+  readonly excluded?: Override<boolean>;
+}
+
+/** Human decisions applied on top of the machine draft. Line keys are machine line indexes. */
+export interface DraftOverrides {
+  readonly customer?: Override<string>;
+  readonly lines?: Readonly<Record<number, LineOverrides>>;
+}
+
+/** An override that cannot apply (unknown product/customer/unit, invalid number). */
+export class OverrideError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OverrideError";
+  }
+}
+
 export interface DraftLine {
   readonly sourceText: string;
+  /** Excluded by a reviewer: kept for audit, left out of totals and issues. */
+  readonly excluded: boolean;
   readonly product: Field<ProductRef>;
   readonly quantity: Field<Quantity>;
   readonly unit: Field<string>;
@@ -105,6 +138,25 @@ const computed = (formula: string, inputs: string[]): Provenance => ({
   formula,
   inputs,
 });
+
+/** Replace a machine value with a reviewer's, keeping the reviewer, reason and previous value. */
+function human<T>(
+  o: Override<unknown>,
+  value: T,
+  previous: unknown,
+  keep: readonly Provenance[],
+): Field<T> {
+  return {
+    value,
+    status: "ok",
+    evidence: [
+      { kind: "human", reviewer: o.reviewer, at: o.at, reason: o.reason, previous },
+      ...keep,
+    ],
+  };
+}
+
+const chatEvidence = (f: Field<unknown>) => f.evidence.filter((e) => e.kind === "message");
 
 function messageEvidence(msg: SourceMessage, start: number, end: number): Provenance {
   const line = msg.startLine + (msg.body.slice(0, start).match(/\n/g)?.length ?? 0);
@@ -152,14 +204,268 @@ function daysBetween(fromIsoDate: string, toIsoDate: string): number {
 const productKeys = (p: Product) => [p.name, ...p.aliases];
 const customerKeys = (c: Customer) => [c.name, ...c.aliases];
 
+function formatQuantity(milli: number): string {
+  const whole = Math.trunc(milli / 1000);
+  const fraction = String(milli % 1000)
+    .padStart(3, "0")
+    .replace(/0+$/, "");
+  return fraction ? `${whole}.${fraction}` : String(whole);
+}
+
+interface LineContext {
+  readonly catalogue: Catalogue;
+  readonly msg: SourceMessage;
+  readonly extracted: ExtractedLine;
+  readonly index: number;
+  readonly orderDateText: string | null;
+  readonly overrides: LineOverrides;
+}
+
+/** Resolve, price and tax one extracted line, applying any reviewer overrides. */
+function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } {
+  const { catalogue, msg, extracted, index, orderDateText, overrides: ov } = ctx;
+  const issues: DraftIssue[] = [];
+  const path = (f: string) => `lines[${index}].${f}`;
+  const issue = (code: IssueCode, field: keyof LineOverrides, message: string) => {
+    if (!ov[field]) issues.push({ code, field: path(field), message });
+  };
+  const productEvidence = messageEvidence(
+    msg,
+    extracted.productSpan.start,
+    extracted.productSpan.end,
+  );
+  const lineEvidence = messageEvidence(msg, extracted.span.start, extracted.span.end);
+
+  // Product
+  const match = matchRecord(extracted.productText, catalogue.products, productKeys);
+  let p: Product | null = match.record;
+  let product: Field<ProductRef>;
+  if (p && match.status === "resolved") {
+    product = ok({ productId: p.id, name: p.name }, [
+      productEvidence,
+      catalogueEvidence(catalogue, p, "aliases"),
+    ]);
+  } else if (p && match.status === "fuzzy") {
+    product = review({ productId: p.id, name: p.name }, [
+      productEvidence,
+      catalogueEvidence(catalogue, p, "aliases"),
+    ]);
+    issue(
+      "product_fuzzy",
+      "product",
+      `"${extracted.productText}" looks like ${p.name}; confirm it.`,
+    );
+  } else if (match.status === "ambiguous") {
+    product = review<ProductRef>(null, [productEvidence]);
+    issue(
+      "product_ambiguous",
+      "product",
+      `"${extracted.productText}" could be ${match.candidates.map((c) => c.name).join(" or ")}.`,
+    );
+  } else {
+    product = review<ProductRef>(null, [productEvidence]);
+    issue("product_unresolved", "product", `"${extracted.productText}" is not in the catalogue.`);
+  }
+  if (ov.product) {
+    const chosen = catalogue.products.find((c) => c.id === ov.product?.value);
+    if (!chosen) throw new OverrideError(`Unknown product ${ov.product.value}.`);
+    product = human(ov.product, { productId: chosen.id, name: chosen.name }, product.value, [
+      ...chatEvidence(product),
+      catalogueEvidence(catalogue, chosen, "product_id"),
+    ]);
+    p = chosen;
+  }
+
+  // Quantity
+  const qtyParsed = parseAmountToMinor(extracted.quantityText, 3);
+  let quantity: Field<Quantity>;
+  if (qtyParsed.ok && qtyParsed.minor > 0) {
+    quantity = ok({ milli: qtyParsed.minor, text: extracted.quantityText }, [lineEvidence]);
+  } else {
+    quantity = review<Quantity>(null, [lineEvidence]);
+    issue("quantity_invalid", "quantity", `Quantity "${extracted.quantityText}" is not usable.`);
+  }
+  if (ov.quantity) {
+    if (!Number.isSafeInteger(ov.quantity.value) || ov.quantity.value <= 0) {
+      throw new OverrideError("Quantity must be a positive number.");
+    }
+    quantity = human(
+      ov.quantity,
+      { milli: ov.quantity.value, text: formatQuantity(ov.quantity.value) },
+      quantity.value,
+      chatEvidence(quantity),
+    );
+  }
+
+  // Unit: as written, or the catalogue's counting unit when none is written.
+  let unit: Field<string> = unknownField();
+  const writtenUnit = extracted.unitText ? canonicalUnit(extracted.unitText) : null;
+  if (writtenUnit) {
+    unit = ok(writtenUnit, [lineEvidence]);
+  } else if (p && p.unit === "piece") {
+    unit = ok("piece", [catalogueEvidence(catalogue, p, "unit")]);
+  } else if (p) {
+    issue("unit_missing", "unit", `No unit given; ${p.name} is sold per ${p.unit}.`);
+  }
+  if (ov.unit) {
+    const code = canonicalUnit(ov.unit.value);
+    if (!code) throw new OverrideError(`Unknown unit ${ov.unit.value}.`);
+    unit = human(ov.unit, code, unit.value, chatEvidence(unit));
+  }
+  let factorMilli: number | null = null;
+  if (p && unit.value) {
+    if (unit.value === p.unit) {
+      factorMilli = 1000;
+    } else {
+      const alt = p.altUnits.find((a) => a.unit === unit.value);
+      if (alt) {
+        factorMilli = alt.factorMilli;
+      } else {
+        // Even a reviewer cannot sell a product by a unit the catalogue does not define.
+        unit = review(unit.value, [...unit.evidence]);
+        issues.push({
+          code: "unit_incompatible",
+          field: path("unit"),
+          message: `${p.name} cannot be sold by ${unit.value}.`,
+        });
+      }
+    }
+  }
+
+  // Base quantity
+  let baseQuantity: Field<Quantity> = unknownField();
+  if (quantity.value && factorMilli !== null && p) {
+    const base = toSafeMinor(
+      divideRoundHalfUp(BigInt(quantity.value.milli) * BigInt(factorMilli), 1000n),
+    );
+    const altEvidence = factorMilli === 1000 ? [] : [catalogueEvidence(catalogue, p, "alt_units")];
+    baseQuantity = ok({ milli: base, text: `${formatQuantity(base)} ${p.unit}` }, [
+      computed("quantity × unit_factor", [path("quantity"), path("unit")]),
+      ...altEvidence,
+    ]);
+  }
+
+  // Unit price: only from the catalogue or a reviewer.
+  let unitPrice: Field<number> = unknownField();
+  if (p) {
+    if (p.priceMinor === null) {
+      issue("price_missing", "unitPrice", `${p.name} has no catalogue price.`);
+    } else {
+      let status: "ok" | "needs_review" = "ok";
+      if (!p.confirmedOn) {
+        status = "needs_review";
+        issue("price_unconfirmed", "unitPrice", `The price of ${p.name} has no confirmation date.`);
+      } else if (
+        orderDateText &&
+        daysBetween(p.confirmedOn, orderDateText) > catalogue.stalePriceDays
+      ) {
+        status = "needs_review";
+        issue(
+          "price_stale",
+          "unitPrice",
+          `The price of ${p.name} was last confirmed on ${p.confirmedOn}, more than ${catalogue.stalePriceDays} days before the order.`,
+        );
+      }
+      if (p.effectiveFrom && orderDateText && p.effectiveFrom > orderDateText) {
+        status = "needs_review";
+        issue(
+          "price_not_yet_effective",
+          "unitPrice",
+          `The price of ${p.name} starts on ${p.effectiveFrom}, after the order date.`,
+        );
+      }
+      unitPrice = {
+        value: p.priceMinor,
+        status,
+        evidence: [catalogueEvidence(catalogue, p, "price")],
+      };
+    }
+  }
+  if (ov.unitPrice) {
+    if (!Number.isSafeInteger(ov.unitPrice.value) || ov.unitPrice.value < 0) {
+      throw new OverrideError("Price must be a non-negative amount.");
+    }
+    unitPrice = human(ov.unitPrice, ov.unitPrice.value, unitPrice.value, unitPrice.evidence);
+  }
+
+  let amount: Field<number> = unknownField();
+  if (baseQuantity.value && unitPrice.value !== null) {
+    const value = toSafeMinor(
+      divideRoundHalfUp(BigInt(baseQuantity.value.milli) * BigInt(unitPrice.value), 1000n),
+    );
+    const status =
+      unitPrice.status === "ok" && product.status === "ok" && unit.status === "ok"
+        ? "ok"
+        : "needs_review";
+    amount = {
+      value,
+      status,
+      evidence: [
+        computed("round_half_up(base_quantity × unit_price)", [
+          path("baseQuantity"),
+          path("unitPrice"),
+        ]),
+      ],
+    };
+  }
+
+  // Tax: only from the catalogue or a reviewer; never guessed.
+  let taxRate: Field<number> = unknownField();
+  if (p) {
+    if (p.taxRateMilli === null) {
+      issue("tax_rate_missing", "taxRate", `${p.name} has no tax rate in the catalogue.`);
+    } else {
+      taxRate = ok(p.taxRateMilli, [catalogueEvidence(catalogue, p, "tax_rate_percent")]);
+    }
+  }
+  if (ov.taxRate) {
+    if (
+      !Number.isSafeInteger(ov.taxRate.value) ||
+      ov.taxRate.value < 0 ||
+      ov.taxRate.value > 100_000
+    ) {
+      throw new OverrideError("Tax rate must be between 0 and 100 percent.");
+    }
+    taxRate = human(ov.taxRate, ov.taxRate.value, taxRate.value, taxRate.evidence);
+  }
+  let tax: Field<number> = unknownField();
+  if (amount.value !== null && taxRate.value !== null) {
+    tax = {
+      value: toSafeMinor(divideRoundHalfUp(BigInt(amount.value) * BigInt(taxRate.value), 100_000n)),
+      status: amount.status,
+      evidence: [
+        computed("round_half_up(amount × tax_rate / 100)", [path("amount"), path("taxRate")]),
+      ],
+    };
+  }
+
+  const excluded = ov.excluded?.value === true;
+  return {
+    line: {
+      sourceText: extracted.text,
+      excluded,
+      product,
+      quantity,
+      unit,
+      baseQuantity,
+      unitPrice,
+      amount,
+      taxRate,
+      tax,
+    },
+    issues: excluded ? [] : issues,
+  };
+}
+
 /**
  * Build a reviewable order draft from one or more chat messages and the owner's catalogue.
- * Deterministic and offline: prices, units and tax come only from the catalogue; totals are
- * exact integer arithmetic; anything unknown stays null and raises an issue.
+ * Deterministic and offline: prices, units and tax come only from the catalogue or a reviewer;
+ * totals are exact integer arithmetic; anything unknown stays null and raises an issue.
  */
 export function buildOrderDraft(
   messages: readonly SourceMessage[],
   catalogue: Catalogue,
+  overrides: DraftOverrides = {},
 ): OrderDraft {
   const issues: DraftIssue[] = [];
   const issue = (code: IssueCode, field: string, message: string) =>
@@ -184,8 +490,9 @@ export function buildOrderDraft(
     issue("order_date_unknown", "orderDate", "The order date is unknown.");
   }
 
-  // Customer: a name or alias mentioned in the messages.
+  // Customer: a name or alias mentioned in the messages, or the reviewer's choice.
   let customer: Field<CustomerRef> = unknownField();
+  const customerIssues: DraftIssue[] = [];
   const customerHits = messages.map((m) => ({
     m,
     match: matchRecord(m.body, catalogue.customers, customerKeys),
@@ -205,225 +512,71 @@ export function buildOrderDraft(
       const ref = { customerId: record.id, name: record.name };
       customer = hit.match.status === "resolved" ? ok(ref, evidence) : review(ref, evidence);
       if (hit.match.status === "fuzzy") {
-        issue(
-          "customer_unresolved",
-          "customer",
-          `Customer "${record.name}" matched only approximately; confirm it.`,
-        );
+        customerIssues.push({
+          code: "customer_unresolved",
+          field: "customer",
+          message: `Customer "${record.name}" matched only approximately; confirm it.`,
+        });
       }
     }
   } else if (distinct.size > 1 || ambiguousHit) {
     const names = ambiguousHit
       ? ambiguousHit.match.candidates.map((c) => c.name)
       : resolved.map((h) => h.match.record?.name ?? "");
-    issue(
-      "customer_ambiguous",
-      "customer",
-      `The messages could refer to several customers: ${names.join(", ")}.`,
+    customerIssues.push({
+      code: "customer_ambiguous",
+      field: "customer",
+      message: `The messages could refer to several customers: ${names.join(", ")}.`,
+    });
+  } else {
+    customerIssues.push({
+      code: "customer_unresolved",
+      field: "customer",
+      message: "No catalogue customer is named in the messages.",
+    });
+  }
+  if (overrides.customer) {
+    const chosen = catalogue.customers.find((c) => c.id === overrides.customer?.value);
+    if (!chosen) throw new OverrideError(`Unknown customer ${overrides.customer.value}.`);
+    customer = human(
+      overrides.customer,
+      { customerId: chosen.id, name: chosen.name },
+      customer.value,
+      [...chatEvidence(customer), catalogueEvidence(catalogue, chosen, "customer_id")],
     );
   } else {
-    issue("customer_unresolved", "customer", "No catalogue customer is named in the messages.");
+    issues.push(...customerIssues);
   }
 
   const lines: DraftLine[] = [];
-  const currencies = new Set<string>();
   for (const msg of messages) {
     for (const extracted of extractOrderLines(msg.body)) {
-      const i = lines.length;
-      const path = (f: string) => `lines[${i}].${f}`;
-      const productEvidence = messageEvidence(
+      const index = lines.length;
+      const built = buildLine({
+        catalogue,
         msg,
-        extracted.productSpan.start,
-        extracted.productSpan.end,
-      );
-      const lineEvidence = messageEvidence(msg, extracted.span.start, extracted.span.end);
-
-      // Product
-      const match = matchRecord(extracted.productText, catalogue.products, productKeys);
-      const productRecord = match.record;
-      let product: Field<ProductRef>;
-      if (productRecord && match.status === "resolved") {
-        product = ok({ productId: productRecord.id, name: productRecord.name }, [
-          productEvidence,
-          catalogueEvidence(catalogue, productRecord, "aliases"),
-        ]);
-      } else if (productRecord && match.status === "fuzzy") {
-        product = review({ productId: productRecord.id, name: productRecord.name }, [
-          productEvidence,
-          catalogueEvidence(catalogue, productRecord, "aliases"),
-        ]);
-        issue(
-          "product_fuzzy",
-          path("product"),
-          `"${extracted.productText}" looks like ${productRecord.name}; confirm it.`,
-        );
-      } else if (match.status === "ambiguous") {
-        product = review<ProductRef>(null, [productEvidence]);
-        issue(
-          "product_ambiguous",
-          path("product"),
-          `"${extracted.productText}" could be ${match.candidates.map((c) => c.name).join(" or ")}.`,
-        );
-      } else {
-        product = review<ProductRef>(null, [productEvidence]);
-        issue(
-          "product_unresolved",
-          path("product"),
-          `"${extracted.productText}" is not in the catalogue.`,
-        );
-      }
-      const p = product.status === "ok" || product.status === "needs_review" ? productRecord : null;
-
-      // Quantity
-      const qtyParsed = parseAmountToMinor(extracted.quantityText, 3);
-      let quantity: Field<Quantity>;
-      if (qtyParsed.ok && qtyParsed.minor > 0) {
-        quantity = ok({ milli: qtyParsed.minor, text: extracted.quantityText }, [lineEvidence]);
-      } else {
-        quantity = review<Quantity>(null, [lineEvidence]);
-        issue(
-          "quantity_invalid",
-          path("quantity"),
-          `Quantity "${extracted.quantityText}" is not usable.`,
-        );
-      }
-
-      // Unit: as written, or the catalogue's counting unit when none is written.
-      let unit: Field<string> = unknownField();
-      let factorMilli: number | null = null;
-      const writtenUnit = extracted.unitText ? canonicalUnit(extracted.unitText) : null;
-      if (writtenUnit) {
-        unit = ok(writtenUnit, [lineEvidence]);
-      } else if (p && p.unit === "piece") {
-        unit = ok("piece", [catalogueEvidence(catalogue, p, "unit")]);
-      } else if (p) {
-        issue("unit_missing", path("unit"), `No unit given; ${p.name} is sold per ${p.unit}.`);
-      }
-      if (p && unit.value) {
-        if (unit.value === p.unit) {
-          factorMilli = 1000;
-        } else {
-          const alt = p.altUnits.find((a) => a.unit === unit.value);
-          if (alt) {
-            factorMilli = alt.factorMilli;
-          } else {
-            unit = review(unit.value, [...unit.evidence]);
-            issue("unit_incompatible", path("unit"), `${p.name} cannot be sold by ${unit.value}.`);
-          }
-        }
-      }
-
-      // Base quantity, price, amount, tax
-      let baseQuantity: Field<Quantity> = unknownField();
-      if (quantity.value && factorMilli !== null && p) {
-        const base = toSafeMinor(
-          divideRoundHalfUp(BigInt(quantity.value.milli) * BigInt(factorMilli), 1000n),
-        );
-        const altEvidence =
-          factorMilli === 1000 ? [] : [catalogueEvidence(catalogue, p, "alt_units")];
-        baseQuantity = ok({ milli: base, text: `${base / 1000} ${p.unit}` }, [
-          computed("quantity × unit_factor", [path("quantity"), path("unit")]),
-          ...altEvidence,
-        ]);
-      }
-
-      let unitPrice: Field<number> = unknownField();
-      if (p) {
-        currencies.add(p.currency);
-        const priceEvidence = [catalogueEvidence(catalogue, p, "price")];
-        if (p.priceMinor === null) {
-          issue("price_missing", path("unitPrice"), `${p.name} has no catalogue price.`);
-        } else {
-          let status: "ok" | "needs_review" = "ok";
-          if (!p.confirmedOn) {
-            status = "needs_review";
-            issue(
-              "price_unconfirmed",
-              path("unitPrice"),
-              `The price of ${p.name} has no confirmation date.`,
-            );
-          } else if (
-            orderDateText &&
-            daysBetween(p.confirmedOn, orderDateText) > catalogue.stalePriceDays
-          ) {
-            status = "needs_review";
-            issue(
-              "price_stale",
-              path("unitPrice"),
-              `The price of ${p.name} was last confirmed on ${p.confirmedOn}, more than ${catalogue.stalePriceDays} days before the order.`,
-            );
-          }
-          if (p.effectiveFrom && orderDateText && p.effectiveFrom > orderDateText) {
-            status = "needs_review";
-            issue(
-              "price_not_yet_effective",
-              path("unitPrice"),
-              `The price of ${p.name} starts on ${p.effectiveFrom}, after the order date.`,
-            );
-          }
-          unitPrice = { value: p.priceMinor, status, evidence: priceEvidence };
-        }
-      }
-
-      let amount: Field<number> = unknownField();
-      if (baseQuantity.value && unitPrice.value !== null) {
-        const value = toSafeMinor(
-          divideRoundHalfUp(BigInt(baseQuantity.value.milli) * BigInt(unitPrice.value), 1000n),
-        );
-        const status = unitPrice.status === "ok" && product.status === "ok" ? "ok" : "needs_review";
-        amount = {
-          value,
-          status,
-          evidence: [
-            computed("round_half_up(base_quantity × unit_price)", [
-              path("baseQuantity"),
-              path("unitPrice"),
-            ]),
-          ],
-        };
-      }
-
-      let taxRate: Field<number> = unknownField();
-      let tax: Field<number> = unknownField();
-      if (p) {
-        if (p.taxRateMilli === null) {
-          issue("tax_rate_missing", path("taxRate"), `${p.name} has no tax rate in the catalogue.`);
-        } else {
-          taxRate = ok(p.taxRateMilli, [catalogueEvidence(catalogue, p, "tax_rate_percent")]);
-          if (amount.value !== null) {
-            tax = {
-              value: toSafeMinor(
-                divideRoundHalfUp(BigInt(amount.value) * BigInt(p.taxRateMilli), 100_000n),
-              ),
-              status: amount.status,
-              evidence: [
-                computed("round_half_up(amount × tax_rate / 100)", [
-                  path("amount"),
-                  path("taxRate"),
-                ]),
-              ],
-            };
-          }
-        }
-      }
-
-      lines.push({
-        sourceText: extracted.text,
-        product,
-        quantity,
-        unit,
-        baseQuantity,
-        unitPrice,
-        amount,
-        taxRate,
-        tax,
+        extracted,
+        index,
+        orderDateText,
+        overrides: overrides.lines?.[index] ?? {},
       });
+      lines.push(built.line);
+      issues.push(...built.issues);
     }
   }
 
-  if (lines.length === 0)
+  const active = lines.filter((l) => !l.excluded);
+  if (active.length === 0) {
     issue("no_lines", "lines", "No order lines were found in the selected messages.");
+  }
 
+  const currencies = new Set(
+    active.flatMap((l) => {
+      const id = l.product.value?.productId;
+      const currency = catalogue.products.find((p) => p.id === id)?.currency;
+      return currency ? [currency] : [];
+    }),
+  );
   let currency: Field<string> = unknownField();
   if (currencies.size === 1) {
     const [code] = currencies;
@@ -443,15 +596,15 @@ export function buildOrderDraft(
     formula: string,
     input: string,
   ): Field<number> => {
-    if (lines.length === 0 || currency.value === null) return unknownField();
-    const fields = lines.map(pick);
+    if (active.length === 0 || currency.value === null) return unknownField();
+    const fields = active.map(pick);
     if (fields.some((f) => f.value === null)) return unknownField();
     const value = fields.reduce((acc, f) => acc + BigInt(f.value as number), 0n);
     const status = fields.every((f) => f.status === "ok") ? "ok" : "needs_review";
     return { value: toSafeMinor(value), status, evidence: [computed(formula, [input])] };
   };
-  const subtotal = sum((l) => l.amount, "sum(line amounts)", "lines[*].amount");
-  const taxTotal = sum((l) => l.tax, "sum(line taxes)", "lines[*].tax");
+  const subtotal = sum((l) => l.amount, "sum(included line amounts)", "lines[*].amount");
+  const taxTotal = sum((l) => l.tax, "sum(included line taxes)", "lines[*].tax");
   const total: Field<number> =
     subtotal.value !== null && taxTotal.value !== null
       ? {

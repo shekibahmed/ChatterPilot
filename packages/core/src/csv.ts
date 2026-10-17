@@ -65,3 +65,27 @@ export function parseCsv(input: string): CsvParseResult {
   if (field !== "" || row.length > 0) endRow();
   return { ok: true, rows };
 }
+
+// OWASP CSV injection: cells starting with these can run as spreadsheet formulas.
+const FORMULA_LEAD = /^[=+\-@\t\r\n＝＋－＠]/;
+
+/**
+ * Make one value safe for spreadsheets: a leading formula character gets an apostrophe prefix,
+ * so "=HYPERLINK(...)" from a chat message is shown as text instead of executed.
+ */
+export function neutraliseCell(value: string): string {
+  return FORMULA_LEAD.test(value) ? `'${value}` : value;
+}
+
+/**
+ * Write rows as RFC 4180 CSV with CRLF line endings. Every text cell is quoted and neutralised;
+ * numbers are written as plain digits. A UTF-8 BOM helps spreadsheet apps detect the encoding.
+ */
+export function toCsv(rows: readonly (readonly (string | number | null)[])[]): string {
+  const cell = (v: string | number | null) => {
+    if (v === null) return "";
+    if (typeof v === "number") return String(v);
+    return `"${neutraliseCell(v).replaceAll('"', '""')}"`;
+  };
+  return `﻿${rows.map((r) => r.map(cell).join(",")).join("\r\n")}\r\n`;
+}

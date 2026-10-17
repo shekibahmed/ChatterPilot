@@ -98,3 +98,27 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   used a guessed offset instead of a located span.
 - GitHub CI for S2 push (`0853e3f1`): see HANDOFF.
 - Next: S4 review UI + CSV/JSON export + `pnpm demo`.
+
+## 2026-10-17 — S4a review persistence, local API and export (WP4/WP5, P2/P3)
+- Tool / active writer: Claude Code (autonomous run authorised by the owner on 2026-10-17)
+- Approved scope: outline approval 2026-10-17, slice S4 (split into S4a API and S4b UI); D006
+- Starting branch / HEAD: `build/v0.1` @ `f823a17a624fa06ddaa410be4f6cb4889384a5bb`
+- Outcome: completed (S4a); UI is S4b
+- Changes:
+  - `packages/orders`: reviewer overrides (`DraftOverrides`, `OverrideError`), excluded lines,
+    human provenance with previous values; draft logic refactored into `buildLine`.
+  - `packages/core`: `toCsv`/`neutraliseCell` (OWASP CSV injection set incl. LF and full-width).
+  - `packages/storage`: migration 2 (catalogue_version, order_draft, append-only draft_decision with
+    triggers), `ReviewStore`, `importSummaries`; blob-reference check covers catalogue files.
+  - `apps/local`: review service (create/decide/accept/reject/reopen, suggestions, CSV/JSON export
+    from accepted snapshots), Hono API with loopback/CSRF/CSP protections, CLI `catalogue load`,
+    `serve`, `demo`.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, code state = S4a working tree before commit):
+  - `pnpm check` — exit 0; 236 tests passed (new: override semantics, CSV neutralisation matrix,
+    Host/CSRF/Origin/Sec-Fetch-Site refusals, upload with date-order prompt, full draft→link
+    correction→exclude→accept→export flow, accept blocked by issues, reject needs reason,
+    formula injection from chat author/reviewer neutralised in export, SQLite refuses UPDATE/DELETE
+    of review history, catalogue blobs byte-identical)
+  - Manual: `serve` on 127.0.0.1:4399 — `/api/status` 200 (old scratch workspace auto-migrated to
+    schema v2); spoofed `Host: evil.example` → 403; web UI not yet built → 503 message as designed
+- Next: S4b React review UI, `pnpm demo`, Playwright e2e, README screenshot.

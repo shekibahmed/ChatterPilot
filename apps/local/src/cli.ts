@@ -7,6 +7,12 @@ import { type ImportSummary, isValidTimeZone, Workspace } from "@chatterpilot/st
 import { draftFor, readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
 import { terminalSafe } from "./format.ts";
 import { ImportError, importExport } from "./import.ts";
+import { loadCatalogueIntoWorkspace } from "./review.ts";
+import { DEFAULT_PORT, startServer } from "./server.ts";
+
+const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
+const FIXTURES = new URL("../../../fixtures/synthetic/", import.meta.url).pathname;
+const DEMO_WORKSPACE = "workspaces/demo";
 
 const DEFAULT_WORKSPACE = "workspaces/default";
 
@@ -19,6 +25,12 @@ const USAGE = `Usage:
       Import a WhatsApp export into the workspace. Re-importing the same file changes nothing.
   chatterpilot catalogue check <dir>
       Validate products.csv, customers.csv and catalogue.json in a catalogue folder.
+  chatterpilot catalogue load <dir> [--workspace <dir>]
+      Validate and store a catalogue version in the workspace (used for new drafts).
+  chatterpilot serve [--workspace <dir>] [--port ${DEFAULT_PORT}]
+      Open the review app on http://127.0.0.1 (this computer only).
+  chatterpilot demo [--port ${DEFAULT_PORT}]
+      Seed ${DEMO_WORKSPACE} with synthetic chats and a catalogue, then serve it. No network needed.
   chatterpilot draft --catalogue <dir> [--workspace <dir>]
       Suggest order messages and show draft orders with the source of every value.
 
@@ -174,8 +186,102 @@ async function importCommand(args: string[]): Promise<number> {
   }
 }
 
-function catalogueCommand(args: string[]): number {
+async function catalogueLoad(args: string[]): Promise<number> {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { workspace: { type: "string", default: DEFAULT_WORKSPACE } },
+  });
+  const [dir] = positionals;
+  if (!dir) {
+    console.error(USAGE);
+    return 2;
+  }
+  if (!Workspace.exists(values.workspace)) {
+    console.error(`No workspace in ${values.workspace}.`);
+    return 1;
+  }
+  const ws = Workspace.open(values.workspace);
+  try {
+    const { catalogue, issues } = await loadCatalogueIntoWorkspace(ws, dir);
+    for (const i of issues) console.log(`${i.severity}: ${terminalSafe(i.message, 200)}`);
+    if (!catalogue) {
+      console.error("Catalogue not loaded: fix the errors above first.");
+      return 1;
+    }
+    console.log(`Loaded catalogue ${catalogue.version} into ${values.workspace}.`);
+    return 0;
+  } finally {
+    ws.close();
+  }
+}
+
+function waitForShutdown(close: () => void): Promise<number> {
+  return new Promise((resolve) => {
+    const stop = () => {
+      close();
+      resolve(0);
+    };
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  });
+}
+
+async function serveCommand(args: string[]): Promise<number> {
+  const { values } = parseArgs({
+    args,
+    options: {
+      workspace: { type: "string", default: DEFAULT_WORKSPACE },
+      port: { type: "string", default: String(DEFAULT_PORT) },
+    },
+  });
+  const port = Number(values.port);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    console.error("Port must be a number between 1024 and 65535.");
+    return 2;
+  }
+  if (!Workspace.exists(values.workspace)) {
+    console.error(`No workspace in ${values.workspace}. Run: chatterpilot init --timezone <zone>`);
+    return 1;
+  }
+  const ws = Workspace.open(values.workspace);
+  const server = await startServer(ws, { port, webRoot: WEB_ROOT });
+  console.log(
+    `ChatterPilot is running at ${server.url} (this computer only). Press Ctrl+C to stop.`,
+  );
+  return waitForShutdown(() => {
+    server.close();
+    ws.close();
+  });
+}
+
+async function demoCommand(args: string[]): Promise<number> {
+  const { values } = parseArgs({
+    args,
+    options: { port: { type: "string", default: String(DEFAULT_PORT) } },
+  });
+  if (!Workspace.exists(DEMO_WORKSPACE)) {
+    Workspace.create(DEMO_WORKSPACE, {
+      name: "ChatterPilot demo (synthetic data)",
+      timezone: "Asia/Kolkata",
+    }).close();
+  }
+  const ws = Workspace.open(DEMO_WORKSPACE);
+  try {
+    await loadCatalogueIntoWorkspace(ws, `${FIXTURES}catalogue`);
+    for (const chat of ["android-dmy-hardware-orders.txt", "ios-mdy-plumbing-orders.txt"]) {
+      await importExport(ws, `${FIXTURES}chats/${chat}`);
+    }
+  } finally {
+    ws.close();
+  }
+  console.log(`Demo workspace ready in ${DEMO_WORKSPACE} (synthetic chats and catalogue).`);
+  return serveCommand(["--workspace", DEMO_WORKSPACE, "--port", values.port]);
+}
+
+function catalogueCommand(args: string[]): number | Promise<number> {
   const [sub, dir] = args;
+  if (sub === "load") return catalogueLoad(args.slice(1));
   if (sub !== "check" || !dir) {
     console.error(USAGE);
     return 2;
@@ -293,6 +399,8 @@ async function main(argv: string[]): Promise<number> {
   if (command === "import") return importCommand(rest);
   if (command === "catalogue") return catalogueCommand(rest);
   if (command === "draft") return draftCommand(rest);
+  if (command === "serve") return serveCommand(rest);
+  if (command === "demo") return demoCommand(rest);
   console.error(USAGE);
   return 2;
 }

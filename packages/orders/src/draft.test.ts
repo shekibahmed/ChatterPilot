@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { scanExport } from "@chatterpilot/import-whatsapp";
 import { describe, expect, it } from "vitest";
 import { loadCatalogue } from "./catalogue.ts";
-import { buildOrderDraft, type OrderDraft, type SourceMessage } from "./draft.ts";
+import { buildOrderDraft, type OrderDraft, OverrideError, type SourceMessage } from "./draft.ts";
 import { read, syntheticCatalogue } from "./fixtures.ts";
 
 const catalogue = syntheticCatalogue();
@@ -278,5 +278,91 @@ describe("buildOrderDraft: synthetic chat exports end to end", () => {
     expect(draft.subtotal.value).toBe(279000);
     expect(draft.taxTotal.value).toBe(50220);
     expect(draft.issues.map((i) => i.code)).toEqual(["customer_unresolved"]);
+  });
+});
+
+describe("buildOrderDraft: reviewer overrides", () => {
+  const by = { reviewer: "Anita", at: "2026-01-12T12:00:00Z" };
+
+  it("records a quantity correction as human provenance and recomputes totals", () => {
+    const draft = buildOrderDraft([message("40 bags cement")], catalogue, {
+      lines: {
+        0: { quantity: { ...by, value: 45000, reason: "Corrected to 45 in chat line 12" } },
+      },
+    });
+    const qty = draft.lines[0]?.quantity;
+    expect(qty?.value).toEqual({ milli: 45000, text: "45" });
+    expect(qty?.evidence[0]).toEqual({
+      kind: "human",
+      reviewer: "Anita",
+      at: "2026-01-12T12:00:00Z",
+      reason: "Corrected to 45 in chat line 12",
+      previous: { milli: 40000, text: "40" },
+    });
+    expect(qty?.evidence[1]).toMatchObject({ kind: "message", text: "40 bags cement" });
+    expect(draft.subtotal.value).toBe(1845000);
+  });
+
+  it("resolves ambiguous products and customers by reviewer choice", () => {
+    const draft = buildOrderDraft([message("120 sq ft 2x2 tiles")], catalogue, {
+      customer: { ...by, value: "SI-01", reason: "Known customer" },
+      lines: { 0: { product: { ...by, value: "TIL-22I", reason: "Ivory per phone call" } } },
+    });
+    expect(draft.issues).toEqual([]);
+    expect(draft.lines[0]?.product.value).toEqual({
+      productId: "TIL-22I",
+      name: "Vitrified Tile 2x2 Ivory",
+    });
+    expect(draft.lines[0]?.amount.value).toBe(654000); // 120 × 54.50
+  });
+
+  it("lets a reviewer confirm a stale price or supply a missing one", () => {
+    const draft = buildOrderDraft(
+      [message("For Kumar Builders 100 kg tmt 8mm, 2 ton sand")],
+      catalogue,
+      {
+        lines: {
+          0: { unitPrice: { ...by, value: 6850, reason: "Supplier reconfirmed today" } },
+          1: { unitPrice: { ...by, value: 120000, reason: "Quoted on phone" } },
+        },
+      },
+    );
+    expect(draft.issues).toEqual([]);
+    expect(draft.lines[1]?.unitPrice.evidence[0]).toMatchObject({ kind: "human", previous: null });
+    expect(draft.subtotal.value).toBe(685000 + 240000);
+  });
+
+  it("excludes a superseded line from totals but keeps it for audit", () => {
+    const body = "For Kumar Builders 40 bags cement\n120 sq ft white tiles";
+    const correction = {
+      ...message("Sorry make it 45 bags cement", "2026-01-12T11:45:00", "m2"),
+      startLine: 12,
+      endLine: 12,
+    };
+    const draft = buildOrderDraft([message(body), correction], catalogue, {
+      lines: { 0: { excluded: { ...by, value: true, reason: "Replaced by the correction" } } },
+    });
+    expect(draft.lines.map((l) => [l.sourceText, l.excluded])).toEqual([
+      ["40 bags cement", true],
+      ["120 sq ft white tiles", false],
+      ["45 bags cement", false],
+    ]);
+    expect(draft.subtotal.value).toBe(624000 + 1845000);
+  });
+
+  it("does not let a reviewer sell by a unit the catalogue does not define", () => {
+    const draft = buildOrderDraft([message("For Shah Interiors 40 bags cement")], catalogue, {
+      lines: { 0: { unit: { ...by, value: "kg", reason: "typo" } } },
+    });
+    expect(draft.issues.map((i) => i.code)).toEqual(["unit_incompatible"]);
+    expect(draft.total.value).toBeNull();
+  });
+
+  it("rejects overrides that reference unknown records", () => {
+    expect(() =>
+      buildOrderDraft([message("40 bags cement")], catalogue, {
+        lines: { 0: { product: { ...by, value: "NOPE", reason: "x" } } },
+      }),
+    ).toThrow(OverrideError);
   });
 });

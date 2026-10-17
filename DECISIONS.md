@@ -97,3 +97,29 @@ their replacement. No secrets, customer data or private transcripts.
 - Known limitations: English/ASCII digits only (Devanagari digits and Hindi unit words abstain);
   delivery dates are not extracted; corrections in later messages appear as separate suggestions
   until review linking (S4).
+
+## D006 — Review model, accepted snapshots and local API security
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S4 scope)
+- Context: PLAN §4 (ReviewDecision), §6 (loopback, CSRF, Host checks, no guessable media paths),
+  §7 (human review before consequential use) and §16 (approvals bind exact versions).
+- Chosen:
+  - A draft = f(source messages, catalogue version, decision log). Decisions (set customer, set line
+    product/quantity/unit/price/tax, exclude line, link message, accept, reject, reopen) are stored in
+    an append-only table guarded by SQLite triggers. Each carries reviewer, time and reason (reason
+    required except for accept); overrides become `human` provenance with the previous value.
+  - Every decision is dry-run before it is recorded; invalid ones (unknown product/unit, zero
+    quantity, line out of range) are refused and leave no trace.
+  - Accept requires zero open issues and freezes the exact computed draft plus its SHA-256 in the
+    decision record. Exports read only accepted snapshots, so later catalogue changes cannot alter
+    an accepted order. Reopening is an explicit, reasoned decision.
+  - Catalogue files are stored as blobs per version so any draft can be re-derived exactly.
+  - Reviewer identity is self-declared (single-user local tool); not authentication.
+  - API binds to 127.0.0.1 only; Host must be loopback (DNS-rebinding defence); non-GET requests
+    need the `x-chatterpilot: 1` header and a same-origin Origin/Sec-Fetch-Site when sent; no CORS;
+    CSP `default-src 'self'` with `frame-ancestors 'none'`. Uploads are written under a random
+    directory with a sanitised name and deleted after import. Attachments are served by random id,
+    with a real media type only when the content signature matched; otherwise as a download.
+  - CSV export quotes every text cell and neutralises formula leaders (= + - @ tab CR LF and their
+    full-width forms) with a leading apostrophe.
+- Known limitations: catalogue upload is CLI-only (`catalogue load`); single reviewer per workspace.

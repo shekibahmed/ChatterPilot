@@ -4,6 +4,7 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { BlobStore, type StoredBlob } from "./blobs.ts";
 import { MIGRATIONS } from "./migrations.ts";
+import { ReviewStore } from "./reviews.ts";
 
 export interface WorkspaceInfo {
   readonly name: string;
@@ -125,11 +126,13 @@ export class Workspace {
   readonly dir: string;
   readonly db: Database.Database;
   readonly blobs: BlobStore;
+  readonly reviews: ReviewStore;
 
   private constructor(dir: string, db: Database.Database) {
     this.dir = dir;
     this.db = db;
     this.blobs = new BlobStore(join(dir, "blobs"));
+    this.reviews = new ReviewStore(db);
   }
 
   static exists(dir: string): boolean {
@@ -186,7 +189,10 @@ export class Workspace {
       this.db
         .prepare(
           `SELECT 1 FROM import_batch WHERE chat_text_sha256 = @sha
-           UNION ALL SELECT 1 FROM attachment WHERE blob_sha256 = @sha LIMIT 1`,
+           UNION ALL SELECT 1 FROM attachment WHERE blob_sha256 = @sha
+           UNION ALL SELECT 1 FROM catalogue_version
+             WHERE @sha IN (products_sha256, customers_sha256, meta_sha256)
+           LIMIT 1`,
         )
         .get({ sha: sha256 }) !== undefined
     );
@@ -299,6 +305,15 @@ export class Workspace {
     })();
 
     return this.importSummary(batchId);
+  }
+
+  importSummaries(): ImportSummary[] {
+    const ids = this.db
+      .prepare("SELECT id FROM import_batch ORDER BY imported_at, rowid")
+      .all() as {
+      id: string;
+    }[];
+    return ids.map((r) => this.importSummary(r.id));
   }
 
   importSummary(batchId: string): ImportSummary {

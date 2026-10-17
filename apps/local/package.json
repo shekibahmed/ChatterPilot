@@ -8,6 +8,8 @@
     "@chatterpilot/core": "workspace:*",
     "@chatterpilot/import-whatsapp": "workspace:*",
     "@chatterpilot/orders": "workspace:*",
-    "@chatterpilot/storage": "workspace:*"
+    "@chatterpilot/storage": "workspace:*",
+    "@hono/node-server": "2.1.3",
+    "hono": "4.13.12"
   }
 }

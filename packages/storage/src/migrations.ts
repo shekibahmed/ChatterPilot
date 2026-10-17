@@ -72,4 +72,42 @@ export const MIGRATIONS: readonly string[] = [
     reason TEXT NOT NULL
   ) STRICT;
   `,
+  `
+  -- Owner catalogue versions; files are kept as blobs so every draft can be re-derived.
+  CREATE TABLE catalogue_version (
+    version TEXT PRIMARY KEY,
+    loaded_at TEXT NOT NULL,
+    maintainer TEXT,
+    products_sha256 TEXT NOT NULL,
+    customers_sha256 TEXT NOT NULL,
+    meta_sha256 TEXT
+  ) STRICT;
+
+  CREATE TABLE order_draft (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    catalogue_version TEXT NOT NULL REFERENCES catalogue_version (version),
+    source_message_ids_json TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('open', 'accepted', 'rejected')),
+    status_at TEXT NOT NULL
+  ) STRICT;
+
+  -- Append-only review history: every human decision with reviewer, time and reason.
+  CREATE TABLE draft_decision (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    draft_id TEXT NOT NULL REFERENCES order_draft (id),
+    at TEXT NOT NULL,
+    reviewer TEXT NOT NULL,
+    action TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    reason TEXT NOT NULL
+  ) STRICT;
+  CREATE INDEX draft_decision_by_draft ON draft_decision (draft_id, seq);
+
+  CREATE TRIGGER draft_decision_no_update BEFORE UPDATE ON draft_decision
+  BEGIN SELECT RAISE(ABORT, 'review history is append-only'); END;
+  CREATE TRIGGER draft_decision_no_delete BEFORE DELETE ON draft_decision
+  BEGIN SELECT RAISE(ABORT, 'review history is append-only'); END;
+  `,
 ];
