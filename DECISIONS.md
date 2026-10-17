@@ -239,3 +239,18 @@ their replacement. No secrets, customer data or private transcripts.
   retention limit). Forwarded text, including injected instructions, is stored as data.
 - Planned for a live pilot: grammY long polling (MIT, checked 2026-10-17), secure token storage,
   privacy-mode documentation.
+
+## D013 — P4 provider boundary, offline (no provider chosen)
+- Date: 2026-10-17 (+05:30)
+- Status: accepted as the contract; **no real provider adapter** until the owner chooses one and its
+  current terms, retention, model ids and pricing are checked (PLAN §13 item 4).
+- Chosen: `@chatterpilot/providers`. Providers may only propose order lines as character spans of
+  the message they were given; `validateExtraction` quarantines unknown ids, duplicates, non-list
+  output, spans outside the text and non-numeric quantities, so injected instructions cannot add
+  content. Products, prices and totals stay with deterministic catalogue code. `runExtractionBatch`
+  requires a `BatchConsent` bound to provider, exact model, recipient, a hash of the exact items and
+  a maximum estimated cost; keys come from an in-memory `KeyVault` (redacted in JSON/inspect,
+  `forget`); spend is reserved before the call; timeouts and in-flight cancellation count as
+  uncertain charges and are never marked safe to retry unless the provider documents idempotency;
+  no automatic fallback. `FixtureProvider` gives deterministic offline answers for tests.
+- Not done: audio transcription, transcript import (next), UI for consent, real adapter.

@@ -254,3 +254,13 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   catalogue products; refused content not stored.
 - Next: independent multi-agent review of the branch (owner asked to use workflows with Sonnet/Haiku
   agents), then P4 offline (transcript import, provider interface without any real provider).
+
+## 2026-10-17 — P4a provider boundary (offline, no provider)
+- Tool / active writer: Claude Code (autonomous run); review workflow running read-only in parallel
+- Starting branch / HEAD: `build/v0.1` @ `3fe6faf8ed41e52db198a2b574f8d329a803f9b2`
+- Outcome: completed for the contract (D013); no network, no keys, no provider calls
+- Changes: `packages/providers` (contract, validation, consent/budget runner, key vault, fixture
+  provider) + 15 tests.
+- Checks: `pnpm exec vitest run packages/providers` — 15 passed; `tsc -p tsconfig.json` and
+  `biome check packages/providers` clean. Full `pnpm check` deferred until the review finishes
+  (to avoid reformatting files under review).
