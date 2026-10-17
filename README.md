@@ -89,4 +89,5 @@ pnpm test:e2e   # browser test of the demo (Playwright)
 
 ## Licence
 
-MIT © 2026 Shekib Ahmed. See [LICENSE](LICENSE). Third-party packages keep their own licences.
+MIT © 2026 Shekib Ahmed. See [LICENSE](LICENSE). Third-party packages keep their own licences; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -310,3 +310,15 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
     source, versioning, edit refusal, audio-only)
   - `pnpm test:e2e` — exit 0; 10 passed (new: CLI adds a transcript to the demo voice note, the UI
     drafts it at 4,908.80 and highlights "5 boxes white tiles" inside the transcript)
+
+## 2026-10-17 — Release-readiness pass (no owner authority needed)
+- Tool / active writer: Claude Code; audits by Workflow run `wf_62591c14-639` (Haiku: fixtures/docs/
+  screenshots privacy and impersonation scan; Sonnet: full git-history secrets/private-reference scan
+  and licence review), read-only.
+- Starting branch / HEAD: `build/v0.1` @ `956ec4d1541de02fd217e84b84740285223ee5bd`
+- Results: no secrets, private links, packet files, databases or personal data anywhere in history;
+  screenshots synthetic. Low-severity notes recorded as owner decisions in `docs/release-checklist.md`
+  (possible coincidental real names in fixtures; "private" wording; build-only MPL-2.0 lightningcss).
+- Changes: `THIRD_PARTY_NOTICES.md` (from `pnpm -r licenses list --prod`: MIT + Apache-2.0
+  Playwright; React bundled), `docs/release-checklist.md`, README licence link.
+- Checks: `pnpm check` — see commit; no code changed.

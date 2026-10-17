@@ -1,25 +1,25 @@
 # Current handoff
 
 ## Session and authority
-- Updated at: 2026-10-17 (+05:30), end of P4b
+- Updated at: 2026-10-17 (+05:30), end of autonomous run (release-readiness pass)
 - Active writer: Claude Code. Next owner: Claude Code (Codex when the Claude allowance ends)
 - Approved outline: S0–S7 + OA0 (see PROGRESS.md / DECISIONS.md D000–D003), approved 2026-10-17
 - Authorised: local commits per tested slice; push to private origin branch `build/v0.1`.
   Owner asked (2026-10-17) to run all remaining stages autonomously, stopping only on real problems.
   Not authorised: visibility change, publication, deployment, paid/provider calls, bot setup, real-target
   submission, merge to `main`.
-- Current work package: S0–S7, WP7 skill, OA1 offline, P4a, review fixes done; OA0 built except the owner's recording → P4b done; next: final release-readiness pass
+- Current work package: S0–S7, WP7 skill, OA1 offline, P4a, review fixes done; OA0 built except the owner's recording → P4b and release-readiness done; **stopped: remaining stages need the owner**
 
 ## Verified repository and code state
 - Repository: `shekibahmed/ChatterPilot` (GitHub visibility PRIVATE, checked with `gh repo view`)
 - Branch: `build/v0.1` (created from `main` @ `f9514b7505dfa4b0f9797a5c454e810eb1dfb216`)
-- Observed HEAD before this metadata edit: `f18db7181bdef5c97255e5acc6ad683aee52d3d4` (review fixes)
-- Last tested code state: P4b working tree, committed as the P4b commit on `build/v0.1`
+- Observed HEAD before this metadata edit: `956ec4d1541de02fd217e84b84740285223ee5bd` (P4b)
+- Last tested code state: P4b commit `956ec4d1` (this commit changes docs only) on `build/v0.1`
   (look up its SHA with `git log -1`; a file cannot contain its own commit SHA)
 - Remote: push of `build/v0.1` authorised; verify with `git ls-remote origin build/v0.1`
 
 ## Working tree to preserve
-- No untracked or unrelated work besides this slice at the time of the P4b commit.
+- No untracked or unrelated work besides this slice at the time of the final commit.
 - Private planning packet: kept outside the repository in the sibling folder `../ChatterPilot-private/`.
   Never copy it in.
 - Ignored local runtime files: `node_modules/`, `apps/local/dist/` (built UI), `workspaces/` (local data).
@@ -45,7 +45,13 @@
   bot authorisation (OA1 live); public release (P6).
 
 ## Exact next step
-- Release-readiness pass that needs no owner authority: dependency licence inventory (THIRD_PARTY
-  notices / SBOM), history scan for private data, README support matrix check. Stop afterwards:
-  remaining stages need the owner (Codegen recording, provider choice, live bot, real target app,
-  pilots, public release).
+Everything that could be done without new authority is done. Each remaining stage needs Shekib:
+1. **OA0 recording** (about 5 minutes): `fixtures/mock-order-app/recording/README.md`.
+2. **P4 provider**: choose the first BYOK provider/model and the cloud-data policy; then build one
+   adapter behind `@chatterpilot/providers` and test it with synthetic data only.
+3. **OA1 live bot**: authorise a private Telegram test bot (token held outside the repo), operator
+   and chat ids; then add a grammY long-polling source feeding `processUpdate`.
+4. **OA2 real target**: name the app, account, document type and permitted actions.
+5. **P5 pilots** and **P6 release**: see `docs/release-checklist.md`; merging `build/v0.1` into `main`
+   also needs approval.
+- Resume command for any tool: `pnpm install --frozen-lockfile && pnpm check && pnpm test:e2e`
