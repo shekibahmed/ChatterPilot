@@ -50,10 +50,10 @@ export interface FollowupLink {
   readonly basis: string;
 }
 
-// Money context: payments need a money word or a money-like amount, so "40 bags bhej diye" (the
-// shop sending goods) is not a payment.
+// Money context: payments need a money word or a money-like amount, so "40 bags bhej diye" or
+// "maal bhej diya, please check" (the shop sending goods) is not a payment.
 const MONEY =
-  /(?:payment|paid|transfer|paise|paisa|rupees?|rs\.?|₹|upi|g ?pay|phone ?pe|paytm|neft|imps|rtgs|cheque|check|dues|amount|balance|baki|baaki|bill|\d{1,3}(?:,\d{2,3})+|\d{4,}|\d+k\b|रुपये|रुपए|पैसे|पेमेंट|फोनपे|बाकी)/iu;
+  /(?:payment|pay|paid|transfer|paise|paisa|rupees?|rs\.?|₹|inr|upi|g ?pay|phone ?pe|paytm|neft|imps|rtgs|cheque|dues|amount|रुपये|रुपए|पैसे|पेमेंट|फोनपे|\b(?:bill|balance|hisab|hisaab|dues)\b.*\b(?:clear|settle|chuka|pay)\p{L}*)/iu;
 
 const RULES: readonly {
   kind: Exclude<FollowupKind, "resolution">;
@@ -90,6 +90,43 @@ const RESOLUTION =
 // Amounts: "15000", "15,000", "1,50,000", "₹ 2500.50"; a payment needs one written near it.
 const AMOUNT =
   /(?:rs\.?|inr|₹)?\s*(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d{3,}(?:\.\d{1,2})?|\d+(?:\.\d)?k)(?![\d%\p{L}])/iu;
+/**
+ * The first number that reads as money: currency-marked ("Rs 7,500", "₹2500", "18,450 rupees") or
+ * a plain amount that is not a bill/order/plot number, a date, a year, a phone number or a
+ * quantity of goods. Anything else is left unknown rather than guessed.
+ */
+function findAmount(body: string): { text: string; start: number } | null {
+  const re = new RegExp(AMOUNT.source, "giu");
+  for (const m of body.matchAll(re)) {
+    const text = m[1];
+    if (!text) continue;
+    const start = m.index + m[0].indexOf(text);
+    const before = body.slice(Math.max(0, start - 14), start);
+    const after = body.slice(start + text.length, start + text.length + 12);
+    const marked =
+      /(?:rs\.?|inr|₹)\s*$/iu.test(before) || /^\s*(?:rupees?|rs\b|\/-|रुपये|रुपए)/iu.test(after);
+    if (marked) return { text, start };
+    const digits = text.replace(/\D/g, "");
+    if (
+      /(?:bill|invoice|inv|no\.?|number|#|ref|order|plot|flat|site|room|gate|pin|code)\s*[:#.-]?\s*$/iu.test(
+        before,
+      )
+    )
+      continue;
+    if (/^[-/.]\d|^\s*(?:am|pm|baje)\b/iu.test(after) || /\d[-/.]$/.test(before)) continue;
+    if (!text.includes(",") && digits.length >= 8) continue;
+    if (/^(?:19|20)\d{2}$/.test(text)) continue;
+    if (
+      /^\s*(?:bags?|bori|box(?:es)?|kg|kgs|ton|tons|sq\s*ft|sqft|pcs|nos|pieces?|litre|ltr|rolls?|bundles?|sheets?|nag|feet|ft|mm|m)\b/iu.test(
+        after,
+      )
+    )
+      continue;
+    return { text, start };
+  }
+  return null;
+}
+
 const DUE =
   /\b(?:kal|parso|aaj|today|tomorrow|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\s*tarikh|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*)\b/iu;
 
@@ -136,24 +173,21 @@ export function extractFollowups(msg: FollowupMessage): FollowupItem[] {
 
   for (const rule of RULES) {
     const hit = rule.re.exec(body);
-    if (!hit || (rule.needs && !rule.needs.test(body))) continue;
+    if (!hit) continue;
+    const amountHit = rule.needs ? findAmount(body) : null;
+    if (rule.needs && !rule.needs.test(body) && !amountHit) continue;
     if (rule.kind === "payment_promise" || rule.kind === "payment_report") {
-      const amountHit = AMOUNT.exec(body);
       let amount: Field<number> = unknown();
-      if (amountHit?.[1]) {
+      if (amountHit) {
         // "15k" is 15,000.
-        const k = /^(\d+(?:\.\d)?)k$/i.exec(amountHit[1]);
+        const k = /^(\d+(?:\.\d)?)k$/i.exec(amountHit.text);
         const parsed = k
           ? parseAmountToMinor(String(Number(k[1]) * 1000), 2)
-          : parseAmountToMinor(amountHit[1], 2);
-        const at = amountHit.index + amountHit[0].indexOf(amountHit[1]);
+          : parseAmountToMinor(amountHit.text, 2);
+        const evidence = [span(m, amountHit.start, amountHit.start + amountHit.text.length)];
         amount = parsed.ok
-          ? { value: parsed.minor, status: "ok", evidence: [span(m, at, at + amountHit[1].length)] }
-          : {
-              value: null,
-              status: "needs_review",
-              evidence: [span(m, at, at + amountHit[1].length)],
-            };
+          ? { value: parsed.minor, status: "ok", evidence }
+          : { value: null, status: "needs_review", evidence };
       }
       const dueHit = rule.kind === "payment_promise" ? DUE.exec(body) : null;
       add(rule.kind, found(m, hit), { amount, due: dueHit ? found(m, dueHit) : unknown() });

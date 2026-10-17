@@ -458,3 +458,13 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   payments; Devanagari; "15k" amounts). Held-out `fu-b`: exact 14/34 → 30/34, no false positives,
   amounts 2/9 → 8/9. CLI `eval --template followups`; floors in tests.
 - Checks: `pnpm check` exit 0, 451 tests; `pnpm test:e2e` exit 0, 12 passed.
+
+## 2026-10-18 — Overnight run, slice 16: review of the follow-ups code
+- Workflow `wf_3f15d46f-5da` (2 Sonnet reviewers + verifiers): 4 findings, 2 confirmed and fixed with
+  tests: payment amounts read from bill numbers, dates, years and phone numbers (now only
+  currency-marked or plain amounts that are not identifiers, dates or goods quantities); dispatch
+  replies ("maal bhej diya, please check") read as payments (gate now needs a strong money word, a
+  money amount, or bill/balance with a settling verb). 2 rejected as documented design choices
+  (amount-miss metric definition; closing message resolves the person's latest item of any kind).
+- Follow-ups labelled set unchanged: 69/73 exact; held-out 30/34, amounts 8/9.
+- Checks: `pnpm check` exit 0, 462 tests.

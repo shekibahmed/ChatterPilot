@@ -102,3 +102,29 @@ describe("labelled follow-ups set", () => {
     expect(heldOut.amounts).toMatchObject({ right: 8, wrong: 0 });
   });
 });
+
+describe("review fixes (wf_3f15d46f-5da)", () => {
+  const read = (body: string) =>
+    extractFollowups(msg("m", body)).map((i) => [i.kind, i.amount.value]);
+
+  it.each([
+    ["Payment done, bill no 4567", [["payment_report", null]]],
+    ["paid 12-05-2026 bill", [["payment_report", null]]],
+    ["paid 2026", [["payment_report", null]]],
+    ["paid 9876543210", [["payment_report", null]]],
+    ["Payment of Rs 7,500 done via UPI", [["payment_report", 750000]]],
+    ["Sunday ko 20000 bhej dunga pakka", [["payment_promise", 2000000]]],
+  ])("reads only money as an amount: %j", (body, expected) => {
+    expect(read(body)).toEqual(expected);
+  });
+
+  it.each([
+    "50 bags bhej diye bill 12345",
+    "maal bhej diya, please check",
+    "Will send the truck kal, bill ready",
+    "will send 50 bags tomorrow, check stock",
+    "ok kar diya, balance baaki hai",
+  ])("does not read the shop's dispatch messages as payments: %j", (body) => {
+    expect(read(body)).toEqual([]);
+  });
+});
