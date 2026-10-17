@@ -179,7 +179,19 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5))
 
+  apps/local:
+    dependencies:
+      '@chatterpilot/import-whatsapp':
+        specifier: workspace:*
+        version: link:../../packages/import-whatsapp
+
   packages/core: {}
+
+  packages/import-whatsapp:
+    devDependencies:
+      whatsapp-chat-parser:
+        specifier: 4.0.2
+        version: 4.0.2
 
 packages:
 
@@ -747,6 +759,10 @@ packages:
       jsdom:
         optional: true
 
+  whatsapp-chat-parser@4.0.2:
+    resolution: {integrity: sha512-p5msNP4bUrgYjNfwfE7nBkdaG/lRwZjp8YE65CW3F9vxvQg2ZCImIusUHWWKbYxxHd737N/lEfixKPJHZLfSdw==}
+    engines: {node: '>=8.0.0'}
+
   why-is-node-running@3.2.1:
     resolution: {integrity: sha512-Tb2FUhB4vUsGQlfSquQLYkApkuPAFQXGFzxWKHHumVz2dK+X1RUm/HnID4+TfIGYJ1kTcwOaCk/buYCEJr6YjQ==}
     engines: {node: '>=20.11'}
@@ -1109,5 +1125,7 @@ snapshots:
       '@types/node': 26.6.5
     transitivePeerDependencies:
       - msw
+
+  whatsapp-chat-parser@4.0.2: {}
 
   why-is-node-running@3.2.1: {}
