@@ -120,16 +120,47 @@ function patternsFor(lex: CompiledLexicon): Patterns {
 // A comma between digits ("10,000") is a thousands separator, not a break.
 const LOOSE_BREAK = /\s*(?:(?<!\d),|,(?!\d)|;|\+|&|\band\b|\baur\b)\s*/giu;
 
+// Order lines are short. Long runs of blanks and very long stretches of text are cut into pieces
+// first, so a pasted or hostile message cannot make the patterns below take quadratic time.
+const BLANK_RUN = /[^\S\n]{4,}/gu;
+const MAX_CHUNK = 300;
+
+function chunks(line: string): { text: string; start: number }[] {
+  const out: { text: string; start: number }[] = [];
+  let from = 0;
+  const pushPiece = (end: number) => {
+    let start = from;
+    while (end - start > MAX_CHUNK) {
+      const cut = line.lastIndexOf(" ", start + MAX_CHUNK);
+      const at = cut > start ? cut : start + MAX_CHUNK;
+      out.push({ text: line.slice(start, at), start });
+      start = at;
+    }
+    out.push({ text: line.slice(start, end), start });
+  };
+  for (const m of line.matchAll(BLANK_RUN)) {
+    pushPiece(m.index);
+    from = m.index + m[0].length;
+  }
+  pushPiece(line.length);
+  return out;
+}
+
 function segments(body: string, breaks: RegExp): { text: string; start: number }[] {
   const out: { text: string; start: number }[] = [];
   let lineStart = 0;
   for (const line of body.split("\n")) {
-    let segStart = 0;
-    for (const m of line.matchAll(breaks)) {
-      out.push({ text: line.slice(segStart, m.index), start: lineStart + segStart });
-      segStart = m.index + m[0].length;
+    for (const chunk of chunks(line)) {
+      let segStart = 0;
+      for (const m of chunk.text.matchAll(breaks)) {
+        out.push({
+          text: chunk.text.slice(segStart, m.index),
+          start: lineStart + chunk.start + segStart,
+        });
+        segStart = m.index + m[0].length;
+      }
+      out.push({ text: chunk.text.slice(segStart), start: lineStart + chunk.start + segStart });
     }
-    out.push({ text: line.slice(segStart), start: lineStart + segStart });
     lineStart += line.length + 1;
   }
   return out;
@@ -159,7 +190,7 @@ export function extractOrderLines(
     /\p{L}/u.test(text) && lexicon.canonicalUnit(text) === null;
   const lines: ExtractedLine[] = [];
 
-  const extractSegment = (seg: { text: string; start: number }): boolean => {
+  const extractSegment = (seg: { text: string; start: number }, requireUnit = false): boolean => {
     const trimmedStart = seg.text.length - seg.text.trimStart().length;
     const text = seg.text.trim();
     const base = seg.start + trimmedStart;
@@ -172,8 +203,18 @@ export function extractOrderLines(
       product: string,
       productStart: number,
     ) => {
-      const cleaned = cleanProduct(product, productStart);
-      if (!isProductLike(cleaned.text)) return false;
+      let cleaned = cleanProduct(product, productStart);
+      // "5 boxes 1 inch elbow": the product starts with a size, so the unit was read as part of it.
+      const firstWord = /^(\S+)\s+(?=\S)/u.exec(cleaned.text);
+      if (unit === null && firstWord?.[1] && lexicon.canonicalUnit(firstWord[1]) !== null) {
+        unit = firstWord[1];
+        cleaned = {
+          text: cleaned.text.slice(firstWord[0].length),
+          start: cleaned.start + firstWord[0].length,
+          end: cleaned.end,
+        };
+      }
+      if (!isProductLike(cleaned.text) || (requireUnit && unit === null)) return false;
       const end = matchStart + whole.replace(/\s*(?:<[^>]*>)?\s*$/, "").length;
       lines.push({
         span: { start: matchStart, end },
@@ -252,7 +293,24 @@ export function extractOrderLines(
     if (/\d/.test(text)) collect(p.qtyFirst, false);
     collect(p.wordsFirst, true);
     candidates.sort((a, b) => a.index - b.index);
-    for (const c of candidates) if (c.run()) return true;
+    for (const c of candidates) {
+      const before = lines.length;
+      if (!c.run()) continue;
+      // Two items without a separator ("10 bags cement 2 bags rockset"): the earlier one was
+      // skipped above because its product phrase ran into the later quantity. Read the text before
+      // and after this line too, accepting only lines with a unit there (stronger evidence).
+      const line = lines[before];
+      if (line) {
+        const startInText = line.span.start - base;
+        const endInText = line.span.end - base;
+        if (startInText > 0)
+          extractSegment({ text: text.slice(0, startInText), start: base }, true);
+        if (endInText < text.length) {
+          extractSegment({ text: text.slice(endInText), start: base + endInText }, true);
+        }
+      }
+      return true;
+    }
     return false;
   };
 

@@ -280,8 +280,14 @@ function formatQuantity(milli: number): string {
 const CORRECTION =
   /(?<![\p{L}])(?:make (?:it|that|them)|change (?:it |that )?to|actually|sorry|correction|cancel|instead|nahi nahi|nahin nahin|no no|mat bhej\p{L}*|hata do|hatao|galti se)(?![\p{L}])/iu;
 /** A corrected quantity: "make it 45", "sorry 25", "nahi nahi 15 kar do". */
+/**
+ * A corrected quantity: the number right after the correction words, with only small filler
+ * words between ("make it 45", "sorry make it 25", "nahi nahi 15 kar do"). Times, floors, dates and
+ * addresses are not quantities: "make it by 5pm", "sorry 2nd floor", "actually deliver to 12 main
+ * road" leave the original quantity in place (flagged).
+ */
 const CORRECTED_NUMBER =
-  /(?<![\p{L}])(?:make (?:it|that|them)|change (?:it |that )?to|actually|sorry|correction|nahi nahi|nahin nahin|no no)\D{0,20}?(\d+(?:\.\d+)?)/iu;
+  /(?<![\p{L}])(?:make (?:it|that|them)|change (?:it |that )?to|actually|sorry|correction|nahi nahi|nahin nahin|no no)(?:[\s,.!:-]+(?:make it|make that|it|that|to|ok|okay|bhai|ji|sir|wait|nahi))*[\s,.!:-]+(\d+(?:\.\d+)?)(?![\p{L}\p{N}.:/-])(?!\s*(?:am|pm|baje|bje|o'?clock|floor|road|street|st|tarikh|tareekh|date|th|nd|rd)(?![\p{L}]))/iu;
 
 interface Correction {
   readonly hasCorrection: boolean;
@@ -297,6 +303,7 @@ interface Correction {
 function findCorrection(
   body: string,
   extracted: readonly ExtractedLine[],
+  catalogue: Catalogue,
 ): { lines: ExtractedLine[]; correction: Correction } {
   const text = normaliseDigits(body);
   const first = extracted[0];
@@ -305,18 +312,22 @@ function findCorrection(
   const later = [...text.matchAll(re)].filter((m) => m.index >= first.span.end);
   if (later.length === 0)
     return { lines: [...extracted], correction: { hasCorrection: false, quantity: null } };
-  // A line introduced by a correction word on the same text line ("… nahi nahi 15 kar do",
-  // "actually make it 45 bags") restates a quantity; it is the correction, not a new line.
+  // A line introduced by a correction word on the same text line whose "product" is not a
+  // catalogue product ("actually make it 45 bags", "nahi nahi 15 kar do") restates a quantity: it
+  // is the correction, not a new line. A real product after the word ("actually 30 bags sand") is
+  // a new line and is kept (every line is flagged anyway).
   const lines = extracted.filter((l, i) => {
     const previousEnd = extracted[i - 1]?.span.end ?? -1;
+    const introduced = later.some(
+      (m) =>
+        m.index > previousEnd &&
+        m.index <= l.productSpan.start &&
+        !text.slice(m.index, l.span.start).includes("\n"),
+    );
     return (
       i === 0 ||
-      !later.some(
-        (m) =>
-          m.index > previousEnd &&
-          m.index <= l.productSpan.start &&
-          !text.slice(m.index, l.span.start).includes("\n"),
-      )
+      !introduced ||
+      matchRecord(l.productText, catalogue.products, productKeys).status !== "unresolved"
     );
   });
   const startAt = later[0]?.index ?? first.span.end;
@@ -343,6 +354,7 @@ export function suggestsOrder(body: string, catalogue: Catalogue): boolean {
   const { lines } = findCorrection(
     body,
     extractOrderLines(body, compileLexicon(catalogue.lexicon)),
+    catalogue,
   );
   return lines.some((l) => {
     const status = matchRecord(l.productText, catalogue.products, productKeys).status;
@@ -763,6 +775,7 @@ export function buildOrderDraft(
     const { lines: extractedLines, correction } = findCorrection(
       msg.body,
       extractOrderLines(msg.body, compileLexicon(catalogue.lexicon)),
+      catalogue,
     );
     for (const extracted of extractedLines) {
       const index = lines.length;

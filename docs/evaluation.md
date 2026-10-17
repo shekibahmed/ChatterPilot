@@ -89,6 +89,7 @@ case by case. When it has to be used for tuning, a new held-out set must be writ
 |---|---|---|---|---|---|
 | before round 1 (`f279e20`) | 67.4% | 81.6% | 9 | 5 | 29/42 |
 | after round 1 (`1da9bcb`) | 72.8% | 87.0% | 2 | 8 | 34/42 |
+| after code-review fixes (no held-out tuning) | 75.0% | 87.3% | 2 | 8 | 34/42 |
 
 By language after round 1: English 59.4% recall / 79.2% precision, Hinglish 81.1% / 89.6%,
 Devanagari 71.4% / 100% (7 lines only). Round 1 moved the held-out numbers in the same direction

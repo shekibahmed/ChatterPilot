@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
@@ -435,10 +435,19 @@ const commands: Record<string, Command> = {
     if (values.json) return emit(out, 0);
     for (const w of out.warnings) console.error(`Note: ${w}`);
     if (values.output) {
-      const many = out.files.length > 1;
-      if (many) mkdirSync(values.output, { recursive: true });
+      // A folder when several files are written, when it already is a folder, or ends with "/".
+      const existing = existsSync(values.output) ? statSync(values.output) : null;
+      const folder =
+        out.files.length > 1 || existing?.isDirectory() === true || /[/\\]$/.test(values.output);
+      if (folder && existing && !existing.isDirectory()) {
+        throw new OpError(
+          "bad_output",
+          `${values.output} is a file, but this export writes ${out.files.length} files; give a folder.`,
+        );
+      }
+      if (folder) mkdirSync(values.output, { recursive: true });
       for (const f of out.files) {
-        const path = many ? join(values.output, f.fileName) : values.output;
+        const path = folder ? join(values.output, f.fileName) : values.output;
         writeFileSync(path, f.content);
         console.error(`Wrote ${path}`);
       }

@@ -359,12 +359,45 @@ export interface ExportOutput {
 /** Read an export map: the explicit file, else export-map.json in the workspace folder. */
 function readExportMap(ws: Workspace, mapPath?: string): ExportMap | undefined {
   const path = mapPath ?? join(ws.dir, "export-map.json");
-  if (!existsSync(path)) return undefined;
+  if (!existsSync(path)) {
+    if (mapPath) throw new OpError("bad_map", `${path} does not exist.`);
+    return undefined;
+  }
+  let value: unknown;
   try {
-    return JSON.parse(readFileSync(path, "utf8")) as ExportMap;
+    value = JSON.parse(readFileSync(path, "utf8"));
   } catch {
     throw new OpError("bad_map", `${path} is not valid JSON.`);
   }
+  const problems = exportMapProblems(value);
+  if (problems.length > 0) throw new OpError("bad_map", `${path}: ${problems.join(" ")}`);
+  return value as ExportMap;
+}
+
+/** Shape check for export-map.json: every name must be text. */
+export function exportMapProblems(value: unknown): string[] {
+  const isObject = (v: unknown): v is Record<string, unknown> =>
+    typeof v === "object" && v !== null && !Array.isArray(v);
+  if (!isObject(value)) return ["It must be a JSON object."];
+  const problems: string[] = [];
+  for (const key of ["customers", "products", "units"] as const) {
+    const table = value[key];
+    if (table === undefined) continue;
+    if (!isObject(table)) {
+      problems.push(`"${key}" must map ids to names.`);
+      continue;
+    }
+    for (const [id, name] of Object.entries(table)) {
+      if (typeof name !== "string" || name.trim() === "")
+        problems.push(`"${key}.${id}" must be a non-empty name.`);
+    }
+  }
+  for (const key of ["seller", "tallyCompany", "tallyVoucherType", "erpnextSeries"] as const) {
+    const v = value[key];
+    if (v !== undefined && (typeof v !== "string" || v.trim() === ""))
+      problems.push(`"${key}" must be a non-empty name.`);
+  }
+  return problems;
 }
 
 /**

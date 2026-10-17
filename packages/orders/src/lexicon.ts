@@ -222,11 +222,13 @@ export function validateLexicon(value: unknown): {
   for (const key of ["numbers", "modifiers", "scales"] as const) {
     const table = v[key];
     if (table === undefined) continue;
-    if (typeof table !== "object" || table === null) {
+    if (typeof table !== "object" || table === null || Array.isArray(table)) {
       problems.push(`"${key}" must map words to numbers.`);
       continue;
     }
     for (const [word, n] of Object.entries(table)) {
+      if (!/\p{L}/u.test(word) || word.trim().split(/\s+/).length > 1)
+        problems.push(`"${key}" word "${word}" must be a single word with letters.`);
       if (typeof n !== "number" || !Number.isFinite(n))
         problems.push(`"${key}.${word}" must be a number.`);
     }
@@ -283,7 +285,19 @@ export function compileLexicon(lexicon: Lexicon): CompiledLexicon {
       .map((s) => escapeRegExp(s).replace(/\\\./g, "\\.?").replace(/ /g, "\\s*"))
       .join("|");
   const spellings = [...lookup.keys()];
-  const words = (o: Readonly<Record<string, number>>) => toAlt(Object.keys(o).map(normaliseWord));
+  const words = (o: Readonly<Record<string, number>>) =>
+    toAlt(
+      Object.keys(o)
+        .map(normaliseWord)
+        .filter((w) => w.length > 0),
+    );
+  // Lookups use the same normalised spelling as the patterns, so "Satais" in lexicon.json matches
+  // "satais" in a chat, and words like "constructor" never hit object prototype keys.
+  const table = (o: Readonly<Record<string, number>>) =>
+    new Map(Object.entries(o).map(([k, v]) => [normaliseWord(k), v] as const));
+  const numbers = table(lexicon.numbers);
+  const modifiers = table(lexicon.modifiers);
+  const scales = table(lexicon.scales);
   const numberAlt = words(lexicon.numbers);
   const modifierAlt = words(lexicon.modifiers);
   const scaleAlt = words(lexicon.scales);
@@ -302,12 +316,12 @@ export function compileLexicon(lexicon: Lexicon): CompiledLexicon {
     wordsToNumber(text) {
       const parts = normaliseWord(text).split(" ");
       let modifier = 0;
-      if (parts.length > 1 && parts[0] !== undefined && parts[0] in lexicon.modifiers) {
-        modifier = lexicon.modifiers[parts.shift() as string] ?? 0;
+      if (parts.length > 1 && parts[0] !== undefined && modifiers.has(parts[0])) {
+        modifier = modifiers.get(parts.shift() as string) ?? 0;
       }
-      const base = parts[0] !== undefined ? lexicon.numbers[parts[0]] : undefined;
+      const base = parts[0] !== undefined ? numbers.get(parts[0]) : undefined;
       if (base === undefined) return null;
-      const scale = parts[1] !== undefined ? lexicon.scales[parts[1]] : 1;
+      const scale = parts[1] !== undefined ? scales.get(parts[1]) : 1;
       if (scale === undefined || parts.length > 2) return null;
       const value = (base + modifier) * scale;
       return value > 0 ? value : null;

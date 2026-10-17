@@ -3,7 +3,7 @@ import { loadCatalogue } from "./catalogue.ts";
 import { buildOrderDraft, type SourceMessage } from "./draft.ts";
 import { looksLikeNonOrder } from "./extract.ts";
 import { syntheticCatalogue } from "./fixtures.ts";
-import { compileLexicon } from "./lexicon.ts";
+import { compileLexicon, DEFAULT_LEXICON, mergeLexicon, validateLexicon } from "./lexicon.ts";
 
 // Synthetic catalogue with generic (non-brand) products sold by Indian distributors.
 const PRODUCTS = `product_id,name,aliases,unit,alt_units,price,currency,price_effective_from,price_confirmed_on,tax_rate_percent
@@ -283,5 +283,73 @@ describe("corrections, partial matches and lists", () => {
       ["TIL-22I", 64000],
     ]);
     expect(draft("tmt 8 mm 200 kg").lines[0]?.product.value?.productId).toBe("TMT-08");
+  });
+});
+
+describe("review fixes (wf_4a70377a-3e7)", () => {
+  const cat = syntheticCatalogue();
+  const lines = (body: string) =>
+    buildOrderDraft(
+      [
+        {
+          id: "m",
+          startLine: 1,
+          endLine: 1,
+          timestampText: "x",
+          localDateTime: "2026-01-12T10:00:00",
+          body,
+        },
+      ],
+      cat,
+    ).lines.map((l) => [
+      l.product.value?.productId ?? null,
+      l.quantity.value?.milli ?? null,
+      l.unit.value,
+    ]);
+
+  it("stays fast on long blank runs and long text", async () => {
+    const { extractOrderLines } = await import("./extract.ts");
+    for (const s of [
+      `5 bags${" ".repeat(20000)}x`,
+      `x 5 bags a${" ".repeat(20000)}b`,
+      "5 a ".repeat(5000),
+    ]) {
+      const t0 = performance.now();
+      extractOrderLines(s);
+      expect(performance.now() - t0).toBeLessThan(1000);
+    }
+  });
+
+  it("reads a unit written before a product that starts with a size", () => {
+    expect(lines("5 boxes 1 inch elbow")).toEqual([["PVC-E1", 5000, "box"]]);
+    expect(lines("20 kg 8 mm rod")).toEqual([["TMT-08", 20000, "kg"]]);
+  });
+
+  it("keeps both items when two lines share a segment without a separator", () => {
+    expect(lines("10 bags cement 2 bags rockset")).toEqual([
+      ["CEM-UB50", 10000, "bag"],
+      ["CEM-RS50", 2000, "bag"],
+    ]);
+  });
+
+  it.each([
+    "40 bags cement, make it by 5pm",
+    "40 bags cement, sorry 2nd floor",
+    "40 bags cement, actually deliver to 12 main road",
+    "40 bags cement. no no wait 3rd floor",
+  ])("never takes a time, floor or address as the corrected quantity: %j", (body) => {
+    expect(lines(body)).toEqual([["CEM-UB50", 40000, "bag"]]);
+  });
+
+  it("keeps a new item that follows a correction word", () => {
+    expect(lines("20 elbow\nactually 30 bags sand").map((l) => l[0])).toEqual(["PVC-E1", "SND-RV"]);
+  });
+
+  it("matches lexicon.json number words in any case and rejects blank keys", () => {
+    const words = compileLexicon(mergeLexicon(DEFAULT_LEXICON, { numbers: { Satais: 27 } }));
+    expect(words.wordsToNumber("satais")).toBe(27);
+    expect(words.wordsToNumber("constructor")).toBeNull();
+    expect(validateLexicon({ numbers: { "": 3 } }).problems).not.toEqual([]);
+    expect(validateLexicon({ numbers: [1, 2] }).problems).not.toEqual([]);
   });
 });

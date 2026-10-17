@@ -431,3 +431,15 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Fix: the connector waits up to 5 s for expected headings/options before deciding they are absent.
   New MockBooks fault `--slow-master` (lists arrive after 1.5 s) and an e2e test: without the fix it
   fails with exactly the CI error; with it, `pnpm test:e2e` exit 0, 11 passed.
+
+## 2026-10-17 — Overnight run, slice 13: multi-agent review fixes
+- Workflow `wf_4a70377a-3e7` (4 Sonnet reviewers by area + 4 adversarial verifiers): 9 findings,
+  8 confirmed by reproduction, 1 rejected (evaluation "flagged" definition: design choice, kept).
+- Fixed, each with a regression test: superlinear regex time on long blank runs (now chunked; 20k
+  hostile chars < 25 ms, was > 120 s); unit before a size-led product ("5 boxes 1 inch elbow" was
+  silently 5 pieces); second item in an unseparated segment dropped; corrections taking times,
+  floors or addresses as quantities; new items after a correction word dropped; lexicon number
+  words case-sensitive / blank keys accepted; malformed export-map.json crashing (now `bad_map`;
+  a missing `--map` file is an error); `export --output` file/folder ambiguity.
+- Held-out set (scored, not tuned on): recall 72.8% → 75.0%, precision 87.0% → 87.3%.
+- Checks: `pnpm check` exit 0, 435 tests; `pnpm test:e2e` exit 0, 11 passed.

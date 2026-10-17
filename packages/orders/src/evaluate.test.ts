@@ -89,8 +89,8 @@ describe("synthetic evaluation set (held-out split)", () => {
 
   it("has valid labels and does not regress", () => {
     expect(problems).toEqual([]);
-    expect(overall.recall ?? 0).toBeGreaterThanOrEqual(0.727);
-    expect(overall.precision ?? 0).toBeGreaterThanOrEqual(0.869);
+    expect(overall.recall ?? 0).toBeGreaterThanOrEqual(0.749);
+    expect(overall.precision ?? 0).toBeGreaterThanOrEqual(0.872);
     expect(overall.silentErrors).toBeLessThanOrEqual(2);
   });
 });

@@ -374,3 +374,15 @@ describe("export targets API", () => {
     expect(unknown.status).toBe(400);
   });
 });
+
+describe("export-map.json validation", () => {
+  it("rejects names that are not text", async () => {
+    const { exportMapProblems } = await import("./ops.ts");
+    expect(exportMapProblems({ customers: { KB: 5 } })).toEqual([
+      '"customers.KB" must be a non-empty name.',
+    ]);
+    expect(exportMapProblems({ seller: ["a"] })).toEqual(['"seller" must be a non-empty name.']);
+    expect(exportMapProblems([])).toEqual(["It must be a JSON object."]);
+    expect(exportMapProblems({ units: { bag: "Bag" }, seller: "S" })).toEqual([]);
+  });
+});
