@@ -74,3 +74,22 @@ describe("synthetic evaluation set (development split)", () => {
     expect(overall.nonOrderDetection.rejected).toBe(overall.nonOrderDetection.nonOrders);
   });
 });
+
+describe("synthetic evaluation set (held-out split)", () => {
+  // Scored, never tuned on (docs/evaluation.md). A floor guards against regressions only.
+  const raw = JSON.parse(
+    readFileSync(
+      new URL("../../../fixtures/eval/order-messages.heldout.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const { cases, problems } = validateEvalCases(raw, catalogue);
+  const { overall } = evaluate(cases, catalogue);
+
+  it("has valid labels and does not regress", () => {
+    expect(problems).toEqual([]);
+    expect(overall.recall ?? 0).toBeGreaterThanOrEqual(0.727);
+    expect(overall.precision ?? 0).toBeGreaterThanOrEqual(0.869);
+    expect(overall.silentErrors).toBeLessThanOrEqual(2);
+  });
+});

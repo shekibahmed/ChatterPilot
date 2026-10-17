@@ -1,0 +1,1545 @@
+[
+  {
+    "id": "ho-en-001",
+    "lang": "en",
+    "tags": ["site-number", "filler"],
+    "text": "Need 40 bags ultrabond cement at site 3 tomorrow morning",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 40
+      }
+    ]
+  },
+  {
+    "id": "ho-en-002",
+    "lang": "en",
+    "tags": ["polite-question", "filler"],
+    "text": "Sir can u send 25 bags rockset cement by 5 pm today",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 25
+      }
+    ]
+  },
+  {
+    "id": "ho-en-003",
+    "lang": "en",
+    "tags": ["all-caps", "multi-line", "site-number"],
+    "text": "KUMAR BUILDERS SITE 2\n20 BAGS ULTRABOND\n2 TON RIVER SAND",
+    "kind": "order",
+    "customer": "KB-01",
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 20
+      },
+      {
+        "product": "SND-RV",
+        "baseQuantity": 2
+      }
+    ]
+  },
+  {
+    "id": "ho-en-004",
+    "lang": "en",
+    "tags": ["numbered-list", "multi-line", "alt-unit", "dozen"],
+    "text": "1) 8mm rod 2 bundles\n2) elbow 1 inch 2 dozen\n3) ub cement 15 bags",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 94.8
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 24
+      },
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 15
+      }
+    ]
+  },
+  {
+    "id": "ho-en-005",
+    "lang": "en",
+    "tags": ["alt-unit", "compound-qty"],
+    "text": "tmt 8mm 1 bundle + 10 kg",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 57.4
+      }
+    ]
+  },
+  {
+    "id": "ho-en-006",
+    "lang": "en",
+    "tags": ["alt-unit", "site-number"],
+    "text": "white tiles 6 box flat 204 bathroom",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 96
+      }
+    ]
+  },
+  {
+    "id": "ho-en-007",
+    "lang": "en",
+    "tags": ["ambiguous-product", "alt-unit"],
+    "text": "2x2 tiles 5 box pls",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "AMBIGUOUS",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-en-008",
+    "lang": "en",
+    "tags": ["no-space-after-comma", "two-items-one-line", "pcs"],
+    "text": "pvc pipe 1 inch 12 rolls,elbow 40 pcs",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-P1",
+        "baseQuantity": 12
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 40
+      }
+    ]
+  },
+  {
+    "id": "ho-en-009",
+    "lang": "en",
+    "tags": ["site-number"],
+    "text": "wall paint white 20 litre site 7",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 20
+      }
+    ]
+  },
+  {
+    "id": "ho-en-010",
+    "lang": "en",
+    "tags": [
+      "voice-to-text",
+      "words-qty",
+      "alt-unit",
+      "plot-number",
+      "multi-item",
+      "customer-name"
+    ],
+    "text": "hello bhaiya this is shah interiors please send two bags ultrabond cement and ten litre white emulsion and also one box elbow to plot number 14 by evening",
+    "kind": "order",
+    "customer": "SI-01",
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 2
+      },
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 10
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 50
+      }
+    ]
+  },
+  {
+    "id": "ho-en-012",
+    "lang": "en",
+    "tags": ["unknown-product", "multi-item", "two-items-one-line"],
+    "text": "wall putty 10 bags and 2 bags ub cement",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      },
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 2
+      }
+    ]
+  },
+  {
+    "id": "ho-en-013",
+    "lang": "en",
+    "tags": ["unknown-product"],
+    "text": "tile adhesive 8 bags urgent",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-en-015",
+    "lang": "en",
+    "tags": ["unknown-product", "two-items-one-line", "no-space"],
+    "text": "binding wire 5kg and 8mm tmt 100kg",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      },
+      {
+        "product": "TMT-08",
+        "baseQuantity": 100
+      }
+    ]
+  },
+  {
+    "id": "ho-en-016",
+    "lang": "en",
+    "tags": ["sqft"],
+    "text": "ivory tiles 120 sqft",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 120
+      }
+    ]
+  },
+  {
+    "id": "ho-en-017",
+    "lang": "en",
+    "tags": ["multi-line", "alt-unit"],
+    "text": "ivory tiles 3 boxes\nwhite tiles 2 boxes",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 48
+      },
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 32
+      }
+    ]
+  },
+  {
+    "id": "ho-en-018",
+    "lang": "en",
+    "tags": ["dozen", "decimal-qty", "site-number"],
+    "text": "Send 1.5 dozen elbows to flat 302",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 18
+      }
+    ]
+  },
+  {
+    "id": "ho-en-019",
+    "lang": "en",
+    "tags": ["nos", "two-items-one-line"],
+    "text": "sand 3 ton and rockset 40 nos",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": 3
+      },
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 40
+      }
+    ]
+  },
+  {
+    "id": "ho-en-020",
+    "lang": "en",
+    "tags": ["alt-unit", "customer-name", "no-space-after-comma"],
+    "text": "kumar traders - ub cement 10 bags,8mm tmt 3 bundles",
+    "kind": "order",
+    "customer": "KT-01",
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 10
+      },
+      {
+        "product": "TMT-08",
+        "baseQuantity": 142.2
+      }
+    ]
+  },
+  {
+    "id": "ho-en-021",
+    "lang": "en",
+    "tags": ["unknown-product", "pcs", "multi-item"],
+    "text": "Need grout 2 kg and 4 pcs elbow",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 4
+      }
+    ]
+  },
+  {
+    "id": "ho-en-022",
+    "lang": "en",
+    "tags": ["no-quantity"],
+    "text": "pvc pipe 1 inch urgent pls",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-P1",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-en-023",
+    "lang": "en",
+    "tags": ["plot-number", "filler"],
+    "text": "ub cement 100 bags, slab tomorrow plot 22, 2 trucks",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 100
+      }
+    ]
+  },
+  {
+    "id": "ho-en-024",
+    "lang": "en",
+    "tags": ["customer-name", "alt-unit", "multi-item"],
+    "text": "shah interior needs 2x2 white tiles 10 box and white emulsion 40 litre",
+    "kind": "order",
+    "customer": "SI-01",
+    "lines": [
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 160
+      },
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 40
+      }
+    ]
+  },
+  {
+    "id": "ho-en-025",
+    "lang": "en",
+    "tags": ["correction", "multi-sentence"],
+    "text": "send 20 bags ultrabond. sorry make it 25",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 25
+      }
+    ]
+  },
+  {
+    "id": "ho-en-026",
+    "lang": "en",
+    "tags": ["delivery-time", "filler"],
+    "text": "8mm rod 250 kg tomorrow 9am gate no 2",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 250
+      }
+    ]
+  },
+  {
+    "id": "ho-en-027",
+    "lang": "en",
+    "tags": ["price-question"],
+    "text": "what is the rate of rockset today?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-028",
+    "lang": "en",
+    "tags": ["quotation", "price-question"],
+    "text": "Please give quotation for 200 bags ultrabond cement delivered to site",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-029",
+    "lang": "en",
+    "tags": ["payment"],
+    "text": "payment done 25000 by gpay, ref no 4471, pls check",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-030",
+    "lang": "en",
+    "tags": ["delivery-update"],
+    "text": "material received ok. all bags counted",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-031",
+    "lang": "en",
+    "tags": ["thank-you"],
+    "text": "Thanks sir, delivery was on time",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-032",
+    "lang": "en",
+    "tags": ["greeting"],
+    "text": "Good morning sir",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-033",
+    "lang": "en",
+    "tags": ["complaint"],
+    "text": "3 boxes white tiles came broken. driver has seen. kindly look into it",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-034",
+    "lang": "en",
+    "tags": ["follow-up", "pending-delivery"],
+    "text": "where is my tmt delivery? ordered yesterday evening",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-035",
+    "lang": "en",
+    "tags": ["address", "location"],
+    "text": "site location: near water tank, sector 9. will drop pin",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-036",
+    "lang": "en",
+    "tags": ["stock-question"],
+    "text": "is ivory tile in stock?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-037",
+    "lang": "en",
+    "tags": ["past-order", "invoice"],
+    "text": "pls send copy of invoice for last week's 40 bags cement",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-038",
+    "lang": "en",
+    "tags": ["quotation", "price-question"],
+    "text": "can u give quote for 500 sqft white tiles?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-039",
+    "lang": "en",
+    "tags": ["payment", "customer-name"],
+    "text": "Kumar sir will pay by cheque tomorrow",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-en-040",
+    "lang": "en",
+    "tags": ["delivery-update"],
+    "text": "truck reaching site in 20 min, keep someone at gate",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-001",
+    "lang": "hinglish",
+    "tags": ["hindi-unit", "cement"],
+    "text": "bhai 20 bori ultrabond cement kal subah bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 20
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-002",
+    "lang": "hinglish",
+    "tags": ["site-number", "customer-alias"],
+    "text": "Kumar builders site 2 pe 15 bag rockset bhijwa do jaldi",
+    "kind": "order",
+    "customer": "KB-01",
+    "lines": [
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 15
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-003",
+    "lang": "hinglish",
+    "tags": ["words-qty", "question-order"],
+    "text": "dhai ton river sand chahiye kal, bhej doge kya?",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": 2.5
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-004",
+    "lang": "hinglish",
+    "tags": ["words-qty", "question-order"],
+    "text": "sawa sau kilo tmt 8mm bhijwa sakte ho?",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 125
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-005",
+    "lang": "hinglish",
+    "tags": ["dozen", "words-qty", "alt-unit"],
+    "text": "do darjan elbow bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 24
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-006",
+    "lang": "hinglish",
+    "tags": ["alt-unit", "words-qty"],
+    "text": "aadha box ivory tiles chahie",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 8
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-007",
+    "lang": "hinglish",
+    "tags": ["multi-line", "alt-unit", "customer-alias"],
+    "text": "shah interior ko 3 box white tiles\n2 box ivory tiles\nbhijwa do kal",
+    "kind": "order",
+    "customer": "SI-01",
+    "lines": [
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 48
+      },
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 32
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-008",
+    "lang": "hinglish",
+    "tags": ["ambiguous-product", "alt-unit"],
+    "text": "2x2 tiles 5 box chaiye",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "AMBIGUOUS",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-009",
+    "lang": "hinglish",
+    "tags": ["two-items-one-line", "alt-unit"],
+    "text": "ek bundle saria 8mm aur 10 bag cement bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 47.4
+      },
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 10
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-010",
+    "lang": "hinglish",
+    "tags": ["two-items-one-line", "alt-unit"],
+    "text": "pvc pipe 1 inch 6 roll aur elbow 1 box chahiye",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-P1",
+        "baseQuantity": 6
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 50
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-011",
+    "lang": "hinglish",
+    "tags": ["litre"],
+    "text": "10 litre white emulsion bhej do kal subah",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 10
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-012",
+    "lang": "hinglish",
+    "tags": ["ambiguous-customer", "cement"],
+    "text": "kumar ko 10 bori cement bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 10
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-013",
+    "lang": "hinglish",
+    "tags": ["words-qty"],
+    "text": "do ton sand jaldi bhijwao",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": 2
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-014",
+    "lang": "hinglish",
+    "tags": ["alias", "urgent"],
+    "text": "bhai 8mm rod 200 kg chahiye aaj hi",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 200
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-015",
+    "lang": "hinglish",
+    "tags": ["words-qty"],
+    "text": "paune do ton river sand bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": 1.75
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-016",
+    "lang": "hinglish",
+    "tags": ["words-qty", "alt-unit", "dozen", "two-items-one-line"],
+    "text": "dedh box white tile aur ek darjan elbow chahiye",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 24
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 12
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-017",
+    "lang": "hinglish",
+    "tags": ["customer-named"],
+    "text": "Kumar Traders ke liye 25 bag rockset kal bhejna",
+    "kind": "order",
+    "customer": "KT-01",
+    "lines": [
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 25
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-018",
+    "lang": "hinglish",
+    "tags": ["unknown-product"],
+    "text": "sariya 12mm 100 kg bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-019",
+    "lang": "hinglish",
+    "tags": ["multi-line", "site-number", "customer-alias"],
+    "text": "kb site pe\nrockset cement 30 bori\nultrabond 20 bori\nkal subah tak",
+    "kind": "order",
+    "customer": "KB-01",
+    "lines": [
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 30
+      },
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 20
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-020",
+    "lang": "hinglish",
+    "tags": ["question-order", "words-qty"],
+    "text": "paanch bori ultrabond bhej sakte ho kya kal tak?",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 5
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-021",
+    "lang": "hinglish",
+    "tags": ["litre"],
+    "text": "wall paint white 20 litre bhij wa do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 20
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-022",
+    "lang": "hinglish",
+    "tags": ["multi-line"],
+    "text": "1 roll pipe 1 inch\n4 elbow\nbhijwa do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-P1",
+        "baseQuantity": 1
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 4
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-023",
+    "lang": "hinglish",
+    "tags": ["no-quantity"],
+    "text": "cement chahiye bhai",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-024",
+    "lang": "hinglish",
+    "tags": ["words-qty"],
+    "text": "tmt 8mm dhai sau kilo bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 250
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-025",
+    "lang": "hinglish",
+    "tags": ["two-items-one-line", "alt-unit", "customer-alias"],
+    "text": "shah interiors: 3 box ivory tile aur 1 bori ub cement chahiye kal",
+    "kind": "order",
+    "customer": "SI-01",
+    "lines": [
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 48
+      },
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 1
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-026",
+    "lang": "hinglish",
+    "tags": ["unknown-product"],
+    "text": "marble 100 sqft chahiye, bhej doge?",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-hi-027",
+    "lang": "hinglish",
+    "tags": ["price-question"],
+    "text": "ultrabond cement ka bhav kya hai aaj?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-028",
+    "lang": "hinglish",
+    "tags": ["price-question"],
+    "text": "rockset ka rate batao bhaiya",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-029",
+    "lang": "hinglish",
+    "tags": ["stock-enquiry"],
+    "text": "white tiles hai kya stock me?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-030",
+    "lang": "hinglish",
+    "tags": ["payment", "customer-named"],
+    "text": "Shah Interiors ka 18000 ka payment kar diya hai, check kar lo",
+    "kind": "non_order",
+    "customer": "SI-01",
+    "lines": []
+  },
+  {
+    "id": "ho-hi-031",
+    "lang": "hinglish",
+    "tags": ["complaint", "delivery-update", "customer-named", "past-order"],
+    "text": "kumar builders site 2: kal 10 bori bheji thi, 2 phati hui aayi",
+    "kind": "non_order",
+    "customer": "KB-01",
+    "lines": []
+  },
+  {
+    "id": "ho-hi-032",
+    "lang": "hinglish",
+    "tags": ["reminder", "delivery-update"],
+    "text": "mera maal abhi tak nahi aaya, kab tak aayega?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-033",
+    "lang": "hinglish",
+    "tags": ["greeting", "filler"],
+    "text": "good morning bhaiya",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-034",
+    "lang": "hinglish",
+    "tags": ["price-question"],
+    "text": "river sand ka rate kya chal raha hai ab?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-035",
+    "lang": "hinglish",
+    "tags": ["delivery-update", "filler"],
+    "text": "gaadi pahunch gayi, maal utar gaya. thanks",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-036",
+    "lang": "hinglish",
+    "tags": ["stock-enquiry"],
+    "text": "tmt 8mm hai kya abhi?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-037",
+    "lang": "hinglish",
+    "tags": ["filler", "greeting"],
+    "text": "Diwali ki bahut bahut shubhkamnayein sabko",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-038",
+    "lang": "hinglish",
+    "tags": ["payment"],
+    "text": "upi se 5200 bhej diye, screenshot dekh lena",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-039",
+    "lang": "hinglish",
+    "tags": ["complaint", "delivery-update", "past-order"],
+    "text": "kal wale order me 3 bag kam aaye, 50 ki jagah 47 utre",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-hi-040",
+    "lang": "hinglish",
+    "tags": ["price-question"],
+    "text": "emulsion ka 20 litre ka rate kya hai? pehle bata do phir order karenge",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-001",
+    "lang": "devanagari",
+    "tags": ["devanagari-digits", "words-qty"],
+    "text": "३ टन रेत",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": 3
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-002",
+    "lang": "devanagari",
+    "tags": ["words-qty", "devanagari-only"],
+    "text": "पचास बोरी सीमेंट भेजो",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 50
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-003",
+    "lang": "devanagari",
+    "tags": ["devanagari-digits", "typo"],
+    "text": "Shah Interiors ko ८mm tmt ४०० kg bhejna",
+    "kind": "order",
+    "customer": "SI-01",
+    "lines": [
+      {
+        "product": "TMT-08",
+        "baseQuantity": 400
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-004",
+    "lang": "hinglish",
+    "tags": ["multi-line", "alt-unit", "dozen", "site-number", "filler"],
+    "text": "Kumar Builders site 2\nultrabond 40 bag\ntiles 2x2 white 5 box\nelbow 2 dozen\nbas itna",
+    "kind": "order",
+    "customer": "KB-01",
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 40
+      },
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 80
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 24
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-005",
+    "lang": "hinglish",
+    "tags": ["correction"],
+    "text": "ub cement 30 bag bhej dena nahi 30 nahi 35 bag",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 35
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-006",
+    "lang": "hinglish",
+    "tags": ["multi-line", "cancellation", "alt-unit"],
+    "text": "rockset 20 bag\nwhite tiles 3 box\nwhite tiles wala cancel, sirf cement",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 20
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-007",
+    "lang": "hinglish",
+    "tags": ["ambiguous-product", "alt-unit"],
+    "text": "2x2 tiles 4 box chahiye",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "AMBIGUOUS",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-008",
+    "lang": "hinglish",
+    "tags": ["unknown-product"],
+    "text": "binding wire 5 kg bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "UNKNOWN",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-009",
+    "lang": "devanagari",
+    "tags": ["devanagari-digits", "two-items-one-line", "dozen", "words-qty"],
+    "text": "पाँच रोल pvc pipe 1 inch और २ dozen elbow",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-P1",
+        "baseQuantity": 5
+      },
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 24
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-010",
+    "lang": "hinglish",
+    "tags": ["ambiguous-customer"],
+    "text": "Kumar ko 10 bag cement bhej dena",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 10
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-011",
+    "lang": "hinglish",
+    "tags": ["time", "phone-like"],
+    "text": "kal subah 9 baje tak 25 bag rockset cement bhej do, site pe call karna 98XXXXXX12",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 25
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-012",
+    "lang": "hinglish",
+    "tags": ["bill-number"],
+    "text": "bill no 4471 ke saath 12 litre white emulsion bhi bhej dena",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 12
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-013",
+    "lang": "hinglish",
+    "tags": ["alt-unit", "two-items-one-line"],
+    "text": "emulsion 20 litre aur ivory tiles 10 box",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 20
+      },
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 160
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-014",
+    "lang": "hinglish",
+    "tags": ["words-qty", "two-items-one-line"],
+    "text": "do bag ultrabond, teen bag rockset",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 2
+      },
+      {
+        "product": "CEM-RS50",
+        "baseQuantity": 3
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-015",
+    "lang": "hinglish",
+    "tags": ["dozen", "words-qty"],
+    "text": "dedh dozen elbow bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 18
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-016",
+    "lang": "hinglish",
+    "tags": ["alt-unit", "two-items-one-line"],
+    "text": "1 box elbow aur 1 roll pvc pipe 1in",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PVC-E1",
+        "baseQuantity": 50
+      },
+      {
+        "product": "PVC-P1",
+        "baseQuantity": 1
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-017",
+    "lang": "devanagari",
+    "tags": ["devanagari-only", "devanagari-digits"],
+    "text": "शाह इंटीरियर साइट पर ६ बोरी सीमेंट",
+    "kind": "order",
+    "customer": "SI-01",
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 6
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-018",
+    "lang": "hinglish",
+    "tags": ["no-quantity"],
+    "text": "ultrabond cement bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-019",
+    "lang": "hinglish",
+    "tags": ["multi-line", "alt-unit", "filler"],
+    "text": "white emulsion 15 ltr\n2 box white tiles\naur kuch nahi",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "PNT-WE20",
+        "baseQuantity": 15
+      },
+      {
+        "product": "TIL-22W",
+        "baseQuantity": 32
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-020",
+    "lang": "hinglish",
+    "tags": ["site-number", "filler"],
+    "text": "kb site pe 60 bag cement aaj, baaki kal",
+    "kind": "order",
+    "customer": "KB-01",
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 60
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-021",
+    "lang": "hinglish",
+    "tags": ["money", "no-quantity"],
+    "text": "5000 ka sand bhej do",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": null
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-022",
+    "lang": "hinglish",
+    "tags": ["date"],
+    "text": "15 tarikh ko 2 ton sand chahiye",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "SND-RV",
+        "baseQuantity": 2
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-023",
+    "lang": "hinglish",
+    "tags": ["typo"],
+    "text": "cemnt ultrabnd 20 bag",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "CEM-UB50",
+        "baseQuantity": 20
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-025",
+    "lang": "devanagari",
+    "tags": ["devanagari-digits"],
+    "text": "Kumar Traders ko ८ roll pvc pipe 1 inch bhejo",
+    "kind": "order",
+    "customer": "KT-01",
+    "lines": [
+      {
+        "product": "PVC-P1",
+        "baseQuantity": 8
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-026",
+    "lang": "hinglish",
+    "tags": ["correction", "alt-unit"],
+    "text": "white tiles 10 box nahi nahi ivory tiles 10 box",
+    "kind": "order",
+    "customer": null,
+    "lines": [
+      {
+        "product": "TIL-22I",
+        "baseQuantity": 160
+      }
+    ]
+  },
+  {
+    "id": "ho-mx-027",
+    "lang": "hinglish",
+    "tags": ["price-question"],
+    "text": "ultrabond ka rate kya hai aaj",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-028",
+    "lang": "hinglish",
+    "tags": ["stock-question"],
+    "text": "rockset stock hai kya?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-029",
+    "lang": "hinglish",
+    "tags": ["payment", "money"],
+    "text": "Kumar Builders ka payment kar diya 12500, check kar lo",
+    "kind": "non_order",
+    "customer": "KB-01",
+    "lines": []
+  },
+  {
+    "id": "ho-mx-030",
+    "lang": "devanagari",
+    "tags": ["delivery-update", "devanagari-only"],
+    "text": "कल का माल पहुँच गया, धन्यवाद",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-031",
+    "lang": "hinglish",
+    "tags": ["greeting"],
+    "text": "good morning bhaiya",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-032",
+    "lang": "hinglish",
+    "tags": ["price-question", "alt-unit"],
+    "text": "tiles 2x2 white ka rate kitna sqft?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-033",
+    "lang": "hinglish",
+    "tags": ["complaint", "past-order"],
+    "text": "kal wala 40 bag cement abhi tak nahi aaya",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-034",
+    "lang": "devanagari",
+    "tags": ["price-question", "devanagari-only"],
+    "text": "सीमेंट का भाव क्या है?",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-035",
+    "lang": "hinglish",
+    "tags": ["payment", "bill-number"],
+    "text": "Shah Interiors ka bill no 5521 ka balance bata do",
+    "kind": "non_order",
+    "customer": "SI-01",
+    "lines": []
+  },
+  {
+    "id": "ho-mx-036",
+    "lang": "hinglish",
+    "tags": ["delivery-update", "past-order"],
+    "text": "30 bag ultrabond mil gaya, thanks",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-037",
+    "lang": "hinglish",
+    "tags": ["stock-question"],
+    "text": "sand available hai? 3 ton lagega, kab tak milega pehle batao",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-038",
+    "lang": "devanagari",
+    "tags": ["phone-like", "time", "devanagari-digits"],
+    "text": "९८XXXXXX१२ pe call karna, kal 11 baje",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-039",
+    "lang": "hinglish",
+    "tags": ["price-question", "alt-unit"],
+    "text": "tmt 8mm ka rate bundle ka kitna padega",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  },
+  {
+    "id": "ho-mx-040",
+    "lang": "hinglish",
+    "tags": ["ambiguous-customer", "price-question"],
+    "text": "Kumar bhai ne bola tha rate list bhejne ko",
+    "kind": "non_order",
+    "customer": null,
+    "lines": []
+  }
+]

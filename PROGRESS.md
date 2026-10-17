@@ -398,3 +398,13 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Dev set: recall 81.7% → 90.4%, precision 85.0% → 93.1%, silent errors 11 → 0, non-orders 23/37 →
   37/37. Tuned on the same set: a held-out set is next.
 - Checks: `pnpm check` exit 0, 422 tests; `pnpm test:e2e` exit 0, 10 passed.
+
+## 2026-10-17 — Overnight run, slice 9: held-out evaluation set
+- Starting HEAD: `1da9bcbb633f88dee0eb4a39c4d8b5c4d5ffef75`
+- Workflow `wf_96736e39-e9c` (6 Sonnet agents, fresh briefs; 10 label changes) wrote
+  `fixtures/eval/order-messages.heldout.json` (117 messages). Scored once; not used for tuning.
+- Held-out: before round 1 (`f279e20`, scored in a temporary worktree) recall 67.4%, precision 81.6%,
+  silent 9; after round 1 recall 72.8%, precision 87.0%, silent 2. Floors added as a test.
+- Benchmark (synthetic 100,000-message Android export, 6.2 MB, this laptop): import 2.8 s,
+  identical re-import 0.23 s, suggestions with preview drafts 13.4 s (45,454 suggestions),
+  dashboard 6.1 s, status 6.0 s. Workspace DB 45 MB. Status/dashboard cost noted for follow-up.

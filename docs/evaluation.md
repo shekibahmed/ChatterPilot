@@ -77,14 +77,32 @@ orders; product names not in the catalogue are sometimes matched to a near alias
 A test (`packages/orders/src/evaluate.test.ts`) fails if recall or precision drops below, or silent
 errors rise above, the recorded figures. Improvements raise the floors.
 
+### Held-out set (the fairer number)
+
+`fixtures/eval/order-messages.heldout.json` (117 messages: 38 English, 70 Hinglish, 9 Devanagari)
+was written the same way by fresh agents with different briefs (all-caps lists, voice-to-text
+run-ons, Rajasthan/UP/MP/Maharashtra spellings, quotation requests, fake phone-like numbers). It
+was scored once, after round 1, and is **not used to tune rules**: its failures are not inspected
+case by case. When it has to be used for tuning, a new held-out set must be written.
+
+| code | recall | precision | silent errors | flagged errors | non-orders rejected |
+|---|---|---|---|---|---|
+| before round 1 (`f279e20`) | 67.4% | 81.6% | 9 | 5 | 29/42 |
+| after round 1 (`1da9bcb`) | 72.8% | 87.0% | 2 | 8 | 34/42 |
+
+By language after round 1: English 59.4% recall / 79.2% precision, Hinglish 81.1% / 89.6%,
+Devanagari 71.4% / 100% (7 lines only). Round 1 moved the held-out numbers in the same direction
+as the development numbers, but by less: the gap (90.4% vs 72.8% recall) is the cost of tuning on
+the development set, and the held-out figure is the one to quote.
+
 ## Limits, stated plainly
 
 - The messages are synthetic. Real chats are messier, and these figures are **not** a prediction of
   accuracy on any real business's chats. Measure on your own labelled sample (with consent) before
   relying on the drafts.
 - The set is small (115 messages; 5 in Devanagari script) and comes from one catalogue.
-- The same set is used to improve the rules (it is the development set). A separate held-out set,
-  written the same way and never used for tuning, is the fairer measure; see below once it exists.
+- The development set is used to improve the rules. Quote the held-out figures, not the
+  development ones.
 - Labels were checked by an AI agent, not by native-speaking shop staff.
 
 ## Label your own sample
