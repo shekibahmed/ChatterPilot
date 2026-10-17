@@ -15,6 +15,12 @@ It runs on your computer. The core needs no account, no API key and no internet 
 > Nothing has been piloted with a real business yet, and no time-saving claims are made.
 > See [docs/why.md](docs/why.md) for the problem and the design principles.
 
+**A starting kit for your coding agent.** ChatterPilot is small, tested, readable code for a
+pattern many businesses need: messy messages in, checked records out, with a person in charge.
+Use it as it is, or point Claude Code, Codex, Cursor or your own agent at it to fit your shop's
+words, your billing tool and your workflow. The tests keep the safety rules in place while you
+change things. See [docs/harnesses.md](docs/harnesses.md).
+
 ## What it does today
 
 | Step | What happens | Safeguards |
@@ -61,13 +67,25 @@ them; see [fixtures/synthetic/fleet](fixtures/synthetic/fleet)). Run `pnpm chatt
 
 Only import chats you have the right to process. Workspaces live in `workspaces/` (ignored by Git).
 
+## Use it with your coding agent
+
+ChatterPilot includes an MCP server, so agents can import exports, prepare drafts and propose
+edits. They cannot accept orders: that tool does not exist, so a person always decides. In this
+repository Claude Code picks up [`.mcp.json`](.mcp.json) automatically. Configs for Codex, Cursor
+and VS Code, the tool list and recipes for extending the code are in [docs/harnesses.md](docs/harnesses.md).
+Every CLI command also takes `--json`. There is an agent skill in
+[skills/whatsapp-operations](skills/whatsapp-operations/SKILL.md).
+
 ## Supported and not supported (yet)
 
 - **Tested export formats:** Android `dd/mm/yy, h:mm am - Name: text` and its variants (24-hour,
   dots, year-first, `a.m./p. m.`), iOS `[dd/mm/yy, h:mm:ss AM] Name: text`, with the special spaces and
   direction marks recent exports contain. Other locales may work but are untested.
-- **Language:** order lines are understood in English with Western digits. Hindi digits and unit
-  words are skipped rather than guessed. Regional-language support needs proper evaluation first.
+- **Language:** order lines in English and romanised Hindi (Hinglish): unit words such as *bori,
+  peti, nag, darjan*, number words such as *do, pachas, dedh, sawa do*, and digits in Devanagari,
+  Bengali, Gujarati, Tamil and other scripts. Quantities written in words are always flagged for a
+  person to confirm. Add your shop's own words in `lexicon.json` ([docs/catalogue.md](docs/catalogue.md)).
+  Other languages need native-speaker evaluation first.
 - **Telegram:** `chatterpilot intake` applies the staff-only intake rules to saved Telegram updates
   offline. There is no live bot yet.
 - **Not included:** live WhatsApp connection, a live Telegram bot, automatic voice-note transcription, AI
@@ -78,8 +96,11 @@ Only import chats you have the right to process. Workspaces live in `workspaces/
 ## How it is built
 
 TypeScript monorepo: `packages/import-whatsapp` (parser, safe ZIP), `packages/storage` (SQLite,
-content-addressed files), `packages/orders` (catalogue, matching, drafts), `packages/core`
-(money, CSV, provenance) and `apps/local` (CLI, loopback API, React review app). Design decisions are
+content-addressed files), `packages/orders` (catalogue, lexicon, matching, drafts), `packages/core`
+(money, CSV, provenance), `packages/exporters` (import files for other tools),
+`packages/templates` (fleet), `packages/order-automation` (approvals, ledger, form connector),
+`packages/telegram-intake`, `packages/providers` (AI boundary, offline) and `apps/local` (CLI, MCP
+server, loopback API, React review app). Design decisions are
 recorded in [DECISIONS.md](DECISIONS.md); progress and test evidence in [PROGRESS.md](PROGRESS.md).
 
 ```sh

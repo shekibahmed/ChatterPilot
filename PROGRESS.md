@@ -357,3 +357,12 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Checks: `pnpm check` exit 0, 399 tests (9 exporter tests incl. hostile names and xmllint
   well-formedness; server export API; MCP export refusal); `pnpm test:e2e` exit 0, 10 passed.
 - Not verified: importing any file into the real tools.
+
+## 2026-10-17 — Overnight run, slice 4: use and extend with your coding agent
+- Starting HEAD: `50ab1d17483ac0b768621024f793e2e5d77421d6`
+- Changes: `.mcp.json`, `docs/harnesses.md` (setup, Claude Code/Codex/Cursor/VS Code configs, tool
+  table, what agents cannot do, extension recipes), README repositioning + updated language and
+  package lists, clean MCP exit on stdin close, config tests in `skill.test.ts`.
+- Checks: `pnpm check` exit 0, 401 tests. Manual: `claude mcp get chatterpilot` reads the project
+  config (pending approval, as designed); the server answers initialize/workspace_status from
+  another working directory and exits 0 on stdin close.

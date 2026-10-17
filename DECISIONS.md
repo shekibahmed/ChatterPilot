@@ -333,3 +333,14 @@ their replacement. No secrets, customer data or private transcripts.
 - Not done: import verification against real Tally/ERPNext/Zoho accounts (owner or customer to run);
   UBL XSD validation in CI (well-formedness only, via xmllint when present); Busy/Vyapar/Marg
   (no documented sales-order import; left to "adapt with your agent").
+
+## D019 — Position as a starting kit for coding agents; ship harness configs
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (owner direction, 2026-10-17: "a skeleton … customers extend with their agentic harness")
+- Chosen: README and `docs/harnesses.md` present ChatterPilot as tested reference code to use via
+  MCP/`--json` and to extend with an agent. The repository ships `.mcp.json` (Claude Code project
+  scope, approval required on first use) pointing at the synthetic fixtures. Configs for Codex,
+  Cursor and VS Code are documented from each vendor's docs (not executed here). A test keeps
+  `.mcp.json` and the documented flags in line with the CLI. The MCP command now exits 0 when the
+  client closes stdin.
+- Not done: npm package (`npx chatterpilot`), so configs run from a clone.

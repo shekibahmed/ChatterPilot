@@ -669,8 +669,10 @@ const commands: Record<string, Command> = {
       agentName: values.agent,
       ...(values.files ? { filesRoot: values.files } : {}),
     });
-    return new Promise<number>(() => {
-      // Runs until the client closes stdin.
+    // Runs until the client closes stdin; then exit cleanly.
+    return new Promise<number>((done) => {
+      process.stdin.once("close", () => done(0));
+      process.stdin.once("end", () => done(0));
     });
   },
 };
