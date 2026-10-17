@@ -1,3 +1,4 @@
+import type { Dashboard } from "@chatterpilot/orders";
 import type {
   DecisionRecord,
   ImportSummary,
@@ -6,7 +7,15 @@ import type {
 } from "@chatterpilot/storage";
 import type { Decision, DraftSummary, DraftView } from "../../src/review.ts";
 
-export type { Decision, DecisionRecord, DraftSummary, DraftView, ImportSummary, StoredMessage };
+export type {
+  Dashboard,
+  Decision,
+  DecisionRecord,
+  DraftSummary,
+  DraftView,
+  ImportSummary,
+  StoredMessage,
+};
 
 export interface Status {
   workspace: WorkspaceInfo;
@@ -69,6 +78,8 @@ export const api = {
       handle<{ status: "imported" | "duplicate" }>(r),
     );
   },
+  dashboard: (scope: "accepted" | "all") =>
+    fetch(`/api/dashboard?scope=${scope}`).then((r) => handle<Dashboard>(r)),
   suggestions: () => fetch("/api/suggestions").then((r) => handle<StoredMessage[]>(r)),
   drafts: () => fetch("/api/drafts").then((r) => handle<DraftSummary[]>(r)),
   draft: (id: string) =>

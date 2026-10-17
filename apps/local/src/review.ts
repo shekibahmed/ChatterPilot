@@ -8,9 +8,12 @@ import {
   type Catalogue,
   type CatalogueIssue,
   canonicalUnit,
+  computeDashboard,
+  type Dashboard,
   type DraftOverrides,
   type LineOverrides,
   loadCatalogue,
+  type MetricScope,
   type OrderDraft,
   OverrideError,
   type SourceMessage,
@@ -527,4 +530,29 @@ export function exportJson(ws: Workspace): string {
     })),
   }));
   return `${JSON.stringify({ exportedAt: now(), format: "chatterpilot-orders/1", drafts }, null, 2)}\n`;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Dashboard
+
+export function dashboard(ws: Workspace, scope: MetricScope): Dashboard {
+  const perDay = ws.db
+    .prepare(
+      `SELECT substr(local_datetime, 1, 10) AS date, COUNT(*) AS count FROM message
+       WHERE kind = 'text' AND local_datetime IS NOT NULL GROUP BY date ORDER BY date`,
+    )
+    .all() as { date: string; count: number }[];
+  return computeDashboard({
+    coverage: ws.importSummaries().map((s) => ({
+      sourceName: s.sourceName,
+      first: s.coverage.first,
+      last: s.coverage.last,
+    })),
+    messagesPerDay: perDay,
+    pendingSuggestions: suggestions(ws).length,
+    drafts: ws.reviews
+      .drafts()
+      .map((d) => ({ id: d.id, status: d.status, draft: getDraft(ws, d.id).draft })),
+    scope,
+  });
 }

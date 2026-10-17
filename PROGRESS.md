@@ -142,3 +142,23 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Issues found and fixed: two Playwright copies (global 1.64 runner vs project 1.63); test expected
   the quantity chip but clicked the product chip; monospace leak and chip wrapping in the UI.
 - Next: S5 deterministic dashboard with coverage and drill-down.
+
+## 2026-10-17 — S5 deterministic dashboard (WP5 / P3)
+- Tool / active writer: Claude Code (autonomous run)
+- Approved scope: slice S5; D008
+- Starting branch / HEAD: `build/v0.1` @ `ec3ed9d68969fd4860974677fe39327a8a1bdcee`
+  (GitHub CI for it: `check` success, `e2e` success)
+- Outcome: completed
+- Changes: `packages/orders/src/metrics.ts` (+11 tests with hand-computed expectations, incl.
+  scope switching, exclusions, base-unit conversion, gaps, insufficient vs valid week comparison
+  33.3%); `/api/dashboard?scope=`; Dashboard tab (coverage banner, pipeline tiles, order-value and
+  activity bar charts with tooltip/table view, comparison, product/customer/issue tables);
+  e2e dashboard assertions; README dashboard row + screenshot.
+- Checks (cwd = repo root, Node 26.10.0, pnpm 12.14.0, code state = S5 working tree):
+  - `pnpm check` — exit 0; 248 tests passed
+  - `pnpm test:e2e` — exit 0; 2 passed (dashboard coverage text, refused trend, tooltip value)
+- Issues found and fixed: a scripted edit failed to re-export the `Dashboard` type, and reading only
+  the tail of the typecheck output hid the root error for several iterations (misattributed at first
+  to a compiler bug); a scripted rename damaged UI text ("comparable d."), caught by the e2e test.
+  Lesson recorded: read complete typecheck output; avoid blind text substitution in UI files.
+- Next: S6 overlap/backfill reimport reconciliation.

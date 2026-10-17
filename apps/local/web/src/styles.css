@@ -18,6 +18,8 @@
   --chip-catalogue: #f0ebff;
   --chip-computed: #eef1f4;
   --chip-human: #fff1d6;
+  /* Chart mark colour, validated with the dataviz palette checks against each surface. */
+  --bar: #0d9488;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -40,6 +42,7 @@
     --chip-catalogue: #2a2145;
     --chip-computed: #222b35;
     --chip-human: #3a2e14;
+    --bar: #1aa596;
     color-scheme: dark;
   }
 }
@@ -458,4 +461,92 @@ mark {
   .table.lines th {
     min-width: 120px;
   }
+}
+.small {
+  font-size: 0.85rem;
+}
+.dash-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.segmented {
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.segmented button {
+  border: 0;
+  border-radius: 0;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.metric-panel details {
+  margin-top: 8px;
+  font-size: 0.88rem;
+}
+.chart {
+  margin: 0;
+}
+.tooltip {
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-height: 1.4em;
+  font-variant-numeric: tabular-nums;
+}
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 140px;
+  border-bottom: 1px solid var(--border);
+  padding-top: 4px;
+}
+.bar-slot {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: default;
+  flex: 1 1 0;
+  max-width: 40px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  outline-offset: 2px;
+}
+.bar {
+  width: 100%;
+  background: var(--bar);
+  border-radius: 4px 4px 0 0;
+  opacity: 0.85;
+}
+.bar.active,
+.bar-slot:focus .bar {
+  opacity: 1;
+}
+.bar.no-data {
+  height: 100%;
+  background: repeating-linear-gradient(45deg, transparent 0 4px, var(--border) 4px 6px);
+  opacity: 1;
+}
+.axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.table.compact {
+  display: table;
+}
+.table.compact td,
+.table.compact th {
+  padding: 4px 8px;
 }

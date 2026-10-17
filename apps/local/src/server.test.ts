@@ -309,3 +309,32 @@ describe("review history integrity", () => {
     );
   });
 });
+
+describe("dashboard API", () => {
+  it("defaults money metrics to accepted orders and states coverage", async () => {
+    const [order] = await json<{ id: string }[]>(get("/api/suggestions"));
+    const draft = await json<View>(
+      post("/api/drafts", { messageIds: [order?.id], reviewer: "Anita" }),
+    );
+    await post(`/api/drafts/${draft.record.id}/decisions`, {
+      decision: { action: "accept" },
+      reviewer: "Anita",
+    });
+
+    interface Dash {
+      scope: string;
+      coverage: { window: { from: string; to: string }; value: { coveredDays: number } };
+      pipeline: { value: Record<string, number> };
+      orderValueByDay: { value: { date: string; totalMinor: number }[] };
+      weekComparison: { value: { status: string } };
+    }
+    const dash = await json<Dash>(get("/api/dashboard"));
+    expect(dash.scope).toBe("accepted");
+    expect(dash.coverage.window).toEqual({ from: "2026-01-12", to: "2026-01-15" });
+    expect(dash.coverage.value.coveredDays).toBe(4);
+    expect(dash.pipeline.value).toEqual({ suggested: 2, open: 0, accepted: 1, rejected: 0 });
+    expect(dash.orderValueByDay.value).toMatchObject([{ date: "2026-01-12", totalMinor: 2835520 }]);
+    expect(dash.weekComparison.value.status).toBe("insufficient");
+    expect((await json<Dash>(get("/api/dashboard?scope=all"))).scope).toBe("all");
+  });
+});

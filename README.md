@@ -23,7 +23,10 @@ It runs on your computer. The core needs no account, no API key and no internet 
 | Suggest | Messages mentioning products from your catalogue become order suggestions. | Suggestions only. Quotes, payments and delivery updates are not treated as orders. |
 | Draft | Products, quantities and units are matched to your `products.csv`; prices and tax come only from the catalogue; totals use exact integer arithmetic. | Unknown values stay unknown. Typos, ambiguous names, stale or missing prices and incompatible units are flagged, never guessed. |
 | Review | A person can set the customer, fix any field, exclude a line or link a later correction. | Every edit needs a reason and is kept in an append-only history. A draft with open issues cannot be accepted. |
+| Dashboard | Order value by day, chat activity, pipeline, quantities by product, orders by customer and open review work. | Money figures count accepted orders only unless you choose otherwise; every metric states its definition, date coverage and what it left out; trends are refused ("insufficient comparable data") when coverage or volume is too thin. |
 | Export | Accepted orders download as CSV or JSON. | Exports come from frozen, fingerprinted snapshots; spreadsheet formula injection is neutralised. |
+
+![Dashboard with coverage banner, reviewed-only order value and a refused week-on-week trend](docs/images/dashboard.png)
 
 ## Try the demo
 
@@ -61,8 +64,8 @@ Only import chats you have the right to process. Workspaces live in `workspaces/
   direction marks recent exports contain. Other locales may work but are untested.
 - **Language:** order lines are understood in English with Western digits. Hindi digits and unit
   words are skipped rather than guessed. Regional-language support needs proper evaluation first.
-- **Not included:** live WhatsApp connection, voice-note transcription, AI extraction, dashboards,
-  Telegram intake and filling forms in other systems. These are planned as separate, opt-in,
+- **Not included:** live WhatsApp connection, voice-note transcription, AI extraction, Telegram
+  intake and filling forms in other systems. These are planned as separate, opt-in,
   permission-gated steps.
 
 ## How it is built

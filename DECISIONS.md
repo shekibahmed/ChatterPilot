@@ -136,3 +136,18 @@ their replacement. No secrets, customer data or private transcripts.
   request leaves 127.0.0.1. README screenshots (`docs/images`) are produced by the same test with
   `CHATTERPILOT_SCREENSHOTS=1` and contain synthetic data only. CI gains an e2e job.
 - All new dependency versions were released at least two weeks before 2026-10-17.
+
+## D008 — Dashboard metrics
+- Date: 2026-10-17 (+05:30)
+- Status: accepted (within approved S5 scope, PLAN §7)
+- Chosen: metrics are a pure function (`computeDashboard` in `@chatterpilot/orders`) over imports,
+  per-day text-message counts, suggestions and drafts. Money metrics default to accepted (reviewed)
+  orders; "include open drafts" is an explicit toggle. Every metric carries a definition, unit,
+  window and exclusion counts. Coverage = union of each export's first..last local date; gaps are
+  listed and uncovered days are "no data", never zero. Currencies are never added or converted.
+  Week-on-week change is shown only when all 14 days are covered, each week has at least
+  3 orders in scope and one currency; otherwise "insufficient comparable data" with the reason.
+  Charts are dependency-free HTML bars (single series, so no legend), with hover/focus tooltips and
+  a table view; bar colours `#0d9488` (light) / `#1aa596` (dark) pass the dataviz palette checks.
+- Not included: forecasting, anomaly detection, staff/productivity measures (PLAN §7 forbids
+  equating message counts with productivity).

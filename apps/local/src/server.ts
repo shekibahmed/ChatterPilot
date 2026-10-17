@@ -12,6 +12,7 @@ import {
   activeCatalogue,
   createDraft,
   type Decision,
+  dashboard,
   decide,
   exportCsv,
   exportJson,
@@ -162,6 +163,9 @@ export function createApp(ws: Workspace, options: AppOptions): Hono {
   });
 
   app.get("/api/suggestions", (c) => c.json(suggestions(ws)));
+  app.get("/api/dashboard", (c) =>
+    c.json(dashboard(ws, c.req.query("scope") === "all" ? "all" : "accepted")),
+  );
   app.get("/api/drafts", (c) => c.json(listDrafts(ws)));
   app.post("/api/drafts", async (c) => {
     const body = (await c.req.json()) as { messageIds?: unknown; reviewer?: unknown };

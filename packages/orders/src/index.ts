@@ -26,4 +26,6 @@ export type { ExtractedLine } from "./extract.ts";
 export { extractOrderLines } from "./extract.ts";
 export type { MatchResult, MatchStatus } from "./match.ts";
 export { matchRecord } from "./match.ts";
+export type { Dashboard, DashboardInput, Exclusion, Metric, MetricScope } from "./metrics.ts";
+export { computeDashboard, MIN_ORDERS_FOR_COMPARISON } from "./metrics.ts";
 export { canonicalUnit, UNIT_SYNONYMS } from "./units.ts";

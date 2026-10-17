@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type Status } from "./api.ts";
+import { Dashboard } from "./views/Dashboard.tsx";
 import { DraftReview } from "./views/DraftReview.tsx";
 import { ExportView } from "./views/Export.tsx";
 import { Imports } from "./views/Imports.tsx";
@@ -11,6 +12,7 @@ type Route =
   | { view: "imports"; batchId?: string }
   | { view: "orders" }
   | { view: "draft"; id: string }
+  | { view: "dashboard" }
   | { view: "export" };
 
 function parseRoute(hash: string): Route {
@@ -19,6 +21,7 @@ function parseRoute(hash: string): Route {
   if (view === "orders") return { view };
   if (view === "draft" && id) return { view, id: decodeURIComponent(id) };
   if (view === "export") return { view };
+  if (view === "dashboard") return { view };
   return { view: "overview" };
 }
 
@@ -70,6 +73,7 @@ export function App() {
     ["overview", "Overview", "#/"],
     ["imports", "Imports", "#/imports"],
     ["orders", "Orders", "#/orders"],
+    ["dashboard", "Dashboard", "#/dashboard"],
     ["export", "Export", "#/export"],
   ];
   const active = route.view === "draft" ? "orders" : route.view;
@@ -111,6 +115,7 @@ export function App() {
         )}
         {route.view === "orders" && <Orders reviewer={reviewer} status={status} />}
         {route.view === "draft" && <DraftReview id={route.id} reviewer={reviewer} />}
+        {route.view === "dashboard" && <Dashboard />}
         {route.view === "export" && <ExportView />}
       </main>
       <footer className="footer muted">
