@@ -208,6 +208,43 @@ test("stops for a person when the target may hold duplicate drafts", async ({ pa
   ws.close();
 });
 
+test("the fill-form command shows the document, needs --approve, and stops before Submit", async () => {
+  const ws = await workspace();
+  const payload = shahOrder(ws);
+  const dir = ws.dir;
+  ws.close();
+  const { execFileSync } = await import("node:child_process");
+  const cli = (extra: string[]) =>
+    execFileSync(
+      process.execPath,
+      [
+        "apps/local/src/cli.ts",
+        "fill-form",
+        "--draft",
+        payload.sourceDraftId,
+        "--operator",
+        "Anita",
+        "--workspace",
+        dir,
+        "--target",
+        target(4330),
+        ...extra,
+      ],
+      {
+        cwd: new URL("../../../", import.meta.url).pathname,
+        encoding: "utf8",
+      },
+    );
+  const before = await stats(4330);
+  expect(cli([])).toContain("Nothing sent. Re-run with --approve");
+  expect((await stats(4330)).drafts).toBe(before.drafts);
+  const out = cli(["--approve"]);
+  expect(out).toContain("Result: awaiting_submit_approval");
+  const after = await stats(4330);
+  expect(after.drafts - before.drafts).toBe(1);
+  expect(after.submissions).toBe(0);
+});
+
 test("cannot reach any address outside the approved target", async ({ page }) => {
   const connector = new MockBooksConnector({ page, origin: target(4330), account: "demo" });
   await connector.guard();

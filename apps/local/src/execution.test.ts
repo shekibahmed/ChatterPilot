@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   type Connector,
   ConnectorError,
+  closeAttempt,
   createApproval,
   type ExecutionPayload,
   PayloadError,
@@ -295,5 +296,46 @@ describe("preparing an approved draft in a target app", () => {
     approve(acceptedPayload());
     await run();
     expect(() => ws.db.prepare("DELETE FROM execution_event").run()).toThrow(/append-only/);
+  });
+});
+
+describe("review fixes: approvals follow the draft", () => {
+  it("voids an approval when the draft is reopened after approval", async () => {
+    const payload = acceptedPayload();
+    approve(payload);
+    decide(ws, payload.sourceDraftId, { action: "reopen" }, "Anita", "Customer called back");
+    const result = await run();
+    expect(result.state).toBe("rejected");
+    expect(result.message).toContain("the draft is no longer accepted in the approved version");
+    expect(target.drafts.size).toBe(0);
+  });
+
+  it("refuses to store an approval for a payload that is not the current accepted version", () => {
+    const payload = acceptedPayload();
+    expect(() => approve({ ...payload, snapshotSha256: "0".repeat(64) })).toThrow(
+      /current accepted version/,
+    );
+  });
+
+  it("blocks a read-back whose target record is no longer a draft", async () => {
+    approve(acceptedPayload());
+    const readBack = target.readBack.bind(target);
+    target.readBack = async (ref) => ({ ...(await readBack(ref)), status: "submitted" });
+    const result = await run();
+    expect(result.state).toBe("blocked");
+    expect(result.diff).toContainEqual({ field: "status", expected: "draft", actual: "submitted" });
+  });
+
+  it("lets a person close a blocked attempt so a new approved attempt can run", async () => {
+    approve(acceptedPayload());
+    target.fault = "price-drift";
+    const blocked = await run();
+    expect(blocked.state).toBe("blocked");
+    expect(
+      closeAttempt(ws, blocked.attemptId ?? "", "Anita", "Checked MockBooks: nothing saved"),
+    ).toBe(true);
+    target.fault = "none";
+    expect((await run()).state).toBe("awaiting_submit_approval");
+    expect(() => closeAttempt(ws, blocked.attemptId ?? "", "Anita", " ")).toThrow();
   });
 });

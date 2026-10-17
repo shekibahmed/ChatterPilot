@@ -2,6 +2,15 @@ import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { type Field, formatMinor, type Provenance } from "@chatterpilot/core";
 import { type DateOrder, decodeExportBytes, scanExport } from "@chatterpilot/import-whatsapp";
+import {
+  createApproval,
+  currentAcceptedSnapshot,
+  MockBooksConnector,
+  PayloadError,
+  payloadFromAcceptedDraft,
+  prepareApprovedDraft,
+  storeApproval,
+} from "@chatterpilot/order-automation";
 import type { OrderDraft } from "@chatterpilot/orders";
 import { buildOrderDraft } from "@chatterpilot/orders";
 import { type ImportSummary, isValidTimeZone, Workspace } from "@chatterpilot/storage";
@@ -12,11 +21,12 @@ import {
   type TgUpdate,
 } from "@chatterpilot/telegram-intake";
 import { loadVehicles } from "@chatterpilot/templates";
+import { chromium } from "playwright";
 import { draftFor, readCatalogueDir, suggestOrderMessages } from "./drafts.ts";
 import { fleetEvents } from "./fleet.ts";
 import { terminalSafe } from "./format.ts";
 import { ImportError, importExport } from "./import.ts";
-import { activeCatalogue, loadCatalogueIntoWorkspace } from "./review.ts";
+import { activeCatalogue, getDraft, loadCatalogueIntoWorkspace } from "./review.ts";
 import { DEFAULT_PORT, startServer } from "./server.ts";
 
 const WEB_ROOT = new URL("../dist/web/", import.meta.url).pathname;
@@ -42,6 +52,9 @@ const USAGE = `Usage:
   chatterpilot intake --updates <updates.jsonl> --policy <policy.json> [--workspace <dir>]
       Offline Telegram intake: apply sender/chat allowlists, dedupe and repeat checks to saved
       Bot API updates (one JSON object per line) and show draft lines. No bot or network is used.
+  chatterpilot fill-form --draft <id> --operator <name> --approve [--target http://127.0.0.1:4330] [--workspace <dir>]
+      Type an ACCEPTED draft into the synthetic MockBooks form on this computer, read it back, and
+      stop before Submit. --approve is your approval of exactly the document shown (15 minutes).
   chatterpilot serve [--workspace <dir>] [--port ${DEFAULT_PORT}]
       Open the review app on http://127.0.0.1 (this computer only).
   chatterpilot demo [--port ${DEFAULT_PORT}] [--workspace ${DEMO_WORKSPACE}]
@@ -154,7 +167,7 @@ function printSummary(summary: ImportSummary): void {
   );
   const o = summary.overlap;
   console.log(
-    `Overlap:      chat "${summary.chatKey}": ${o.new} new, ${o.duplicate} already imported, ${o.uncertain} changed (kept for review)`,
+    `Overlap:      chat "${terminalSafe(summary.chatKey, 80)}": ${o.new} new, ${o.duplicate} already imported, ${o.uncertain} changed (kept for review)`,
   );
   if (summary.skippedEntries > 0)
     console.log(`Skipped:      ${summary.skippedEntries} unsupported archive entries`);
@@ -482,10 +495,19 @@ function intakeCommand(args: string[]): number {
     return 2;
   }
   const policy = JSON.parse(readFileSync(values.policy, "utf8")) as IntakePolicy;
-  const updates = readFileSync(values.updates, "utf8")
-    .split("\n")
-    .filter((l) => l.trim())
-    .map((l) => JSON.parse(l) as TgUpdate);
+  const updates: TgUpdate[] = [];
+  for (const [n, line] of readFileSync(values.updates, "utf8").split("\n").entries()) {
+    if (!line.trim()) continue;
+    try {
+      const u = JSON.parse(line) as TgUpdate;
+      if (!Number.isSafeInteger(u?.update_id)) throw new Error("no numeric update_id");
+      updates.push(u);
+    } catch (err) {
+      console.log(
+        `line ${n + 1}  skipped: ${terminalSafe(err instanceof Error ? err.message : String(err), 80)}`,
+      );
+    }
+  }
   if (!Workspace.exists(values.workspace)) {
     console.error(`No workspace in ${values.workspace}.`);
     return 1;
@@ -495,14 +517,7 @@ function intakeCommand(args: string[]): number {
     const now = new Date();
     const gap = intakeGapWarning(ws.intake.lastSeenAt(), now);
     if (gap) console.log(`Warning: ${gap}`);
-    const resolver = {
-      acceptedSnapshot: (id: string) => {
-        const d = ws.reviews.draft(id);
-        if (d?.status !== "accepted") return null;
-        const accept = [...ws.reviews.decisions(id)].reverse().find((x) => x.action === "accept");
-        return (accept?.payload as { snapshotSha256?: string } | undefined)?.snapshotSha256 ?? null;
-      },
-    };
+    const resolver = { acceptedSnapshot: (id: string) => currentAcceptedSnapshot(ws, id) };
     const catalogue = activeCatalogue(ws);
     for (const u of updates) {
       const r = processUpdate(ws.intake, u, policy, resolver, now);
@@ -537,6 +552,99 @@ function intakeCommand(args: string[]): number {
   }
 }
 
+async function fillFormCommand(args: string[]): Promise<number> {
+  const { values } = parseArgs({
+    args,
+    options: {
+      draft: { type: "string" },
+      operator: { type: "string" },
+      approve: { type: "boolean", default: false },
+      target: { type: "string", default: "http://127.0.0.1:4330" },
+      workspace: { type: "string", default: DEFAULT_WORKSPACE },
+    },
+  });
+  if (!values.draft || !values.operator) {
+    console.error(USAGE);
+    return 2;
+  }
+  const target = new URL(values.target);
+  if (target.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(target.hostname)) {
+    console.error(
+      "Only the synthetic MockBooks form on this computer is supported in this release.",
+    );
+    return 2;
+  }
+  if (!Workspace.exists(values.workspace)) {
+    console.error(`No workspace in ${values.workspace}.`);
+    return 1;
+  }
+  const ws = Workspace.open(values.workspace);
+  const browser = await chromium.launch();
+  try {
+    const view = getDraft(ws, values.draft);
+    let payload: ReturnType<typeof payloadFromAcceptedDraft>;
+    try {
+      payload = payloadFromAcceptedDraft({
+        draftId: view.record.id,
+        status: view.record.status,
+        snapshotSha256: view.acceptedSnapshotSha256,
+        draft: view.draft,
+      });
+    } catch (err) {
+      if (err instanceof PayloadError) {
+        console.error(`Not sent: ${err.message}`);
+        return 1;
+      }
+      throw err;
+    }
+    console.log(
+      `Document for ${terminalSafe(payload.customerName, 60)} (${payload.customerId}), ${payload.orderDate}:`,
+    );
+    for (const l of payload.lines) {
+      console.log(
+        `  ${l.quantity} ${l.unit} ${terminalSafe(l.productName, 40)} @ ${l.unitPrice} = ${l.amount} + tax ${l.tax}`,
+      );
+    }
+    console.log(
+      `  Total ${payload.currency} ${payload.total} → ${target.origin} (synthetic MockBooks), action: prepare draft only`,
+    );
+    if (!values.approve) {
+      console.log(
+        "Nothing sent. Re-run with --approve to approve exactly this document for 15 minutes.",
+      );
+      return 0;
+    }
+    const page = await browser.newPage();
+    const connector = new MockBooksConnector({ page, origin: target.origin, account: "demo" });
+    const approval = createApproval({
+      id: crypto.randomUUID(),
+      operator: values.operator,
+      target: { connectorId: connector.id, origin: connector.origin, account: connector.account },
+      action: "prepare_draft",
+      payload,
+      now: new Date(),
+      minutes: 15,
+    });
+    storeApproval(ws, approval, payload.sourceDraftId, payload);
+    const result = await prepareApprovedDraft({
+      ws,
+      approvalId: approval.id,
+      operator: values.operator,
+      connector,
+      currentCatalogueVersion: activeCatalogue(ws)?.version ?? "",
+    });
+    console.log(
+      `Result: ${result.state}${result.remoteRef ? ` (${result.remoteRef})` : ""}. ${result.message}`,
+    );
+    for (const d of result.diff)
+      console.log(`  ${d.field}: expected ${d.expected}, target has ${d.actual}`);
+    return result.state === "awaiting_submit_approval" ? 0 : 1;
+  } finally {
+    await browser.close();
+    ws.close();
+  }
+}
+
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command === "parse") return parseCommand(rest);
@@ -547,6 +655,7 @@ async function main(argv: string[]): Promise<number> {
   if (command === "serve") return serveCommand(rest);
   if (command === "events") return eventsCommand(rest);
   if (command === "intake") return intakeCommand(rest);
+  if (command === "fill-form") return fillFormCommand(rest);
   if (command === "demo") return demoCommand(rest);
   console.error(USAGE);
   return 2;

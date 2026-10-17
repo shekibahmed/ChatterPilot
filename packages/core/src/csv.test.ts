@@ -10,6 +10,7 @@ describe("parseCsv", () => {
         ["A1", 'Tile, 2x2 "white"'],
         ["A2", "two\nlines"],
       ],
+      rowLines: [1, 2, 3],
     });
   });
 
@@ -20,11 +21,12 @@ describe("parseCsv", () => {
         ["a", "b", "c"],
         ["1", "", "3"],
       ],
+      rowLines: [1, 3],
     });
   });
 
   it("handles a final row without a newline", () => {
-    expect(parseCsv("a,b\n1,2")).toEqual({
+    expect(parseCsv("a,b\n1,2")).toMatchObject({
       ok: true,
       rows: [
         ["a", "b"],
@@ -75,6 +77,14 @@ describe("toCsv / neutraliseCell", () => {
         ['Tile, 2x2 "white"', "1640000", ""],
         ["'=cmd|' /C calc'!A0", "5", "line\nbreak"],
       ],
+      rowLines: [1, 2, 3],
     });
+  });
+});
+
+describe("parseCsv row lines", () => {
+  it("reports the real starting line of each row", () => {
+    const parsed = parseCsv('id,name\nP1,One\n\nP2,"two\nlines"\nP3,Three\n');
+    expect(parsed.ok && parsed.rowLines).toEqual([1, 2, 4, 6]);
   });
 });

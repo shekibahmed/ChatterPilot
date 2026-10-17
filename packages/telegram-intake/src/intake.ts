@@ -166,6 +166,17 @@ export function processUpdate(
   }
 
   const message = update.message ?? update.edited_message;
+  // Malformed updates are logged and skipped so one bad line cannot stall intake.
+  if (
+    message &&
+    (typeof message.chat?.id !== "number" ||
+      typeof message.message_id !== "number" ||
+      typeof message.date !== "number" ||
+      (message.from !== undefined && typeof message.from.id !== "number"))
+  ) {
+    store.log(updateId, at, "refused", "malformed message");
+    return { updateId, outcome: "refused", reason: "malformed message" };
+  }
   if (!message) {
     store.log(updateId, at, "refused", "unsupported update type");
     return { updateId, outcome: "refused", reason: "unsupported update type" };

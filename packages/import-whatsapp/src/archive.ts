@@ -31,6 +31,7 @@ export type ArchiveRejectReason =
   | "total_too_large"
   | "compression_ratio"
   | "no_chat_text"
+  | "duplicate_entry"
   | "multiple_chat_texts"
   | "corrupt";
 
@@ -210,6 +211,7 @@ export async function openWhatsAppArchive(
 
     let total = 0;
     const files: Entry[] = [];
+    const names = new Set<string>();
     for (const entry of entries) {
       const name = entry.fileName;
       if (name.endsWith("/")) continue; // directory record
@@ -236,6 +238,9 @@ export async function openWhatsAppArchive(
       if (total > limits.maxTotalUncompressedBytes) {
         throw new ArchiveRejectedError("total_too_large", `${total} bytes expanded`);
       }
+      // Two entries with one name make "which file did the chat mean?" unanswerable.
+      if (names.has(name)) throw new ArchiveRejectedError("duplicate_entry", name, name);
+      names.add(name);
       files.push(entry);
     }
 

@@ -6,7 +6,7 @@ import {
   toSafeMinor,
   unknownField,
 } from "@chatterpilot/core";
-import type { Catalogue, Customer, Product } from "./catalogue.ts";
+import { type Catalogue, type Customer, matchKey, type Product } from "./catalogue.ts";
 import { type ExtractedLine, extractOrderLines } from "./extract.ts";
 import { matchRecord } from "./match.ts";
 import { canonicalUnit } from "./units.ts";
@@ -41,7 +41,8 @@ export type IssueCode =
   | "price_stale"
   | "price_not_yet_effective"
   | "tax_rate_missing"
-  | "mixed_currency";
+  | "mixed_currency"
+  | "amount_out_of_range";
 
 export interface DraftIssue {
   readonly code: IssueCode;
@@ -158,6 +159,19 @@ function human<T>(
 
 const chatEvidence = (f: Field<unknown>) => f.evidence.filter((e) => e.kind === "message");
 
+/** A bigint money/quantity value as a number, or null when it is beyond exact range. */
+function inRange(value: bigint): number | null {
+  try {
+    return toSafeMinor(value);
+  } catch {
+    return null;
+  }
+}
+
+/** Which catalogue column a match came from, so the citation points at the actual value. */
+const matchedColumn = (record: { name: string }, key: string | null) =>
+  key !== null && matchKey(record.name) === key ? "name" : "aliases";
+
 function messageEvidence(msg: SourceMessage, start: number, end: number): Provenance {
   const line = msg.startLine + (msg.body.slice(0, start).match(/\n/g)?.length ?? 0);
   const endLine = msg.startLine + (msg.body.slice(0, end).match(/\n/g)?.length ?? 0);
@@ -243,12 +257,12 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
   if (p && match.status === "resolved") {
     product = ok({ productId: p.id, name: p.name }, [
       productEvidence,
-      catalogueEvidence(catalogue, p, "aliases"),
+      catalogueEvidence(catalogue, p, matchedColumn(p, match.matchedKey)),
     ]);
   } else if (p && match.status === "fuzzy") {
     product = review({ productId: p.id, name: p.name }, [
       productEvidence,
-      catalogueEvidence(catalogue, p, "aliases"),
+      catalogueEvidence(catalogue, p, matchedColumn(p, match.matchedKey)),
     ]);
     issue(
       "product_fuzzy",
@@ -334,10 +348,18 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
 
   // Base quantity
   let baseQuantity: Field<Quantity> = unknownField();
-  if (quantity.value && factorMilli !== null && p) {
-    const base = toSafeMinor(
-      divideRoundHalfUp(BigInt(quantity.value.milli) * BigInt(factorMilli), 1000n),
-    );
+  const tooLarge = () =>
+    issues.push({
+      code: "amount_out_of_range",
+      field: path("quantity"),
+      message: "The quantity or amount is too large to calculate exactly; check the message.",
+    });
+  const base =
+    quantity.value && factorMilli !== null
+      ? inRange(divideRoundHalfUp(BigInt(quantity.value.milli) * BigInt(factorMilli), 1000n))
+      : null;
+  if (quantity.value && factorMilli !== null && p && base === null) tooLarge();
+  if (quantity.value && factorMilli !== null && p && base !== null) {
     const altEvidence = factorMilli === 1000 ? [] : [catalogueEvidence(catalogue, p, "alt_units")];
     baseQuantity = ok({ milli: base, text: `${formatQuantity(base)} ${p.unit}` }, [
       computed("quantity × unit_factor", [path("quantity"), path("unit")]),
@@ -389,10 +411,15 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
   }
 
   let amount: Field<number> = unknownField();
-  if (baseQuantity.value && unitPrice.value !== null) {
-    const value = toSafeMinor(
-      divideRoundHalfUp(BigInt(baseQuantity.value.milli) * BigInt(unitPrice.value), 1000n),
-    );
+  const amountValue =
+    baseQuantity.value && unitPrice.value !== null
+      ? inRange(
+          divideRoundHalfUp(BigInt(baseQuantity.value.milli) * BigInt(unitPrice.value), 1000n),
+        )
+      : null;
+  if (baseQuantity.value && unitPrice.value !== null && amountValue === null) tooLarge();
+  if (amountValue !== null) {
+    const value = amountValue;
     const status =
       unitPrice.status === "ok" && product.status === "ok" && unit.status === "ok"
         ? "ok"
@@ -429,9 +456,14 @@ function buildLine(ctx: LineContext): { line: DraftLine; issues: DraftIssue[] } 
     taxRate = human(ov.taxRate, ov.taxRate.value, taxRate.value, taxRate.evidence);
   }
   let tax: Field<number> = unknownField();
-  if (amount.value !== null && taxRate.value !== null) {
+  const taxValue =
+    amount.value !== null && taxRate.value !== null
+      ? inRange(divideRoundHalfUp(BigInt(amount.value) * BigInt(taxRate.value), 100_000n))
+      : null;
+  if (amount.value !== null && taxRate.value !== null && taxValue === null) tooLarge();
+  if (taxValue !== null) {
     tax = {
-      value: toSafeMinor(divideRoundHalfUp(BigInt(amount.value) * BigInt(taxRate.value), 100_000n)),
+      value: taxValue,
       status: amount.status,
       evidence: [
         computed("round_half_up(amount × tax_rate / 100)", [path("amount"), path("taxRate")]),
@@ -599,16 +631,27 @@ export function buildOrderDraft(
     if (active.length === 0 || currency.value === null) return unknownField();
     const fields = active.map(pick);
     if (fields.some((f) => f.value === null)) return unknownField();
-    const value = fields.reduce((acc, f) => acc + BigInt(f.value as number), 0n);
+    const value = inRange(fields.reduce((acc, f) => acc + BigInt(f.value as number), 0n));
+    if (value === null) {
+      issue("amount_out_of_range", "total", "The order total is too large to calculate exactly.");
+      return unknownField();
+    }
     const status = fields.every((f) => f.status === "ok") ? "ok" : "needs_review";
-    return { value: toSafeMinor(value), status, evidence: [computed(formula, [input])] };
+    return { value, status, evidence: [computed(formula, [input])] };
   };
   const subtotal = sum((l) => l.amount, "sum(included line amounts)", "lines[*].amount");
   const taxTotal = sum((l) => l.tax, "sum(included line taxes)", "lines[*].tax");
-  const total: Field<number> =
+  const totalValue =
     subtotal.value !== null && taxTotal.value !== null
+      ? inRange(BigInt(subtotal.value) + BigInt(taxTotal.value))
+      : null;
+  if (subtotal.value !== null && taxTotal.value !== null && totalValue === null) {
+    issue("amount_out_of_range", "total", "The order total is too large to calculate exactly.");
+  }
+  const total: Field<number> =
+    totalValue !== null
       ? {
-          value: subtotal.value + taxTotal.value,
+          value: totalValue,
           status: subtotal.status === "ok" && taxTotal.status === "ok" ? "ok" : "needs_review",
           evidence: [computed("subtotal + tax_total", ["subtotal", "taxTotal"])],
         }

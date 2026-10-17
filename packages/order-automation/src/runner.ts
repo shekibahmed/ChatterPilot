@@ -26,7 +26,10 @@ export const TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
   awaiting_submit_approval: ["approved_to_submit", "cancelled_before_submit"],
   approved_to_submit: ["submitting", "cancelled_before_submit"],
   submitting: ["verified_complete", "submitted_unknown", "failed_before_side_effect"],
-  submitted_unknown: ["draft_readback", "verified_complete"],
+  submitted_unknown: ["draft_readback", "verified_complete", "rejected"],
+  // A person may close a stuck attempt after checking the target; this frees the document key.
+  blocked: ["rejected"],
+  cancelled_before_submit: ["rejected"],
 };
 
 export function canTransition(from: string, to: string): boolean {
@@ -69,12 +72,25 @@ function approvalFromRecord(
 export const idempotencyKey = (connector: Connector, payload: ExecutionPayload) =>
   `${connector.id}|${connector.account}|${payload.documentType}|${payload.sourceDraftId}`;
 
+/** The accepted snapshot hash a draft currently has, or null if it is not accepted. */
+export function currentAcceptedSnapshot(ws: Workspace, draftId: string): string | null {
+  if (ws.reviews.draft(draftId)?.status !== "accepted") return null;
+  const accept = [...ws.reviews.decisions(draftId)].reverse().find((d) => d.action === "accept");
+  return (accept?.payload as { snapshotSha256?: string } | undefined)?.snapshotSha256 ?? null;
+}
+
 export function storeApproval(
   ws: Workspace,
   approval: Approval,
   draftId: string,
   payload: ExecutionPayload,
 ): void {
+  if (
+    payload.sourceDraftId !== draftId ||
+    currentAcceptedSnapshot(ws, draftId) !== payload.snapshotSha256
+  ) {
+    throw new Error("The payload does not match the draft's current accepted version.");
+  }
   ws.executions.insertApproval({
     id: approval.id,
     draftId,
@@ -119,7 +135,38 @@ function verify(
     currentCatalogueVersion: input.currentCatalogueVersion,
     now: (input.now ?? (() => new Date()))(),
   });
+  // The approval covers one accepted version; reopening, editing or rejecting the draft voids it.
+  if (currentAcceptedSnapshot(input.ws, draftId) !== payload.snapshotSha256) {
+    const reasons = [
+      ...(check.ok ? [] : check.reasons),
+      "the draft is no longer accepted in the approved version",
+    ];
+    return { check: { ok: false, reasons }, payload, draftId, approval };
+  }
   return { check, payload, draftId, approval };
+}
+
+/**
+ * Close a blocked, cancelled or unknown attempt after a person has checked the target. Recorded with
+ * the operator and reason; frees the document so a new, separately approved attempt can run.
+ */
+export function closeAttempt(
+  ws: Workspace,
+  attemptId: string,
+  operator: string,
+  reason: string,
+): boolean {
+  if (!operator.trim() || !reason.trim())
+    throw new Error("Closing an attempt needs an operator and a reason.");
+  const attempt = ws.executions.attempt(attemptId);
+  if (!attempt || !canTransition(attempt.state, "rejected")) return false;
+  return ws.executions.transition(
+    attemptId,
+    attempt.state,
+    "rejected",
+    new Date().toISOString(),
+    `Closed by ${operator.trim()}: ${reason.trim()}`,
+  );
 }
 
 /**

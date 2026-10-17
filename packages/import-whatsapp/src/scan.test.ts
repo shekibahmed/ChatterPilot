@@ -285,3 +285,15 @@ describe("scanExport: system, media, deleted and edited messages", () => {
     expect(m?.kind).toBe("text");
   });
 });
+
+describe("scanExport: review fixes", () => {
+  it("keeps right-to-left text that starts with a direction mark as text", () => {
+    const [m] = scanExport(chat("[31/12/24, 9:41:00 PM] Alice: ‏مرحبا، أحتاج 10 أكياس")).messages;
+    expect(m).toMatchObject({ kind: "text", author: "Alice" });
+  });
+
+  it("does not treat typed '<attached: …>' text as media", () => {
+    const [m] = scanExport(chat("[31/12/24, 9:42:00 PM] Bob: see this <attached: x.jpg>")).messages;
+    expect(m).toMatchObject({ kind: "text", media: null });
+  });
+});

@@ -14,6 +14,8 @@ export { canonicalJson, PayloadError, payloadFromAcceptedDraft, payloadHash } fr
 export type { RunResult } from "./runner.ts";
 export {
   canTransition,
+  closeAttempt,
+  currentAcceptedSnapshot,
   idempotencyKey,
   prepareApprovedDraft,
   storeApproval,

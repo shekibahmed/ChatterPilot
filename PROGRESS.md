@@ -264,3 +264,35 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Checks: `pnpm exec vitest run packages/providers` — 15 passed; `tsc -p tsconfig.json` and
   `biome check packages/providers` clean. Full `pnpm check` deferred until the review finishes
   (to avoid reformatting files under review).
+
+## 2026-10-17 — Multi-agent review and fixes (owner asked for Sonnet/Haiku workflows)
+- Tool / active writer: Claude Code; review by Workflow run `wf_809cd0bf-461` (4 Sonnet finders by
+  area → 4 Sonnet adversarial verifiers; 1 Haiku docs-claims checker); 9 agents, read-only.
+- Starting branch / HEAD: `build/v0.1` @ `9f7a38eb55987b431da28c33e2b22e2480758cb4`
+- Result: 15 findings confirmed by the verifiers (0 critical, 0 high, 4 medium, 11 low), 1 refuted;
+  4 docs-claim issues. All addressed in this commit:
+  - Import: same-minute messages interleaved across batches were mismatched (now compared as
+    multisets per timestamp); messages in a hole between earlier exports were "uncertain" (now new
+    unless an unmatched stored message shares the gap); duplicate ZIP entry names crashed with a raw
+    SQLite error (now `duplicate_entry` refusal); right-to-left text starting with a direction mark was
+    classed as system (now requires system-notice wording); typed "<attached: x>" text became media
+    (now only at line start or after the exporter's mark).
+  - Orders: catalogue citations used row index, not file line (parseCsv now returns `rowLines`); huge
+    quantities threw and broke every view (now `amount_out_of_range` issue, value unknown); the same
+    message could feed two drafts or appear twice (now refused; one live draft per message; repeats
+    from earlier exports refused); name matches were cited as "aliases" (now the matched column);
+    customer overrides were missing from CSV `human_edits` (now included).
+  - Security: chat names were printed to the terminal unsanitised (now `terminalSafe`).
+  - Execution: approvals survived reopening/rejecting the draft (runner and `storeApproval` now
+    require the current accepted snapshot); blocked/unknown attempts locked the document forever
+    (new `closeAttempt` with operator + reason); read-back did not check the target record is still a
+    draft (now a `status` diff); malformed Telegram updates threw and stalled intake (now logged and
+    skipped; CLI skips bad JSON lines).
+  - Docs: README claimed payments/quotes are never suggested (now true via `looksLikeNonOrder`, and
+    worded as English keyword rules); README/docs implied app-level form filling (new CLI
+    `fill-form --approve`, MockBooks on loopback only, plus accurate wording); README listed Telegram
+    intake as absent (now describes offline intake); SKILL legend for `?`/`!` corrected.
+- Checks (Node 26.10.0, pnpm 12.14.0, Chromium rev 1243):
+  - `pnpm check` — exit 0; 357 tests passed (new regression tests for each fix)
+  - `pnpm test:e2e` — exit 0; 9 passed (adds the `fill-form` CLI flow: no `--approve` sends
+    nothing; with it, one MockBooks draft and 0 submissions)

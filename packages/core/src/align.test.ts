@@ -64,3 +64,26 @@ describe("reconcileSequences", () => {
     expect(statuses([], incoming("a@10:00"))).toEqual(["new"]);
   });
 });
+
+describe("reconcileSequences: review fixes", () => {
+  it("matches same-minute messages even when stored batches interleave them", () => {
+    // Stored order came from two batches: x, z, y, w (y was filled in later); the chat order is x, y, z, w.
+    const s: StoredItem[] = [
+      { id: "x", fingerprint: "x", time: "2026-01-01T09:00:00" },
+      { id: "z", fingerprint: "z", time: "2026-01-01T10:00:00" },
+      { id: "y", fingerprint: "y", time: "2026-01-01T10:00:00" },
+      { id: "w", fingerprint: "w", time: "2026-01-01T11:00:00" },
+    ];
+    const i = incoming("x@09:00", "y@10:00", "z@10:00", "w@11:00");
+    expect(statuses(s, i)).toEqual(["dup:x", "dup:y", "dup:z", "dup:w"]);
+  });
+
+  it("treats messages in a hole between two earlier exports as new, not uncertain", () => {
+    expect(
+      statuses(
+        stored("a@09:00", "b@09:10", "e@11:00", "f@11:10"),
+        incoming("a@09:00", "b@09:10", "c@10:00", "d@10:05", "e@11:00", "f@11:10"),
+      ),
+    ).toEqual(["dup:s0", "dup:s1", "new", "new", "dup:s2", "dup:s3"]);
+  });
+});

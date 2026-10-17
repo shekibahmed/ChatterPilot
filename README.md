@@ -20,12 +20,12 @@ It runs on your computer. The core needs no account, no API key and no internet 
 | Step | What happens | Safeguards |
 |---|---|---|
 | Import | Reads WhatsApp TXT or ZIP exports (Android and iOS formats). | Every line is accounted for; ambiguous day/month order must be confirmed; hostile ZIPs (path tricks, symlinks, zip bombs) are refused; identical re-imports change nothing; the original text is kept byte-for-byte. |
-| Suggest | Messages mentioning products from your catalogue become order suggestions. | Suggestions only. Quotes, payments and delivery updates are not treated as orders. |
+| Suggest | Messages mentioning products from your catalogue become order suggestions. | Suggestions only. Messages that read as payments, deliveries or quotes (English keyword rules) are not suggested. A message can belong to only one live draft. |
 | Draft | Products, quantities and units are matched to your `products.csv`; prices and tax come only from the catalogue; totals use exact integer arithmetic. | Unknown values stay unknown. Typos, ambiguous names, stale or missing prices and incompatible units are flagged, never guessed. |
 | Review | A person can set the customer, fix any field, exclude a line or link a later correction. | Every edit needs a reason and is kept in an append-only history. A draft with open issues cannot be accepted. |
 | Dashboard | Order value by day, chat activity, pipeline, quantities by product, orders by customer and open review work. | Money figures count accepted orders only unless you choose otherwise; every metric states its definition, date coverage and what it left out; trends are refused ("insufficient comparable data") when coverage or volume is too thin. |
 | Export | Accepted orders download as CSV or JSON. | Exports come from frozen, fingerprinted snapshots; spreadsheet formula injection is neutralised. |
-| Fill a form (opt-in, synthetic only) | An accepted order can be typed into another system's web form by a browser connector, proven on a local synthetic form. | Approval bound to the exact document, prices, target, person and expiry; checked before and after saving; never twice; unknown outcomes reconciled, not retried; **stops before Submit**. See [docs/order-automation.md](docs/order-automation.md). |
+| Fill a form (opt-in, synthetic only) | `chatterpilot fill-form --approve` types an accepted order into a local synthetic web form (MockBooks) and reads it back. No real system is supported yet. | Approval bound to the exact document, prices, target, person and expiry; checked before and after saving; never twice; unknown outcomes reconciled, not retried; **stops before Submit**. See [docs/order-automation.md](docs/order-automation.md). |
 
 ![Dashboard with coverage banner, reviewed-only order value and a refused week-on-week trend](docs/images/dashboard.png)
 
@@ -67,8 +67,11 @@ Only import chats you have the right to process. Workspaces live in `workspaces/
   direction marks recent exports contain. Other locales may work but are untested.
 - **Language:** order lines are understood in English with Western digits. Hindi digits and unit
   words are skipped rather than guessed. Regional-language support needs proper evaluation first.
-- **Not included:** live WhatsApp connection, voice-note transcription, AI extraction, Telegram
-  intake, and any real (non-synthetic) target system or document submission. These are planned as separate, opt-in,
+- **Telegram:** `chatterpilot intake` applies the staff-only intake rules to saved Telegram updates
+  offline. There is no live bot yet.
+- **Not included:** live WhatsApp connection, a live Telegram bot, voice-note transcription, AI
+  extraction (only the offline consent/validation boundary exists), any real (non-synthetic) target
+  system, and document submission. These are planned as separate, opt-in,
   permission-gated steps.
 
 ## How it is built

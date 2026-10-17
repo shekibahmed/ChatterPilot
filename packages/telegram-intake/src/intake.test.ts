@@ -171,3 +171,18 @@ describe("offline Telegram intake on synthetic updates", () => {
     expect(intakeGapWarning("2026-01-10T12:00:00Z", NOW)).toMatch(/48 hours.*at most 24 hours/);
   });
 });
+
+describe("intake review fixes", () => {
+  it("logs and skips a malformed update instead of stalling", () => {
+    const bad = {
+      update_id: 7001,
+      message: { message_id: 1, date: 1, from: { id: 111001 } },
+    } as unknown as TgUpdate;
+    expect(processUpdate(ws.intake, bad, POLICY, resolver, NOW)).toEqual({
+      updateId: 7001,
+      outcome: "refused",
+      reason: "malformed message",
+    });
+    expect(ws.intake.offset()).toBe(7001);
+  });
+});

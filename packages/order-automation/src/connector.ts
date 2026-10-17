@@ -69,12 +69,14 @@ export interface FieldDiff {
 /** Compare what the target holds with what was approved. Any difference blocks the attempt. */
 export function diffReadBack(
   payload: ExecutionPayload,
-  rb: Omit<ReadBack, "remoteRef" | "status">,
+  rb: Omit<ReadBack, "remoteRef">,
 ): FieldDiff[] {
   const diffs: FieldDiff[] = [];
   const check = (field: string, expected: string | null, actual: string | null) => {
     if (expected !== actual) diffs.push({ field, expected, actual });
   };
+  // Only an unsubmitted draft is acceptable: a record someone already submitted must not pass.
+  check("status", "draft", rb.status);
   check("reference", payload.sourceDraftId, rb.reference);
   check("customerId", payload.customerId, rb.customerId);
   check("orderDate", payload.orderDate, rb.orderDate);

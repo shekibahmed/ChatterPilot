@@ -115,6 +115,15 @@ describe("openWhatsAppArchive: hostile or unsupported archives are refused", () 
     ],
     ["no chat text", [{ name: "a.opus", data: SAMPLE_BYTES.opus }], "no_chat_text"],
     [
+      "two entries with the same name",
+      [
+        chat,
+        { name: "IMG-1.jpg", data: SAMPLE_BYTES.jpg },
+        { name: "IMG-1.jpg", data: "different" },
+      ],
+      "duplicate_entry",
+    ],
+    [
       "two candidate chat texts",
       [
         { name: "WhatsApp Chat with A.txt", data: CHAT },

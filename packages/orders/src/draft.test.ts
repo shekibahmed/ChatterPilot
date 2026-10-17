@@ -366,3 +366,24 @@ describe("buildOrderDraft: reviewer overrides", () => {
     ).toThrow(OverrideError);
   });
 });
+
+describe("buildOrderDraft: review fixes", () => {
+  it("reports an absurd quantity as an issue instead of crashing", () => {
+    const draft = buildOrderDraft(
+      [message("For Kumar Builders 9000000000000 bags cement")],
+      catalogue,
+    );
+    expect(draft.lines[0]?.amount.value).toBeNull();
+    expect(draft.issues.map((i) => i.code)).toContain("amount_out_of_range");
+    expect(draft.total.value).toBeNull();
+  });
+
+  it("cites the catalogue column that actually matched", () => {
+    const byAlias = buildOrderDraft([message("40 bags cement")], catalogue).lines[0]?.product
+      .evidence[1];
+    const byName = buildOrderDraft([message("120 sq ft Vitrified Tile 2x2 White")], catalogue)
+      .lines[0]?.product.evidence[1];
+    expect(byAlias).toMatchObject({ kind: "catalogue", column: "aliases" });
+    expect(byName).toMatchObject({ kind: "catalogue", recordId: "TIL-22W", column: "name" });
+  });
+});

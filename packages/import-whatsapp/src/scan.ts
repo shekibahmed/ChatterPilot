@@ -85,7 +85,12 @@ const ANDROID_HEADER = new RegExp(
 const ANDROID_SYSTEM_PREFIX =
   / (?:changed the subject|changed the group description|changed this group's|added|removed|left|joined using|created group)/;
 
-const ATTACHED_IOS = /<attached: ([^>]+)>\s*$/;
+// iOS writes "<attached: …>" at the start of the line or after the exporter's direction mark
+// ("Quote.pdf • ‎1 page ‎<attached: …>"); text a person typed ending in "<attached: x>" is not media.
+const ATTACHED_IOS = /(?:^|\u200E)<attached: ([^>]+)>\s*$/;
+// English iOS system notices, which the exporter writes under the chat name after a direction mark.
+const IOS_SYSTEM_TEXT =
+  /^(?:Messages and calls are end-to-end encrypted|Your security code with|.+ (?:added|removed|left|joined using|changed the (?:subject|group description)|changed this group's|created (?:group|this group))\b)/;
 const ATTACHED_ANDROID = /^(.+\.[A-Za-z0-9]{2,5}) \(file attached\)$/;
 const OMITTED_IOS = /^(image|video|audio|sticker|GIF|document|Contact card) omitted$/i;
 const DELETED = /^(?:This message was deleted|You deleted this message)\.?$/;
@@ -187,7 +192,7 @@ function classify(
     const mediaType = omittedType(omitted[1] ?? "");
     return { kind: "media", media: { state: "omitted", fileName: null, mediaType }, edited };
   }
-  const attached = ATTACHED_IOS.exec(first) ?? ATTACHED_ANDROID.exec(first);
+  const attached = ATTACHED_IOS.exec(firstLine) ?? ATTACHED_ANDROID.exec(first);
   if (attached) {
     const fileName = attached[1] ?? "";
     return {
@@ -197,9 +202,11 @@ function classify(
     };
   }
   if (DELETED.test(first)) return { kind: "deleted", media: null, edited };
-  // iOS writes system notices (encryption banner, member changes) under the chat name with a
-  // leading direction mark; ordinary typed text does not start with one.
-  if (format === "ios" && startsWithMark) return { kind: "system", media: null, edited };
+  // iOS writes system notices under the chat name with a leading direction mark. Right-to-left text
+  // a person typed can also start with one, so the notice text must also look like a system notice.
+  if (format === "ios" && startsWithMark && IOS_SYSTEM_TEXT.test(first)) {
+    return { kind: "system", media: null, edited };
+  }
   return { kind: "text", media: null, edited };
 }
 

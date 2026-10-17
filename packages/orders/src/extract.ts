@@ -41,6 +41,17 @@ const LEADING_FILLER =
   /^(?:(?:hi|hello|sir|ji|bhai|pls|please|kindly|need|needs|send|order|want|book|add|also|and|of|required|require|supply|give|i|we|urgent|sorry|make|it)(?:\s+|$))+/i;
 const TRAILING_FILLER = /(?:\s+(?:only|please|pls|urgent|asap|sir|ji|thanks|thank you))+$/i;
 
+/**
+ * Messages reporting a payment, a delivery or a price quote mention products and quantities but are
+ * not orders. English keyword rules only; a person can still draft any message deliberately.
+ */
+const NON_ORDER =
+  /^\s*(?:paid|payment|delivered|dispatched|received|quote|quotation|rate|price|prices)\b|\b(?:paid|payment (?:done|made|received|sent)|has been delivered|delivered today|dispatched)\b/i;
+
+export function looksLikeNonOrder(body: string): boolean {
+  return NON_ORDER.test(body);
+}
+
 /** A product phrase needs letters and must not be just a unit word ("45 bags"). */
 function isProductLike(text: string): boolean {
   return /[a-z]/i.test(text) && canonicalUnit(text) === null;

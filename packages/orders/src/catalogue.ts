@@ -148,7 +148,8 @@ function readTable<C extends string>(
   }
   return {
     rows: body.map((cells, i) => {
-      const row = i + 2;
+      // The real line in the file, so catalogue citations and issues point at the right row.
+      const row = parsed.rowLines[i + 1] ?? i + 2;
       if (cells.length !== names.length) {
         issues.push({
           severity: "error",

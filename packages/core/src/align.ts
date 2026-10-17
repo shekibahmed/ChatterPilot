@@ -8,8 +8,9 @@
  *
  * - matched incoming messages are duplicates of the stored ones (counted once);
  * - incoming messages outside the shared window are new;
- * - unmatched incoming messages inside the window are "uncertain" (possibly edited or deleted in
- *   one export) and are kept for a person to review, never dropped.
+ * - unmatched incoming messages inside the window are "uncertain" when an unmatched stored message
+ *   sits in the same gap (possibly edited or deleted), otherwise new; uncertain ones are kept for a
+ *   person to review, never dropped.
  */
 
 export interface StoredItem {
@@ -98,14 +99,27 @@ export function reconcileSequences(
 
   // Items without a time are kept with their neighbours (treated as inside the window).
   const inWindow = (t: string | null) => t === null || (t >= from && t <= to);
-  const sIdx = stored.flatMap((s, i) => (inWindow(s.time) ? [i] : []));
-  const iIdx = incoming.flatMap((m, i) => (inWindow(m.time) ? [i] : []));
+  // Exports have minute (sometimes second) resolution, and stored messages from different batches
+  // can interleave within one timestamp. Compare same-timestamp runs as multisets: order each side
+  // by (time, fingerprint), carrying the previous time forward for items without one.
+  const ordered = <T extends { fingerprint: string; time: string | null }>(items: readonly T[]) => {
+    let last = "";
+    return items
+      .map((item, i) => {
+        if (item.time) last = item.time;
+        return { i, key: last, fp: item.fingerprint };
+      })
+      .filter(({ i }) => inWindow((items[i] as T).time))
+      .sort((a, b) => a.key.localeCompare(b.key) || a.fp.localeCompare(b.fp) || a.i - b.i)
+      .map(({ i }) => i);
+  };
+  const sIdx = ordered(stored);
+  const iIdx = ordered(incoming);
   const pairs = lcsPairs(
     sIdx.map((i) => (stored[i] as StoredItem).fingerprint),
     iIdx.map((i) => (incoming[i] as IncomingItem).fingerprint),
   );
 
-  for (const i of iIdx) result[i] = { status: "uncertain" };
   for (const [a, b] of pairs) {
     result[iIdx[b] as number] = {
       status: "duplicate",
@@ -113,15 +127,17 @@ export function reconcileSequences(
     };
   }
 
-  // Window edges: unmatched incoming items beyond the last (or before the first) match are new
-  // when the stored side has nothing further in the window, e.g. messages later in the same minute.
-  const firstPair = pairs[0];
-  const lastPair = pairs.at(-1);
-  if (lastPair && lastPair[0] === sIdx.length - 1) {
-    for (const i of iIdx.slice(lastPair[1] + 1)) result[i] = { status: "new" };
-  }
-  if (firstPair && firstPair[0] === 0) {
-    for (const i of iIdx.slice(0, firstPair[1])) result[i] = { status: "new" };
+  // An unmatched incoming item is "uncertain" only if some stored item in the same gap between
+  // matches is also unmatched (a possible edited or deleted counterpart). Otherwise it is new: for
+  // example messages after the stored export ended, or in a hole between two earlier exports.
+  const bounds: [number, number][] = [[-1, -1], ...pairs, [sIdx.length, iIdx.length]];
+  for (let k = 0; k + 1 < bounds.length; k++) {
+    const [sA, iA] = bounds[k] as [number, number];
+    const [sB, iB] = bounds[k + 1] as [number, number];
+    const storedGap = sB - sA - 1 > 0;
+    for (let b = iA + 1; b < iB; b++) {
+      result[iIdx[b] as number] = { status: storedGap ? "uncertain" : "new" };
+    }
   }
   return result;
 }

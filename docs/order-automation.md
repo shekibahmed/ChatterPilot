@@ -16,8 +16,10 @@ submitting a document is deliberately not available in this release.
    action ("prepare a draft" or "submit"), the customer, the exact document (by hash), the catalogue
    version and an expiry (at most 60 minutes). If the document, the prices, the target or the person
    changes, or time runs out, the approval no longer applies.
-3. **Chat text never grants permission.** Approvals come from a person in the app; nothing in a
-   message, a transcript or model output can approve or trigger an action.
+3. **Chat text never grants permission.** Approvals come from a named person
+   (today: `chatterpilot fill-form --operator <name> --approve`, after the document is shown; an
+   approval screen in the review app is not built yet). Nothing in a message, a transcript or model
+   output can approve or trigger an action. Reopening or rejecting the draft voids the approval.
 4. **Check before saving.** The connector fills the form, then compares the target's own calculated
    prices and totals with the approved document. If anything differs, it stops without saving.
 5. **Read back after saving.** The saved draft is read back and compared field by field. Any
@@ -60,6 +62,8 @@ are in place.
 - When the connection drops after saving, the browser itself may retry the request and create a
   second draft. Reconciliation finds two matches and stops for a person instead of picking one.
 - Requests to any other address are blocked.
+- A read-back of a record that is no longer a draft (for example already submitted) is blocked.
+- A blocked or unknown attempt stays locked until a person closes it with a reason.
 
 ## What is still needed before a real system
 

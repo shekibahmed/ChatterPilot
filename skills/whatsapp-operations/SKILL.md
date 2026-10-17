@@ -46,8 +46,9 @@ To show the product without any real data: `pnpm demo`, then open http://127.0.0
    Use `--chat` when a later export of the same chat has a different file name. Report the overlap
    line ("new / already imported / changed") and any warnings.
 5. **Review drafts.** Either print them with `pnpm chatterpilot draft --catalogue <folder>`, or open
-   the review app with `pnpm chatterpilot serve`. Explain that `?` means "needs review" and `!`
-   means "unknown", and that each value lists its source (chat line, catalogue row, calculation or
+   the review app with `pnpm chatterpilot serve`. In the terminal output, `?` marks a field that needs
+   review (including a product that could not be identified, shown as `? unknown`) and `!` marks a
+   value that is unknown because something it depends on is missing. Each value lists its source (chat line, catalogue row, calculation or
    human edit). Accepting, editing and rejecting are the **user's** decisions in the app; never
    accept on their behalf.
 6. **Export** accepted orders from the app's Export tab (CSV or JSON). Only accepted orders appear.

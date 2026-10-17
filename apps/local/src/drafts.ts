@@ -6,6 +6,7 @@ import {
   type CatalogueIssue,
   extractOrderLines,
   loadCatalogue,
+  looksLikeNonOrder,
   matchRecord,
   type OrderDraft,
   type SourceMessage,
@@ -60,14 +61,16 @@ export function suggestOrderMessages(workspace: Workspace, catalogue: Catalogue)
     )
     .all() as MessageRow[];
   return rows
-    .filter((r) =>
-      extractOrderLines(r.body).some((line) => {
-        const status = matchRecord(line.productText, catalogue.products, (p) => [
-          p.name,
-          ...p.aliases,
-        ]).status;
-        return status === "resolved" || status === "fuzzy";
-      }),
+    .filter(
+      (r) =>
+        !looksLikeNonOrder(r.body) &&
+        extractOrderLines(r.body).some((line) => {
+          const status = matchRecord(line.productText, catalogue.products, (p) => [
+            p.name,
+            ...p.aliases,
+          ]).status;
+          return status === "resolved" || status === "fuzzy";
+        }),
     )
     .map((r) => ({
       message: {

@@ -13,6 +13,7 @@ import {
   type DraftOverrides,
   type LineOverrides,
   loadCatalogue,
+  looksLikeNonOrder,
   type MetricScope,
   type OrderDraft,
   OverrideError,
@@ -189,11 +190,12 @@ export function createDraft(
 ): DraftView {
   const by = requireText(reviewer, "Reviewer name", 80);
   if (messageIds.length === 0) throw new ReviewError(400, "Choose at least one message.");
+  if (new Set(messageIds).size !== messageIds.length) {
+    throw new ReviewError(400, "The same message was chosen twice.");
+  }
   const messages = ws.reviews.messages(messageIds);
   if (messages.length !== messageIds.length) throw new ReviewError(404, "Unknown message.");
-  if (messages.some((m) => m.kind !== "text")) {
-    throw new ReviewError(400, "Only text messages can become order drafts.");
-  }
+  for (const m of messages) assertDraftable(ws, m);
   const catalogue = activeCatalogue(ws);
   if (!catalogue) throw new ReviewError(409, "Load a catalogue before drafting orders.");
   const id = randomUUID();
@@ -344,9 +346,11 @@ export function decide(
   const { payload } = parseDecision(input, catalogueFor(ws, record.catalogueVersion));
   if (input.action === "link_message") {
     const [message] = ws.reviews.messages([payload.messageId as string]);
-    if (message?.kind !== "text") throw new ReviewError(400, "Only text messages can be linked.");
-    const already = view.messages.some((m) => m.id === message.id);
-    if (already) throw new ReviewError(409, "That message is already part of this draft.");
+    if (!message) throw new ReviewError(404, "Unknown message.");
+    if (view.messages.some((m) => m.id === message.id)) {
+      throw new ReviewError(409, "That message is already part of this draft.");
+    }
+    assertDraftable(ws, message);
   }
   if (
     "line" in payload &&
@@ -411,20 +415,42 @@ export function listDrafts(ws: Workspace): DraftSummary[] {
 }
 
 /** Text messages that look like orders and are not yet part of any draft. */
+/** Message ids already used by a draft that is not rejected (as a source or a linked message). */
+function usedMessageIds(ws: Workspace): Set<string> {
+  return new Set(
+    ws.reviews
+      .drafts()
+      .filter((d) => d.status !== "rejected")
+      .flatMap((d) => [
+        ...d.sourceMessageIds,
+        ...ws.reviews
+          .decisions(d.id)
+          .filter((x) => x.action === "link_message")
+          .map((x) => (x.payload as { messageId: string }).messageId),
+      ]),
+  );
+}
+
+/** One message can feed only one live draft, and only canonical text messages are drafted. */
+function assertDraftable(ws: Workspace, m: StoredMessage): void {
+  if (m.kind !== "text") throw new ReviewError(400, "Only text messages can become order drafts.");
+  if (m.duplicateOf) {
+    throw new ReviewError(
+      409,
+      "This message repeats one from an earlier export; use that one instead.",
+    );
+  }
+  if (usedMessageIds(ws).has(m.id)) {
+    throw new ReviewError(409, "This message is already part of another order draft.");
+  }
+}
+
 export function suggestions(ws: Workspace): StoredMessage[] {
   const catalogue = activeCatalogue(ws);
   if (!catalogue) return [];
-  const used = new Set(
-    ws.reviews.drafts().flatMap((d) => [
-      ...d.sourceMessageIds,
-      ...ws.reviews
-        .decisions(d.id)
-        .filter((x) => x.action === "link_message")
-        .map((x) => (x.payload as { messageId: string }).messageId),
-    ]),
-  );
+  const used = usedMessageIds(ws);
   return ws.reviews.allTextMessages().filter((m) => {
-    if (used.has(m.id)) return false;
+    if (used.has(m.id) || looksLikeNonOrder(m.body)) return false;
     const draft = buildOrderDraft([toSource(m)], catalogue);
     return draft.lines.some((l) => l.product.value !== null);
   });
@@ -478,7 +504,14 @@ export function exportCsv(ws: Workspace): string {
     for (const line of draft.lines) {
       if (line.excluded) continue;
       lineNo++;
-      const fields = [line.product, line.quantity, line.unit, line.unitPrice, line.taxRate];
+      const fields = [
+        draft.customer,
+        line.product,
+        line.quantity,
+        line.unit,
+        line.unitPrice,
+        line.taxRate,
+      ];
       const chat = line.quantity.evidence.find((e) => e.kind === "message");
       const edits = fields.flatMap((f) =>
         f.evidence.flatMap((e) => (e.kind === "human" ? [`${e.reviewer}: ${e.reason}`] : [])),

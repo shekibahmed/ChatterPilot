@@ -254,3 +254,15 @@ their replacement. No secrets, customer data or private transcripts.
   uncertain charges and are never marked safe to retry unless the provider documents idempotency;
   no automatic fallback. `FixtureProvider` gives deterministic offline answers for tests.
 - Not done: audio transcription, transcript import (next), UI for consent, real adapter.
+
+## D014 — Review-driven changes
+- Date: 2026-10-17 (+05:30)
+- Status: accepted
+- Overlap reconciliation now compares same-timestamp runs as multisets and labels an unmatched
+  message "uncertain" only when an unmatched stored message shares its gap (supersedes the edge
+  rule in D009). One message can belong to only one live (non-rejected) draft, and repeats from
+  earlier exports cannot be drafted. Approvals are void once the draft leaves the approved accepted
+  version (extends D011). A person can close a stuck attempt (blocked, cancelled, unknown) with a
+  reason, which moves it to `rejected` and frees the document key. Read-back requires target status
+  "draft". `chatterpilot fill-form` exposes OA0 for the synthetic MockBooks form only (loopback
+  targets), with an explicit `--approve` per run.

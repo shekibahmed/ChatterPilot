@@ -1,5 +1,10 @@
 export type CsvParseResult =
-  | { ok: true; rows: string[][] }
+  | {
+      ok: true;
+      rows: string[][];
+      /** 1-based source line where each row starts (blank lines and quoted newlines counted). */
+      rowLines: number[];
+    }
   | { ok: false; reason: "unterminated_quote" | "stray_quote"; line: number };
 
 /**
@@ -15,10 +20,15 @@ export function parseCsv(input: string): CsvParseResult {
   let inQuotes = false;
   let fieldStarted = false;
   let line = 1;
+  let rowStart = 1;
+  const rowLines: number[] = [];
 
   const endRow = () => {
     row.push(field);
-    if (!(row.length === 1 && row[0] === "")) rows.push(row);
+    if (!(row.length === 1 && row[0] === "")) {
+      rows.push(row);
+      rowLines.push(rowStart);
+    }
     row = [];
     field = "";
     fieldStarted = false;
@@ -56,6 +66,7 @@ export function parseCsv(input: string): CsvParseResult {
       if (c === "\r" && text[i + 1] === "\n") i++;
       endRow();
       line++;
+      rowStart = line;
     } else {
       field += c;
       fieldStarted = true;
@@ -63,7 +74,7 @@ export function parseCsv(input: string): CsvParseResult {
   }
   if (inQuotes) return { ok: false, reason: "unterminated_quote", line };
   if (field !== "" || row.length > 0) endRow();
-  return { ok: true, rows };
+  return { ok: true, rows, rowLines };
 }
 
 // OWASP CSV injection: cells starting with these can run as spreadsheet formulas.
