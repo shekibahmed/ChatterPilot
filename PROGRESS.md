@@ -228,3 +228,16 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   servers (now deltas); orphaned test servers from a timed-out background run were stopped.
 - Owner action needed: follow `fixtures/mock-order-app/recording/README.md` (about 5 minutes).
 - Next: WP7 agent skill package against the real CLI; then OA1 offline Telegram intake fixtures.
+
+## 2026-10-17 — WP7 companion agent skill
+- Tool / active writer: Claude Code (autonomous run)
+- Starting branch / HEAD: `build/v0.1` @ `0b4ec5eaaa346b30898cd5f43ae61ea10e7af78b`
+- Outcome: completed (skill text); packaging/installer work of WP7 not started
+- Changes: `skills/whatsapp-operations/SKILL.md` (triggers, inputs, procedure using only the real
+  CLI, outputs, permission boundaries, untrusted-content rule, "never" list);
+  `apps/local/src/skill.test.ts` checks frontmatter, that every `pnpm chatterpilot …` command and
+  flag in the skill appears in the CLI's own usage text, and that referenced pnpm scripts exist.
+- Checks: `pnpm check` — exit 0; 316 tests passed. Mutation check: adding a fake
+  `pnpm chatterpilot transcribe --all` line made the skill test fail as intended; file restored.
+- Not run: installing the skill into a separate clean agent environment (PLAN WP7 test).
+- Next: OA1 offline Telegram intake (synthetic updates, no bot, no network).
