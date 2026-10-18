@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/8d0de102-f271-46f9-93e5-22ced205c35a
+
 # ChatterPilot
 
 **Turn WhatsApp order messages into source-linked drafts you can check and export.**
