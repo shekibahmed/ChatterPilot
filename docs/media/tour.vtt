@@ -1,0 +1,100 @@
+WEBVTT
+
+00:00:25.580 --> 00:00:30.570
+The review app runs on this computer and needs no internet.
+
+00:00:30.570 --> 00:00:36.160
+The demo opens with invented chat exports already imported.
+
+00:00:36.160 --> 00:00:40.210
+Anita enters her name so each edit records who made it.
+
+00:00:41.700 --> 00:00:46.830
+The Imports tab lists each chat export that was read.
+
+00:00:46.830 --> 00:00:52.190
+Opening one shows the original text, untouched, with line numbers.
+
+00:00:52.190 --> 00:00:56.300
+The Kumar Builders order is one message on lines 6 to 9.
+
+00:00:57.780 --> 00:01:03.090
+The Orders tab suggests messages that mention catalogue products.
+
+00:01:03.090 --> 00:01:09.660
+Draft order prepares a draft from the Kumar Builders message.
+
+00:01:09.660 --> 00:01:14.970
+Prices come from the catalogue. The draft total is INR 28,355.20.
+
+00:01:14.970 --> 00:01:19.580
+No open issues are flagged. A later correction is not yet linked.
+
+00:01:20.570 --> 00:01:26.880
+Each field has source labels that show where its value came from.
+
+00:01:26.880 --> 00:01:33.410
+Clicking Chat line 7 on the product field highlights the word cement.
+
+00:01:33.410 --> 00:01:37.800
+The quantity label highlights the exact words 40 bags cement.
+
+00:01:38.800 --> 00:01:45.790
+Anita links the later message, "Sorry make it 45 bags cement."
+
+00:01:45.790 --> 00:01:53.790
+She gives a reason: "Customer corrected cement to 45 bags."
+
+00:01:56.240 --> 00:02:03.040
+She excludes the old 40-bag line. The total is now INR 30,979.20.
+
+00:02:03.040 --> 00:02:07.650
+Accepting the order locks it. The page reads Accepted and frozen.
+
+00:02:09.150 --> 00:02:14.160
+Export uses only orders that a person has accepted.
+
+00:02:14.160 --> 00:02:19.620
+The CSV carries the corrected 45 bags, not the original 40.
+
+00:02:19.620 --> 00:02:26.470
+A Zoho Books import file is prepared. It is not yet tried in Zoho.
+
+00:02:26.470 --> 00:02:31.140
+Tally Prime refuses until each name is matched in export-map.json.
+
+00:02:33.610 --> 00:02:37.480
+The dashboard states its dates: 2026-01-12 to 2026-01-21.
+
+00:02:37.480 --> 00:02:42.250
+It shows the gap as well: no data for 16 to 19 January.
+
+00:02:42.250 --> 00:02:47.390
+It refuses a week comparison: "Insufficient comparable data".
+
+00:02:47.390 --> 00:02:52.060
+By default it counts accepted orders: INR 30,979.20 on 2026-01-12.
+
+00:02:53.560 --> 00:02:57.910
+Follow-ups list what is still open in the chats.
+
+00:02:57.910 --> 00:03:02.100
+Meera Shah's quote request is listed as open.
+
+00:03:02.100 --> 00:03:06.190
+Promised and reported payments are listed as things to check.
+
+00:03:06.190 --> 00:03:10.690
+A promise or a report is not a verified payment, the page says.
+
+00:03:10.420 --> 00:03:18.420
+A coding agent uses MCP, a tool link, to load the catalogue.
+
+00:03:22.130 --> 00:03:28.720
+It imports a Hindi-English chat. Each draft line cites its chat words.
+
+00:03:28.720 --> 00:03:36.720
+Its proposed edit is recorded as agent:demo-agent, with a reason.
+
+00:03:38.060 --> 00:03:46.060
+Export refuses: nothing is accepted. The agent has no accept tool.

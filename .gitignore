@@ -31,3 +31,6 @@ test-results/
 .DS_Store
 .idea/
 .vscode/
+
+# Raw walkthrough recordings (regenerate with pnpm media)
+/docs/media/raw/

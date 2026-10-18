@@ -39,6 +39,15 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 30_000,
     },
+    // The interactive walkthrough page (static files from docs/).
+    {
+      command: "node apps/local/src/media/serve-tour.ts",
+      cwd: root,
+      env: { PORT: "4319" },
+      url: "http://127.0.0.1:4319/media/tour.html",
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
     // Synthetic MockBooks targets for the order connector (normal and with injected faults).
     ...[
       [4330, ""],

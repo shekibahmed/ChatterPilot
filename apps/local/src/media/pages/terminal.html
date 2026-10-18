@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ChatterPilot agent session</title>
+<!-- Replays docs/agent-session.md (a real MCP session) as a typed terminal for the walkthrough video.
+     Steps and captions come from window.__SESSION, injected by apps/local/src/media/record.ts. -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: #0b1417; color: #e6edf3;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { background: radial-gradient(1200px 700px at 80% 0%, #0f2a2a, #0b1417 70%); padding: 34px 60px 110px; }
+  .win { height: 100%; border-radius: 14px; background: #060c0e; border: 1px solid #24403f;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5); display: flex; flex-direction: column; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #0f1b1f; border-bottom: 1px solid #24403f; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #3a4b4f; }
+  .bar .t { margin-left: 12px; font-size: 14px; color: #9fb4b2; font-weight: 600; }
+  .bar .r { margin-left: auto; font-size: 13px; color: #2dd4bf; font-weight: 700; }
+  pre { flex: 1; padding: 18px 22px; overflow: hidden; font: 16.5px/1.5 ui-monospace, "JetBrains Mono", "Fira Code", Menlo, monospace;
+    white-space: pre-wrap; word-break: break-word; }
+  .c { color: #6b8a87; }
+  .p { color: #2dd4bf; font-weight: 700; }
+  .k { color: #e6edf3; }
+  .res { color: #b7c7c5; }
+  .e { color: #f87171; font-weight: 700; }
+  .ok { color: #86efac; }
+  .cur { display: inline-block; width: 9px; height: 18px; background: #2dd4bf; vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  #cap { position: fixed; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: 26px; transform: translateY(12px); max-width: 84%;
+    padding: 12px 24px; border-radius: 14px; background: rgba(12,18,24,.92); color: #fff; border: 1px solid #24403f;
+    font: 600 23px/1.35 system-ui, sans-serif; text-align: center; opacity: 0; transition: opacity 320ms, transform 320ms; }
+  #cap.on { opacity: 1; transform: none; }
+  #hook { display: none; }
+  #brand { display: none; }
+  /* Social formats: large type, the hook on top, the terminal filling the rest. */
+  body.social { padding: 70px 54px 250px; }
+  body.social #hook { display: block; font: 800 50px/1.25 system-ui, sans-serif; color: #fff; margin: 0 6px 40px; letter-spacing: -.5px; }
+  body.social #hook b { color: #2dd4bf; }
+  body.social .win { height: auto; flex: 1; }
+  body.social pre { font-size: 25px; line-height: 1.45; padding: 26px 28px; }
+  body.social .bar .t { font-size: 20px; }
+  body.social .bar .r { display: none; }
+  body.social #cap { font-size: 34px; bottom: 70px; max-width: 90%; padding: 18px 30px; }
+  body.social #brand { display: block; position: fixed; left: 0; right: 0; bottom: 18px; text-align: center; font: 800 28px system-ui, sans-serif; color: #2dd4bf; }
+  body.vertical { padding-top: 150px; padding-bottom: 330px; }
+  body.vertical #hook { font-size: 62px; margin-bottom: 60px; }
+  body.vertical pre { font-size: 29px; }
+  body.vertical #cap { bottom: 120px; font-size: 38px; }
+  body.vertical #brand { bottom: 50px; font-size: 34px; }
+</style>
+</head>
+<body>
+<div id="hook"></div>
+<div class="win">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="t">coding agent ⇄ chatterpilot MCP server (stdio)</span><span class="r">recorded session · synthetic data</span></div>
+  <pre id="out"></pre>
+</div>
+<div id="cap"></div>
+<div id="brand">ChatterPilot · MIT · local-first</div>
+<script>
+  const S = window.__SESSION || { steps: [], tools: 0 };
+  if (S.layout) {
+    const [w, h] = S.layout === "vertical" ? [1080, 1920] : [1080, 1080];
+    document.documentElement.style.width = document.body.style.width = `${w}px`;
+    document.documentElement.style.height = document.body.style.height = `${h}px`;
+    document.body.classList.add("social", S.layout);
+    document.body.style.display = "flex";
+    document.body.style.flexDirection = "column";
+    document.getElementById("hook").textContent = S.hook || "";
+  }
+  const out = document.getElementById("out");
+  const cap = document.getElementById("cap");
+  const t0 = performance.now();
+  window.__marks = [];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  const cursor = '<span class="cur"></span>';
+  let html = "";
+  const render = () => { out.innerHTML = html + cursor; out.scrollTop = out.scrollHeight; };
+  const add = (s) => { html += s; render(); };
+  const type = async (text, cls, cps = 55) => {
+    const open = `<span class="${cls}">`;
+    html += open;
+    for (const ch of text) { html += esc(ch); render(); await sleep(1000 / cps); }
+    html += "</span>";
+    render();
+  };
+  const caption = (text) => {
+    window.__marks.push({ t: (performance.now() - t0) / 1000, text });
+    cap.textContent = text;
+    cap.classList.toggle("on", Boolean(text));
+  };
+  (async () => {
+    await sleep(600);
+    add(`<span class="c"># The agent connects over MCP and sees ${S.tools} tools. None of them accepts an order.</span>\n\n`);
+    for (const step of S.steps) {
+      if (step.caption) caption(step.caption);
+      add(`<span class="c"># ${esc(step.title)}</span>\n`);
+      await type(`› ${step.call}`, "p", 48);
+      add("\n");
+      await sleep(450);
+      add(`<span class="${step.error ? "e" : "res"}">${esc(step.result)}</span>\n\n`);
+      await sleep(step.hold || 2600);
+    }
+    if (S.closing) caption(S.closing);
+    await sleep(3400);
+    window.__done = true;
+  })();
+</script>
+</body>
+</html>
