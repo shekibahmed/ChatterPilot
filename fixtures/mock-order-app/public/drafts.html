@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MockBooks — drafts</title>
+  </head>
+  <body>
+    <h1>MockBooks — drafts</h1>
+    <ul id="list"></ul>
+    <script type="module">
+      const ref = new URLSearchParams(location.search).get("ref") ?? "";
+      const ids = await (await fetch(`/api/drafts?ref=${encodeURIComponent(ref)}`)).json();
+      for (const id of ids) {
+        const li = document.createElement("li");
+        li.setAttribute("data-testid", "draft-id");
+        li.textContent = id;
+        document.querySelector("#list").append(li);
+      }
+      document.body.dataset.loaded = "true";
+    </script>
+  </body>
+</html>

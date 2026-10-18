@@ -1,0 +1,50 @@
+name: Tell us how you use it
+description: Who you are, what you tried, what worked and what got in the way.
+labels: [usage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste real chats, customer names, phone numbers or prices.** Describe the shape and use invented values.
+        Security problems: please report privately (see SECURITY.md).
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who are you?
+      multiple: true
+      options:
+        - Developer
+        - Agent builder
+        - Shop or distributor
+        - Consultant (accounting, ERP, IT)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you try?
+      description: For example the demo, your own export with invented data, a new export format, an agent session, a change to the code.
+    validations:
+      required: true
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked?
+  - type: textarea
+    id: blocked
+    attributes:
+      label: What got in the way?
+      description: Setup, missing features, confusing docs, results you did not expect. Write "nothing" if it went smoothly. Use invented values for any example.
+  - type: input
+    id: tools
+    attributes:
+      label: Which agent or tools did you use?
+      description: For example Claude Code, Codex, Cursor, VS Code, your own MCP client, Tally, ERPNext, a spreadsheet.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: This issue contains no real chat content or personal data.
+          required: true

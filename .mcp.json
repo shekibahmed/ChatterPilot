@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "chatterpilot": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${CLAUDE_PROJECT_DIR:-.}/apps/local/src/cli.ts",
+        "mcp",
+        "--workspace",
+        "${CLAUDE_PROJECT_DIR:-.}/workspaces/default",
+        "--files",
+        "${CLAUDE_PROJECT_DIR:-.}/fixtures/synthetic",
+        "--agent",
+        "claude-code"
+      ]
+    }
+  }
+}

@@ -1,0 +1,513 @@
+[
+  {
+    "id": "fu-a-001",
+    "lang": "en",
+    "text": "Where is my order of 50 bags cement? It was supposed to reach yesterday.",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-002",
+    "lang": "hinglish",
+    "text": "bhaiya TMT saria abhi tak nahi aaya, truck kab tak pahunchega?",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-003",
+    "lang": "hinglish",
+    "text": "Sir kal bola tha subah tak maal aa jayega, ab 4 baj gaye. Kahan hai gaadi?",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-004",
+    "lang": "en",
+    "text": "Still waiting for the tiles delivery at site. Please update, labour is sitting idle.",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-005",
+    "lang": "devanagari",
+    "text": "भैया सीमेंट की डिलीवरी अभी तक नहीं आई, कब भेज रहे हो?",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-006",
+    "lang": "hinglish",
+    "text": "Order #214 ka kya hua? 3 din ho gaye, abhi tak delivery nahi mili.",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-007",
+    "lang": "en",
+    "text": "The 10 bags of putty delivered today are short, only 8 came.",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-008",
+    "lang": "hinglish",
+    "text": "bhai 12 tiles toot ke aayi hain, photo bhej raha hu. Replace karo.",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-009",
+    "lang": "hinglish",
+    "text": "Maine 12mm saria bola tha, aapne 10mm bhej diya. Galat maal aaya hai.",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-010",
+    "lang": "en",
+    "text": "The paint buckets are leaking and two are defective. Please send replacement.",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-011",
+    "lang": "devanagari",
+    "text": "ईंटें बहुत कमज़ोर आई हैं, आधी टूटी हुई हैं। क्वालिटी ठीक नहीं है।",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-012",
+    "lang": "hinglish",
+    "text": "Pipes ka size galat hai, 1 inch ki jagah 3/4 aa gaye. Kya karna hai?",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-013",
+    "lang": "hinglish",
+    "text": "Bhaiya payment kal tak kar dunga, thoda wait karo.",
+    "kinds": ["payment_promise"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-014",
+    "lang": "en",
+    "text": "I will pay Rs 15000 on Friday, please keep the account open.",
+    "kinds": ["payment_promise"],
+    "amount": 15000
+  },
+  {
+    "id": "fu-a-015",
+    "lang": "hinglish",
+    "text": "Sunday ko 20000 bhej dunga pakka, abhi cash tight hai.",
+    "kinds": ["payment_promise"],
+    "amount": 20000
+  },
+  {
+    "id": "fu-a-016",
+    "lang": "en",
+    "text": "Will clear the pending dues next week after my client pays me.",
+    "kinds": ["payment_promise"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-017",
+    "lang": "devanagari",
+    "text": "भैया बाकी पैसे अगले हफ्ते दे दूंगा, चिंता मत करो।",
+    "kinds": ["payment_promise"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-018",
+    "lang": "hinglish",
+    "text": "Is mahine ke end tak 8500 de dunga, bill mein add kar lo.",
+    "kinds": ["payment_promise"],
+    "amount": 8500
+  },
+  {
+    "id": "fu-a-019",
+    "lang": "hinglish",
+    "text": "Paise bhej diye hain GPay se, 12000. Check kar lo.",
+    "kinds": ["payment_report"],
+    "amount": 12000
+  },
+  {
+    "id": "fu-a-020",
+    "lang": "en",
+    "text": "Payment of Rs 7,500 done via UPI just now. Screenshot attached.",
+    "kinds": ["payment_report"],
+    "amount": 7500
+  },
+  {
+    "id": "fu-a-021",
+    "lang": "hinglish",
+    "text": "bhai transfer kar diya subah hi, abhi tak nahi dikha kya?",
+    "kinds": ["payment_report"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-022",
+    "lang": "en",
+    "text": "I have paid the full amount of 32000 by NEFT yesterday.",
+    "kinds": ["payment_report"],
+    "amount": 32000
+  },
+  {
+    "id": "fu-a-023",
+    "lang": "devanagari",
+    "text": "मैंने 5000 रुपये फोनपे कर दिए हैं, देख लेना।",
+    "kinds": ["payment_report"],
+    "amount": 5000
+  },
+  {
+    "id": "fu-a-025",
+    "lang": "en",
+    "text": "Can you send me a quotation for 200 sq ft vitrified tiles?",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-026",
+    "lang": "hinglish",
+    "text": "Bhaiya 8mm aur 10mm saria ka aaj ka rate kya hai?",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-027",
+    "lang": "en",
+    "text": "Please share the price for 100 bags of white cement and plywood 18mm.",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-028",
+    "lang": "hinglish",
+    "text": "Ek quotation bana do bathroom fittings ka, 3 bathrooms ke liye.",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-029",
+    "lang": "devanagari",
+    "text": "पीवीसी पाइप का रेट क्या चल रहा है? कोटेशन भेज दो।",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-030",
+    "lang": "hinglish",
+    "text": "Maal mil gaya, sab theek hai. Thanks bhaiya.",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-031",
+    "lang": "en",
+    "text": "Replacement tiles received, issue solved. Thank you.",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-032",
+    "lang": "hinglish",
+    "text": "Delivery pahunch gayi, ab koi problem nahi. Shukriya.",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-033",
+    "lang": "hinglish",
+    "text": "Bhaiya tiles toot ke aayi hain, replace kar dena. Payment Friday ko 10000 kar dunga.",
+    "kinds": ["complaint", "payment_promise"],
+    "amount": 10000
+  },
+  {
+    "id": "fu-a-034",
+    "lang": "en",
+    "text": "Cement was supposed to arrive today, still not here. Also I paid 25000 yesterday, please confirm.",
+    "kinds": ["delivery_chase", "payment_report"],
+    "amount": 25000
+  },
+  {
+    "id": "fu-a-035",
+    "lang": "hinglish",
+    "text": "Rate bata do 40 bags ka, aur pichla bill kal tak clear kar dunga.",
+    "kinds": ["quote_request", "payment_promise"],
+    "amount": null
+  },
+  {
+    "id": "fu-a-036",
+    "lang": "en",
+    "text": "40 bags cement bhej do site pe, same address as last time.",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-a-037",
+    "lang": "hinglish",
+    "text": "Good morning bhaiya, kaise ho?",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-a-038",
+    "lang": "hinglish",
+    "text": "truck nikal gaya hai, 2 ghante mein pahunch jayega.",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-a-039",
+    "lang": "en",
+    "text": "Site address: Plot 12, Green Park Colony, near water tank.",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-a-040",
+    "lang": "devanagari",
+    "text": "नमस्ते भैया, 20 बोरी सीमेंट और 2 टन सरिया भेज दीजिए।",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-b-001",
+    "lang": "hinglish",
+    "text": "kal subah 40 bags cement bhej dena site pe",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-b-002",
+    "lang": "hinglish",
+    "text": "bhai thoda jaldi bhijwa do, kaam ruka hai",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-003",
+    "lang": "hinglish",
+    "text": "payment kab karna hai? aap bata do total kitna hua",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-b-004",
+    "lang": "hinglish",
+    "text": "saman mil gaya but 2 bags phate hue the",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-005",
+    "lang": "hinglish",
+    "text": "15 tarikh ko cheque de dunga, 18,450 ka",
+    "kinds": ["payment_promise"],
+    "amount": 18450
+  },
+  {
+    "id": "fu-b-006",
+    "lang": "devanagari",
+    "text": "माल अभी तक नहीं आया",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-007",
+    "lang": "en",
+    "text": "Will transfer 1,20,000 by Friday, please hold the account",
+    "kinds": ["payment_promise"],
+    "amount": 120000
+  },
+  {
+    "id": "fu-b-008",
+    "lang": "hinglish",
+    "text": "15k bhej diya GPay se, check kar lena",
+    "kinds": ["payment_report"],
+    "amount": 15000
+  },
+  {
+    "id": "fu-b-010",
+    "lang": "devanagari",
+    "text": "सीमेंट का रेट क्या चल रहा है आज?",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-011",
+    "lang": "en",
+    "text": "Received the tiles, thanks. Everything is fine.",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-012",
+    "lang": "hinglish",
+    "text": "tiles aa gayi par 6 boxes tuti hui nikli, replace karo",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-014",
+    "lang": "hinglish",
+    "text": "paise kal tak de dunga bhai, 30000 ke",
+    "kinds": ["payment_promise"],
+    "amount": 30000
+  },
+  {
+    "id": "fu-b-015",
+    "lang": "devanagari",
+    "text": "मैंने 25,000 रुपये भेज दिए हैं, देख लीजिए",
+    "kinds": ["payment_report"],
+    "amount": 25000
+  },
+  {
+    "id": "fu-b-016",
+    "lang": "hinglish",
+    "text": "sir kal wala truck kahan hai? 2 din ho gaye",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-017",
+    "lang": "en",
+    "text": "Can you share the rate for 10mm plywood 50 sheets?",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-018",
+    "lang": "hinglish",
+    "text": "problem solve ho gayi, thanks bhai",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-019",
+    "lang": "hinglish",
+    "text": "truck nikal gaya hai, shaam tak pahunch jayega",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-b-020",
+    "lang": "hinglish",
+    "text": "wrong size aa gaya, maine 8mm manga tha 10mm bheja hai",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-021",
+    "lang": "hinglish",
+    "text": "month end tak 1,50,000 clear kar dunga, thoda time do",
+    "kinds": ["payment_promise"],
+    "amount": 150000
+  },
+  {
+    "id": "fu-b-022",
+    "lang": "hinglish",
+    "text": "transfer ho gaya 12,300, UTR bhej raha hun",
+    "kinds": ["payment_report"],
+    "amount": 12300
+  },
+  {
+    "id": "fu-b-023",
+    "lang": "hinglish",
+    "text": "delivery mil gayi, sab theek hai. aur 10 bag cement kal chahiye",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-024",
+    "lang": "devanagari",
+    "text": "भाई पेमेंट अगले हफ्ते कर दूंगा",
+    "kinds": ["payment_promise"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-025",
+    "lang": "hinglish",
+    "text": "aapka 22,000 baaki hai, kab tak aa jayega?",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-b-026",
+    "lang": "en",
+    "text": "The sand quantity was short by almost a tonne, please check",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-027",
+    "lang": "hinglish",
+    "text": "bhai order ka kya hua, abhi tak koi update nahi",
+    "kinds": ["delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-029",
+    "lang": "hinglish",
+    "text": "payment kar diya tha pichle hafte, 45k, check karo",
+    "kinds": ["payment_report"],
+    "amount": 45000
+  },
+  {
+    "id": "fu-b-030",
+    "lang": "devanagari",
+    "text": "टाइल्स सही आ गई, धन्यवाद",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-031",
+    "lang": "hinglish",
+    "text": "site pe address hai Sector 14, plot 22, gate ke samne utaar dena",
+    "kinds": [],
+    "amount": null
+  },
+  {
+    "id": "fu-b-032",
+    "lang": "hinglish",
+    "text": "20 tarikh ko 9,750 de dunga pakka, abhi haath tight hai",
+    "kinds": ["payment_promise"],
+    "amount": 9750
+  },
+  {
+    "id": "fu-b-033",
+    "lang": "hinglish",
+    "text": "pipes mil gaye, ab koi issue nahi. thanks",
+    "kinds": ["resolution"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-035",
+    "lang": "hinglish",
+    "text": "yaar sariya defective hai, zang laga hua aya hai, aur delivery bhi late thi",
+    "kinds": ["complaint"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-036",
+    "lang": "hinglish",
+    "text": "kitna ho jayega 500 eent aur 10 bag cement ka total?",
+    "kinds": ["quote_request"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-037",
+    "lang": "devanagari",
+    "text": "मैंने पैसे डाल दिए, अब तो माल भेज दो भाई",
+    "kinds": ["payment_report", "delivery_chase"],
+    "amount": null
+  },
+  {
+    "id": "fu-b-040",
+    "lang": "en",
+    "text": "Good morning sir, thank you for the quick service yesterday",
+    "kinds": [],
+    "amount": null
+  }
+]

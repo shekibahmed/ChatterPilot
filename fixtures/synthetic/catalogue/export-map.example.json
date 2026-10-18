@@ -1,0 +1,22 @@
+{
+  "seller": "Sunrise Hardware (synthetic)",
+  "tallyCompany": "Sunrise Hardware Demo",
+  "tallyVoucherType": "Sales Order",
+  "erpnextSeries": "SAL-ORD-.YYYY.-",
+  "customers": {
+    "KB-01": "Kumar Builders",
+    "SI-01": "Shah Interiors"
+  },
+  "products": {
+    "CEM-UB50": "UltraBond Cement 50kg",
+    "TIL-22W": "Vitrified Tile 2x2 White",
+    "PVC-P1": "PVC Pipe 1 inch",
+    "PVC-E1": "PVC Elbow 1 inch"
+  },
+  "units": {
+    "bag": "Bag",
+    "sqft": "SqFt",
+    "roll": "Roll",
+    "piece": "Nos"
+  }
+}

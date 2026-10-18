@@ -1,0 +1,130 @@
+import { readFileSync } from "node:fs";
+import { scanExport } from "@chatterpilot/import-whatsapp";
+import { describe, expect, it } from "vitest";
+import { extractFollowups, linkFollowups, summariseFollowups } from "./followups.ts";
+import { evaluateFollowups, type FollowupCase } from "./followups-eval.ts";
+
+const msg = (id: string, body: string, author = "A", at = "2026-02-02T10:00:00") => ({
+  id,
+  author,
+  localDateTime: at,
+  startLine: 1,
+  body,
+});
+const kinds = (body: string) => extractFollowups(msg("m", body)).map((i) => i.kind);
+
+describe("extractFollowups", () => {
+  it.each([
+    ["40 bags cement abhi tak nahi aaya", ["delivery_chase"]],
+    ["where is my cement order?", ["delivery_chase"]],
+    ["5 bags short in yesterday's delivery", ["complaint"]],
+    ["2 box tiles toot gaye", ["complaint"]],
+    ["wrong size elbow aaya hai", ["complaint"]],
+    ["payment kal kar dunga", ["payment_promise"]],
+    ["payment done 15000 via upi", ["payment_report"]],
+    ["rate batao 8mm rod ka", ["quote_request"]],
+    ["mil gaya, thanks", ["resolution"]],
+    ["received only 35, 5 short", ["complaint"]],
+    ["40 bags cement bhej do", []],
+    ["good morning", []],
+  ])("%j → %j", (body, expected) => {
+    expect(kinds(body)).toEqual(expected);
+  });
+
+  it("cites the trigger and the amount, and keeps promised and reported money apart", () => {
+    const [promise] = extractFollowups(msg("p", "payment kal kar dunga 18,450"));
+    expect(promise?.amount).toMatchObject({ value: 1845000, status: "ok" });
+    expect(promise?.amount.evidence[0]).toMatchObject({ kind: "message", text: "18,450" });
+    expect(promise?.due.value).toBe("kal");
+    const [report] = extractFollowups(msg("r", "paid"));
+    expect(report?.amount).toMatchObject({ value: null, status: "unknown" });
+  });
+});
+
+describe("synthetic follow-ups chat", () => {
+  const text = readFileSync(
+    new URL("../../../fixtures/synthetic/chats/android-followups.txt", import.meta.url),
+    "utf8",
+  );
+  const items = linkFollowups(
+    scanExport(text, { dateOrder: "dmy" }).messages.flatMap((m) =>
+      extractFollowups({
+        id: `L${m.startLine}`,
+        author: m.author,
+        localDateTime: m.localDateTime,
+        startLine: m.startLine,
+        body: m.body,
+      }),
+    ),
+  );
+  const summary = summariseFollowups(items);
+
+  it("links the repeat chase and the closing message, marked for review", () => {
+    const resolution = items.find((i) => i.kind === "resolution");
+    expect(resolution?.links).toEqual([
+      {
+        type: "resolves",
+        itemId: "L1#0",
+        strength: "needs_review",
+        basis: "closing message from the same person within 7 days",
+      },
+    ]);
+    expect(items.find((i) => i.messageId === "L3")?.links[0]).toMatchObject({
+      type: "repeat_of",
+      itemId: "L1#0",
+    });
+  });
+
+  it("lists what is still open, with age and repeats, and never sums promises with payments", () => {
+    expect(summary.open.map((o) => [o.kind, o.author, o.ageHours, o.repeats])).toEqual([
+      ["complaint", "Shah Interiors", 42, 0],
+      ["quote_request", "Ravi (synthetic)", 17, 0],
+      ["delivery_chase", "Shah Interiors", 0, 0],
+    ]);
+    expect(summary).toMatchObject({
+      resolved: 1,
+      promisedMinor: 1845000,
+      reportedPaidMinor: 1845000,
+    });
+  });
+});
+
+describe("labelled follow-ups set", () => {
+  // fu-a was used to improve the rules; fu-b is held out (scored, not tuned on). docs/evaluation.md
+  const all = JSON.parse(
+    readFileSync(new URL("../../../fixtures/eval/followup-messages.json", import.meta.url), "utf8"),
+  ) as FollowupCase[];
+  const heldOut = evaluateFollowups(all.filter((c) => c.id.startsWith("fu-b")));
+
+  it("does not regress on the held-out half", () => {
+    expect(heldOut.exactMessages).toBeGreaterThanOrEqual(30);
+    expect(heldOut.byKind.every((k) => k.falsePositives === 0)).toBe(true);
+    expect(heldOut.amounts).toMatchObject({ right: 8, wrong: 0 });
+  });
+});
+
+describe("review fixes (wf_3f15d46f-5da)", () => {
+  const read = (body: string) =>
+    extractFollowups(msg("m", body)).map((i) => [i.kind, i.amount.value]);
+
+  it.each([
+    ["Payment done, bill no 4567", [["payment_report", null]]],
+    ["paid 12-05-2026 bill", [["payment_report", null]]],
+    ["paid 2026", [["payment_report", null]]],
+    ["paid 9876543210", [["payment_report", null]]],
+    ["Payment of Rs 7,500 done via UPI", [["payment_report", 750000]]],
+    ["Sunday ko 20000 bhej dunga pakka", [["payment_promise", 2000000]]],
+  ])("reads only money as an amount: %j", (body, expected) => {
+    expect(read(body)).toEqual(expected);
+  });
+
+  it.each([
+    "50 bags bhej diye bill 12345",
+    "maal bhej diya, please check",
+    "Will send the truck kal, bill ready",
+    "will send 50 bags tomorrow, check stock",
+    "ok kar diya, balance baaki hai",
+  ])("does not read the shop's dispatch messages as payments: %j", (body) => {
+    expect(read(body)).toEqual([]);
+  });
+});

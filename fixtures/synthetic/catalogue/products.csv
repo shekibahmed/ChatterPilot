@@ -1,0 +1,10 @@
+product_id,name,aliases,unit,alt_units,price,currency,price_effective_from,price_confirmed_on,tax_rate_percent
+CEM-UB50,UltraBond Cement 50kg,cement|ultrabond|ultrabond cement|ub cement|सीमेंट,bag,,410.00,INR,2026-01-01,2026-01-10,28
+CEM-RS50,Rockset Cement 50kg,rockset|rockset cement,bag,,395.00,INR,2026-01-01,2026-01-10,28
+TIL-22W,Vitrified Tile 2x2 White,tiles 2x2 white|2x2 white tiles|white tiles|white tile|2x2 tiles,sqft,box:16,52.00,INR,2026-01-01,2026-01-10,18
+TIL-22I,Vitrified Tile 2x2 Ivory,tiles 2x2 ivory|ivory tiles|ivory tile|2x2 tiles,sqft,box:16,54.50,INR,2026-01-01,2026-01-10,18
+PVC-P1,PVC Pipe 1 inch (3 m),pvc pipe 1 inch|pvc pipe 1in|1 inch pipe|pipe 1 inch,roll,,780.00,INR,2026-01-01,2026-01-12,18
+PVC-E1,PVC Elbow 1 inch,elbow|elbows|pvc elbow|elbow 1 inch,piece,box:50,18.00,INR,2026-01-01,2026-01-12,18
+SND-RV,River Sand,sand|river sand,ton,,,INR,,,5
+TMT-08,TMT Bar 8mm,tmt 8mm|8mm rod|8mm tmt|saria 8mm,kg,bundle:47.4,68.50,INR,2025-06-01,2025-09-01,18
+PNT-WE20,"Wall Emulsion, White",emulsion|white emulsion|wall paint white,litre,,165.25,INR,2026-01-01,2026-01-05,

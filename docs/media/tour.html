@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatterPilot tour</title>
+<meta name="description" content="A chaptered walkthrough of ChatterPilot: WhatsApp order messages become source-linked drafts a person checks and exports. Synthetic data only.">
+<!-- Interactive walkthrough. Static: no build step, no external requests. Data comes from
+     chapters.js, written by `pnpm media` (apps/local/src/media/render.ts). Works from disk too. -->
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #17202a; --muted: #5d6b79; --border: #dde3ea;
+    --accent: #0f766e; --accent-soft: #e6f4f2; --accent-text: #ffffff; --code: #0b1417; --code-text: #d6f5f0;
+    --shadow: 0 10px 30px rgba(16, 24, 32, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1215; --surface: #121c21; --text: #e6edf3; --muted: #93a1b0; --border: #24343a;
+      --accent: #2dd4bf; --accent-soft: #10302c; --accent-text: #04201d; --code: #050a0c; --code-text: #c9f2ec;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1215; --surface: #121c21; --text: #e6edf3; --muted: #93a1b0; --border: #24343a;
+    --accent: #2dd4bf; --accent-soft: #10302c; --accent-text: #04201d; --code: #050a0c; --code-text: #c9f2ec;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+  header { padding: 28px 0 8px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+  .brand { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
+  .brand span { color: var(--accent); }
+  .status { font-size: 14px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; background: var(--surface); }
+  .lede { color: var(--muted); max-width: 820px; margin: 4px 0 20px; }
+  .player { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .player { grid-template-columns: 1fr; } }
+  .screen { background: #000; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--border); }
+  button, .btn { font: inherit; font-size: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; text-decoration: none; }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button:focus-visible, .chapter:focus-visible, .cap:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button[aria-pressed="true"], button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+  .progress { position: relative; height: 8px; background: var(--border); cursor: pointer; }
+  .progress .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); width: 0; }
+  .progress .tick { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--surface); }
+  aside { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  aside h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin: 0; padding: 14px 16px 8px; }
+  ol.chapters { list-style: none; margin: 0; padding: 0 8px 8px; max-height: 470px; overflow: auto; }
+  .chapter { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; width: 100%; text-align: left;
+    border: 0; border-radius: 8px; padding: 9px 8px; background: none; position: relative; }
+  .chapter .n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chapter .t { font-weight: 600; font-size: 15px; }
+  .chapter .d { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chapter.active { background: var(--accent-soft); }
+  .chapter.active .t { color: var(--accent); }
+  .chapter .meter { position: absolute; left: 8px; right: 8px; bottom: 3px; height: 2px; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+  .transcript { margin-top: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px 8px; box-shadow: var(--shadow); }
+  .transcript h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin: 10px 8px; }
+  .caps { display: grid; gap: 2px; max-height: 260px; overflow: auto; padding-bottom: 6px; }
+  .cap { display: grid; grid-template-columns: 52px 1fr; gap: 10px; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 6px; font-size: 15px; }
+  .cap .ts { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; padding-top: 1px; }
+  .cap.now { background: var(--accent-soft); }
+  .cap.now span:last-child { font-weight: 600; }
+  .block { margin: 46px 0; }
+  .block > h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.3px; }
+  .block > p.sub { color: var(--muted); margin: 0 0 18px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0 0 10px; color: var(--muted); font-size: 15px; }
+  .card .proof { font-size: 13px; color: var(--muted); word-break: break-word; }
+  .card .proof code { font-size: 12.5px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  pre { margin: 0; background: var(--code); color: var(--code-text); border-radius: 12px; padding: 16px 18px; overflow: auto;
+    font: 14px/1.5 ui-monospace, "JetBrains Mono", "Fira Code", Menlo, monospace; }
+  .codebox { position: relative; }
+  .codebox .copy { position: absolute; top: 10px; right: 10px; background: #1b2b30; color: #d6f5f0; border-color: #2f4a4f; }
+  .note { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .clip { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .clip img, .clip video { display: block; width: 100%; background: #000; }
+  .clip .cap2 { padding: 10px 14px; font-size: 14px; }
+  .ask { background: var(--accent-soft); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .ask ul { margin: 8px 0 0; padding-left: 20px; }
+  footer { color: var(--muted); font-size: 13px; padding: 30px 0 50px; border-top: 1px solid var(--border); }
+  kbd { font: 12px ui-monospace, monospace; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+  fieldset.speed { border: 0; margin: 0; padding: 0; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Chatter<span>Pilot</span> <span class="status">Early prototype · synthetic data · MIT</span></div>
+    <button id="theme" type="button" aria-label="Switch colour theme">Theme</button>
+  </header>
+  <p class="lede" id="blurb">WhatsApp order messages become source-linked drafts that a person checks and exports.</p>
+
+  <div class="player">
+    <div>
+      <div class="screen">
+        <video id="v" src="tour.mp4" poster="poster.jpg" preload="metadata" playsinline aria-describedby="blurb">
+          <track kind="captions" src="tour.vtt" srclang="en" label="English">
+        </video>
+        <div class="progress" id="progress" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+          <div class="fill" id="fill"></div>
+        </div>
+        <div class="bar">
+          <button id="play" class="primary" type="button">Play tour</button>
+          <button id="prev" type="button" aria-label="Previous chapter">◀ Chapter</button>
+          <button id="next" type="button" aria-label="Next chapter">Chapter ▶</button>
+          <button id="sound" type="button" aria-pressed="true">Music on</button>
+          <fieldset class="tabs speed"><legend class="sr">Playback speed</legend>
+            <button type="button" data-rate="1" aria-pressed="true">1×</button>
+            <button type="button" data-rate="1.25" aria-pressed="false">1.25×</button>
+            <button type="button" data-rate="1.5" aria-pressed="false">1.5×</button>
+          </fieldset>
+          <span class="time" id="time">0:00</span>
+        </div>
+      </div>
+      <div class="transcript">
+        <h2>Captions <span class="sr">(select one to jump there)</span></h2>
+        <div class="caps" id="caps"></div>
+      </div>
+      <p class="note">Keys: <kbd>Space</kbd> play or pause · <kbd>←</kbd> <kbd>→</kbd> chapters · <kbd>M</kbd> music. Link to a chapter with <code>#05-correction</code>.
+        Music: “Hypnotic Chill” by cynicmusic, CC0 (<a href="music/LICENSE.md">details</a>).</p>
+    </div>
+    <aside>
+      <h2>Chapters</h2>
+      <ol class="chapters" id="chapters"></ol>
+    </aside>
+  </div>
+
+  <section class="block">
+    <h2>Why it is built this way</h2>
+    <p class="sub">Each claim names the test in the repository that checks it.</p>
+    <div class="cards" id="benefits"></div>
+  </section>
+
+  <section class="block">
+    <h2>Try it</h2>
+    <p class="sub">Node.js 26+ and pnpm 12. Everything runs on your computer with invented data.</p>
+    <div class="tabs" role="tablist" aria-label="Setup">
+      <button type="button" role="tab" data-tab="demo" aria-selected="true">Run the demo</button>
+      <button type="button" role="tab" data-tab="claude" aria-selected="false">Claude Code</button>
+      <button type="button" role="tab" data-tab="codex" aria-selected="false">Codex CLI</button>
+      <button type="button" role="tab" data-tab="cursor" aria-selected="false">Cursor</button>
+    </div>
+    <div class="codebox"><button class="copy" type="button" id="copy">Copy</button><pre id="code"></pre></div>
+    <p class="note">More agents and the full tool list: <a href="https://github.com/shekibahmed/ChatterPilot/blob/HEAD/docs/harnesses.md">docs/harnesses.md</a>. The agent tools can draft and propose edits; none can accept an order.</p>
+  </section>
+
+  <section class="block">
+    <h2>Short clips</h2>
+    <p class="sub">Silent loops for the README and captioned clips with music for sharing.</p>
+    <div class="clips">
+      <figure class="clip" style="margin:0"><img src="gif/intro.gif" alt="Animated intro: a chat order becomes a draft with source labels, then a correction changes the total" loading="lazy"><figcaption class="cap2">The idea in 25 seconds</figcaption></figure>
+      <figure class="clip" style="margin:0"><img src="gif/correction.gif" alt="A reviewer links a correction, excludes the old line and accepts the order" loading="lazy"><figcaption class="cap2">A correction, with reasons</figcaption></figure>
+      <figure class="clip" style="margin:0"><img src="gif/agent.gif" alt="A coding agent uses the MCP tools; export and accept are refused" loading="lazy"><figcaption class="cap2">A coding agent, with limits</figcaption></figure>
+      <figure class="clip" style="margin:0"><!-- biome-ignore lint/a11y/useMediaCaption: the hook text is part of the picture and there is no speech -->
+        <video src="social/correction-vertical.mp4" controls preload="none" poster="poster.jpg"></video><figcaption class="cap2">Vertical clip with music</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="block ask">
+    <h2 style="margin-top:0">Help shape it</h2>
+    <p style="margin:0">This is an early, honest prototype. The most useful things you can do:</p>
+    <ul>
+      <li>Run the demo and tell us what confused you or broke, in a <a href="https://github.com/shekibahmed/ChatterPilot/issues/new/choose">GitHub issue</a>.</li>
+      <li>Describe how orders reach your shop or your clients (with invented examples, never real chats).</li>
+      <li>Point your coding agent at it and share what it built. Star the repository if it was useful.</li>
+    </ul>
+  </section>
+
+  <footer>ChatterPilot is MIT-licensed. Every name, number and chat in this tour is invented. No time-saving or accuracy claims are made; see <a href="https://github.com/shekibahmed/ChatterPilot/blob/HEAD/docs/why.md">docs/why.md</a>.</footer>
+</div>
+
+<script src="chapters.js"></script>
+<script>
+  const REPO = "https://github.com/shekibahmed/ChatterPilot/blob/HEAD/";
+  const TOUR = window.TOUR || { chapters: [], benefits: [], duration: 0 };
+  const v = document.getElementById("v");
+  const $ = (id) => document.getElementById(id);
+  const fmt = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const chapters = TOUR.chapters;
+  if (TOUR.blurb) $("blurb").textContent = TOUR.blurb;
+
+  // Chapters
+  const list = $("chapters");
+  chapters.forEach((c, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<button class="chapter" type="button" data-i="${i}"><span class="n">${String(i).padStart(2, "0")}</span><span class="t">${esc(c.title)}</span><span class="d">${fmt(c.start)}</span><span class="meter"></span></button>`;
+    list.appendChild(li);
+  });
+  const chapterButtons = [...list.querySelectorAll(".chapter")];
+  const seek = (t, play = true) => {
+    v.currentTime = Math.max(0, t + 0.05);
+    if (play) v.play().catch(() => {});
+  };
+  list.addEventListener("click", (e) => {
+    const b = e.target.closest(".chapter");
+    if (b) seek(chapters[Number(b.dataset.i)].start);
+  });
+
+  // Progress bar with chapter ticks
+  const progress = $("progress");
+  const total = () => v.duration || TOUR.duration || 1;
+  const drawTicks = () => {
+    for (const el of progress.querySelectorAll(".tick")) el.remove();
+    for (const c of chapters.slice(1)) {
+      const t = document.createElement("div");
+      t.className = "tick";
+      t.style.left = `${(c.start / total()) * 100}%`;
+      progress.appendChild(t);
+    }
+  };
+  drawTicks();
+  v.addEventListener("loadedmetadata", drawTicks);
+  progress.addEventListener("click", (e) => {
+    const r = progress.getBoundingClientRect();
+    seek(((e.clientX - r.left) / r.width) * total(), !v.paused);
+  });
+  progress.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") seek(v.currentTime + 5, !v.paused);
+    if (e.key === "ArrowLeft") seek(v.currentTime - 5, !v.paused);
+  });
+
+  // Captions transcript
+  const caps = $("caps");
+  const allCaps = chapters.flatMap((c) => c.captions);
+  allCaps.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cap";
+    b.dataset.i = String(i);
+    b.innerHTML = `<span class="ts">${fmt(c.t)}</span><span>${esc(c.text)}</span>`;
+    caps.appendChild(b);
+  });
+  const capButtons = [...caps.querySelectorAll(".cap")];
+  caps.addEventListener("click", (e) => {
+    const b = e.target.closest(".cap");
+    if (b) seek(allCaps[Number(b.dataset.i)].t);
+  });
+
+  // Live state
+  const current = () => {
+    let i = 0;
+    chapters.forEach((c, j) => { if (v.currentTime + 0.01 >= c.start) i = j; });
+    return i;
+  };
+  let lastCap = -1;
+  const update = () => {
+    const i = current();
+    chapterButtons.forEach((b, j) => {
+      b.classList.toggle("active", j === i);
+      const c = chapters[j];
+      const f = Math.min(1, Math.max(0, (v.currentTime - c.start) / Math.max(0.1, c.end - c.start)));
+      b.querySelector(".meter").style.transform = `scaleX(${j === i ? f : 0})`;
+    });
+    $("fill").style.width = `${(v.currentTime / total()) * 100}%`;
+    progress.setAttribute("aria-valuenow", String(Math.round((v.currentTime / total()) * 100)));
+    $("time").textContent = `${fmt(v.currentTime)} / ${fmt(total())}`;
+    let ci = -1;
+    allCaps.forEach((c, j) => { if (v.currentTime >= c.t) ci = j; });
+    if (ci !== lastCap) {
+      capButtons.forEach((b, j) => {
+        b.classList.toggle("now", j === ci);
+      });
+      const el = capButtons[ci];
+      if (el && !v.paused) caps.scrollTo({ top: el.offsetTop - caps.offsetTop - 60, behavior: "smooth" });
+      lastCap = ci;
+    }
+  };
+  v.addEventListener("timeupdate", update);
+  v.addEventListener("seeked", update);
+
+  // Controls
+  const play = $("play");
+  play.addEventListener("click", () => (v.paused ? v.play() : v.pause()));
+  v.addEventListener("click", () => (v.paused ? v.play() : v.pause()));
+  v.addEventListener("play", () => { play.textContent = "Pause"; });
+  v.addEventListener("pause", () => { play.textContent = "Play tour"; });
+  const step = (d) => {
+    const i = Math.min(chapters.length - 1, Math.max(0, current() + d));
+    if (chapters[i]) seek(chapters[i].start, !v.paused);
+  };
+  $("prev").addEventListener("click", () => step(-1));
+  $("next").addEventListener("click", () => step(1));
+  const sound = $("sound");
+  const setMuted = (m) => {
+    v.muted = m;
+    sound.setAttribute("aria-pressed", String(!m));
+    sound.textContent = m ? "Music off" : "Music on";
+  };
+  sound.addEventListener("click", () => setMuted(!v.muted));
+  for (const b of document.querySelectorAll("[data-rate]")) {
+    b.addEventListener("click", () => {
+      v.playbackRate = Number(b.dataset.rate);
+      for (const o of document.querySelectorAll("[data-rate]")) o.setAttribute("aria-pressed", String(o === b));
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); v.paused ? v.play() : v.pause(); }
+    if (e.key === "ArrowRight" && e.target === document.body) step(1);
+    if (e.key === "ArrowLeft" && e.target === document.body) step(-1);
+    if (e.key === "m" || e.key === "M") setMuted(!v.muted);
+  });
+
+  // Deep links: #05-correction or #t=95
+  const fromHash = () => {
+    const h = decodeURIComponent(location.hash.slice(1));
+    const t = /^t=(\d+(?:\.\d+)?)$/.exec(h);
+    const c = chapters.find((x) => x.id === h);
+    if (t) seek(Number(t[1]), false);
+    else if (c) seek(c.start, false);
+  };
+  window.addEventListener("hashchange", fromHash);
+  if (location.hash) v.addEventListener("loadedmetadata", fromHash, { once: true });
+
+  // Benefits
+  $("benefits").innerHTML = TOUR.benefits.map((b) => {
+    const file = b.proof.split(":")[0];
+    return `<article class="card"><h3>${esc(b.heading)}</h3><p>${esc(b.body)}</p><div class="proof">Checked by <a href="${REPO}${esc(file)}"><code>${esc(file)}</code></a>${esc(b.proof.slice(file.length))}</div></article>`;
+  }).join("");
+
+  // Try it
+  const SNIPPETS = {
+    demo: "pnpm install --frozen-lockfile\npnpm demo\n# open http://127.0.0.1:4317",
+    claude: "# In the repository, Claude Code picks up .mcp.json automatically. Or add it by hand:\nclaude mcp add chatterpilot -- node apps/local/src/cli.ts mcp \\\n  --workspace workspaces/default --files fixtures/synthetic --agent claude-code",
+    codex: '# .codex/config.toml\n[mcp_servers.chatterpilot]\ncommand = "node"\nargs = ["apps/local/src/cli.ts", "mcp", "--workspace", "workspaces/default", "--files", "fixtures/synthetic", "--agent", "codex"]\ncwd = "/absolute/path/to/ChatterPilot"\ndefault_tools_approval_mode = "writes"',
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: Cursor expands ${workspaceFolder} itself
+    cursor: '// .cursor/mcp.json\n{\n  "mcpServers": {\n    "chatterpilot": {\n      "type": "stdio",\n      "command": "node",\n      "args": ["${workspaceFolder}/apps/local/src/cli.ts", "mcp", "--workspace", "${workspaceFolder}/workspaces/default", "--files", "${workspaceFolder}/fixtures/synthetic", "--agent", "cursor"]\n    }\n  }\n}',
+  };
+  const showTab = (name) => {
+    $("code").textContent = SNIPPETS[name];
+    for (const t of document.querySelectorAll("[data-tab]")) t.setAttribute("aria-selected", String(t.dataset.tab === name));
+  };
+  for (const t of document.querySelectorAll("[data-tab]")) t.addEventListener("click", () => showTab(t.dataset.tab));
+  showTab("demo");
+  $("copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("code").textContent);
+      $("copy").textContent = "Copied";
+    } catch {
+      $("copy").textContent = "Select and copy";
+    }
+    setTimeout(() => { $("copy").textContent = "Copy"; }, 1500);
+  });
+
+  // Theme
+  $("theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+  });
+  update();
+</script>
+</body>
+</html>

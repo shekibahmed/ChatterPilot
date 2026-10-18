@@ -1,0 +1,36 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local workspaces, databases and imported data (never commit real chats/audio)
+/workspaces/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Secrets, browser sessions and traces
+.env
+.env.*
+!.env.example
+storage-state*.json
+*.trace.zip
+playwright-report/
+test-results/
+
+# Private planning packet must live outside this repository (../ChatterPilot-private/)
+/PLAN.md
+/whatsapp_oss_plan/
+/*.zip
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Raw walkthrough recordings (regenerate with pnpm media)
+/docs/media/raw/

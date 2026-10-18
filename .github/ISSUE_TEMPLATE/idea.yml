@@ -1,0 +1,20 @@
+name: Idea or use case
+description: A workflow you would like ChatterPilot (or a template) to support.
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do people do by hand today?
+      description: Who sends what, where it is re-typed, what goes wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would a good result look like?
+  - type: textarea
+    id: limits
+    attributes:
+      label: What must never happen automatically?
+      description: For example, "never confirm a price to a customer".

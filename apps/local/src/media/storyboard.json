@@ -1,0 +1,256 @@
+{
+  "intro": {
+    "title": "ChatterPilot walkthrough",
+    "subtitle": "WhatsApp order messages become drafts that cite their sources. Early prototype, tested only on synthetic data.",
+    "cards": [
+      {
+        "heading": "Every value cites its source",
+        "line": "Each field links to a chat line, catalogue row, calculation or edit."
+      },
+      {
+        "heading": "Unknown stays unknown",
+        "line": "Missing prices, unclear products and units are flagged, not guessed."
+      },
+      {
+        "heading": "A person accepts, agents cannot",
+        "line": "The agent interface has no accept tool. A person always decides."
+      },
+      {
+        "heading": "Export files for other tools",
+        "line": "CSV and JSON, plus experimental Tally, ERPNext, Zoho and UBL files."
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "id": "01-overview",
+      "title": "The review app",
+      "captions": [
+        {
+          "at": "landing page with the 'source-linked drafts' heading",
+          "text": "The review app runs on this computer and needs no internet."
+        },
+        {
+          "at": "status line showing chat exports imported",
+          "text": "The demo opens with invented chat exports already imported."
+        },
+        {
+          "at": "reviewer types the name Anita",
+          "text": "Anita enters her name so each edit records who made it."
+        }
+      ]
+    },
+    {
+      "id": "02-imports",
+      "title": "The original chat, untouched",
+      "captions": [
+        {
+          "at": "Imports tab opens",
+          "text": "The Imports tab lists each chat export that was read."
+        },
+        {
+          "at": "after clicking android-dmy-hardware-orders.txt",
+          "text": "Opening one shows the original text, untouched, with line numbers."
+        },
+        {
+          "at": "'lines 6–9' label next to the Kumar Builders message",
+          "text": "The Kumar Builders order is one message on lines 6 to 9."
+        }
+      ]
+    },
+    {
+      "id": "03-draft",
+      "title": "From message to draft",
+      "captions": [
+        {
+          "at": "Orders tab with the suggestion list",
+          "text": "The Orders tab suggests messages that mention catalogue products."
+        },
+        {
+          "at": "after clicking Draft order on 'Order for Kumar Builders site 2'",
+          "text": "Draft order prepares a draft from the Kumar Builders message."
+        },
+        {
+          "at": "draft total shows INR 28,355.20",
+          "text": "Prices come from the catalogue. The draft total is INR 28,355.20."
+        },
+        {
+          "at": "'No open issues' message",
+          "text": "No open issues are flagged. A later correction is not yet linked."
+        }
+      ]
+    },
+    {
+      "id": "04-provenance",
+      "title": "Where each value came from",
+      "captions": [
+        {
+          "at": "source labels on the first draft line",
+          "text": "Each field has source labels that show where its value came from."
+        },
+        {
+          "at": "after clicking 'Chat line 7' on the product field",
+          "text": "Clicking Chat line 7 on the product field highlights the word cement."
+        },
+        {
+          "at": "after clicking the quantity source label",
+          "text": "The quantity label highlights the exact words 40 bags cement."
+        }
+      ]
+    },
+    {
+      "id": "05-correction",
+      "title": "A correction, with reasons",
+      "captions": [
+        {
+          "at": "selecting line 12 in 'Message to link'",
+          "text": "Anita links the later message, \"Sorry make it 45 bags cement.\""
+        },
+        {
+          "at": "typing the link reason and clicking Link",
+          "text": "She gives a reason: \"Customer corrected cement to 45 bags.\""
+        },
+        {
+          "at": "after excluding the old line; total shows INR 30,979.20",
+          "text": "She excludes the old 40-bag line. The total is now INR 30,979.20."
+        },
+        {
+          "at": "after clicking Accept order",
+          "text": "Accepting the order locks it. The page reads Accepted and frozen."
+        }
+      ]
+    },
+    {
+      "id": "06-export",
+      "title": "Export what was accepted",
+      "captions": [
+        {
+          "at": "Export tab opens",
+          "text": "Export uses only orders that a person has accepted."
+        },
+        {
+          "at": "after clicking Download CSV",
+          "text": "The CSV carries the corrected 45 bags, not the original 40."
+        },
+        {
+          "at": "after Prepare file on the Zoho Books panel",
+          "text": "A Zoho Books import file is prepared. It is not yet tried in Zoho."
+        },
+        {
+          "at": "after Prepare file on the Tally Prime panel",
+          "text": "Tally Prime refuses until each name is matched in export-map.json."
+        }
+      ]
+    },
+    {
+      "id": "07-dashboard",
+      "title": "A dashboard that shows its gaps",
+      "captions": [
+        {
+          "at": "coverage banner",
+          "text": "The dashboard states its dates: 2026-01-12 to 2026-01-21."
+        },
+        {
+          "at": "gap text in the coverage banner",
+          "text": "It shows the gap as well: no data for 16 to 19 January."
+        },
+        {
+          "at": "week comparison panel",
+          "text": "It refuses a week comparison: \"Insufficient comparable data\"."
+        },
+        {
+          "at": "order value chart with tooltip",
+          "text": "By default it counts accepted orders: INR 30,979.20 on 2026-01-12."
+        }
+      ]
+    },
+    {
+      "id": "08-followups",
+      "title": "What is still open",
+      "captions": [
+        {
+          "at": "Follow-ups tab opens",
+          "text": "Follow-ups list what is still open in the chats."
+        },
+        {
+          "at": "open items table row 'Quote requested', Meera Shah",
+          "text": "Meera Shah's quote request is listed as open."
+        },
+        {
+          "at": "payments summary line",
+          "text": "Promised and reported payments are listed as things to check."
+        },
+        {
+          "at": "'Neither is a verified payment' text",
+          "text": "A promise or a report is not a verified payment, the page says."
+        }
+      ]
+    },
+    {
+      "id": "09-agent",
+      "title": "A coding agent, with limits",
+      "captions": [
+        {
+          "at": "terminal replay: load_catalogue call",
+          "text": "A coding agent uses MCP, a tool link, to load the catalogue."
+        },
+        {
+          "at": "terminal replay: import_export, list_suggestions, create_draft",
+          "text": "It imports a Hindi-English chat. Each draft line cites its chat words."
+        },
+        {
+          "at": "terminal replay: revise_draft result",
+          "text": "Its proposed edit is recorded as agent:demo-agent, with a reason."
+        },
+        {
+          "at": "terminal replay: export refused and 'Tool accept_draft not found'",
+          "text": "Export refuses: nothing is accepted. The agent has no accept tool."
+        }
+      ]
+    }
+  ],
+  "outro": {
+    "title": "Running the demo",
+    "lines": [
+      "With repo access, run pnpm install --frozen-lockfile, then pnpm demo.",
+      "Shop owners can start with docs/for-shops.md.",
+      "Every name and number in this video is invented.",
+      "Pilots and next steps are listed in docs/roadmap.md."
+    ]
+  },
+  "benefits": [
+    {
+      "heading": "Every value cites its source",
+      "body": "Each draft field links to a chat line, a catalogue row, a calculation or a named person's edit. Clicking a source label highlights the words in the original message.",
+      "proof": "packages/orders/src/draft.test.ts: \"cites the exact message text and source lines for chat-derived fields\""
+    },
+    {
+      "heading": "Unknown stays unknown",
+      "body": "Missing prices, unclear products and incompatible units become open issues instead of guesses. A draft with open issues cannot be accepted.",
+      "proof": "packages/orders/src/draft.test.ts: \"never invents a price, unit or tax\""
+    },
+    {
+      "heading": "Money is counted in whole units",
+      "body": "Amounts are stored as whole numbers of the smallest currency unit, so totals carry no decimal rounding error. Totals in different currencies are never added.",
+      "proof": "packages/core/src/money.test.ts: \"avoids binary float error\"; packages/orders/src/draft.test.ts: \"refuses to total mixed currencies\""
+    },
+    {
+      "heading": "A person accepts, agents cannot",
+      "body": "The MCP server lets an agent import, draft and propose edits, each recorded under its name. It has no tool to accept, reject, fill or submit.",
+      "proof": "apps/local/src/mcp.test.ts: \"lists the tools with honest hints, and no accept or form-filling tool\""
+    },
+    {
+      "heading": "Exports come from accepted orders only",
+      "body": "CSV, JSON and import files are built only from orders a person has accepted. The import files are experimental. The Tally Prime file is refused until every name is matched.",
+      "proof": "apps/local/src/server.test.ts: \"lists targets and prepares files only from accepted orders, refusing Tally without a map\""
+    }
+  ],
+  "readmeBlurb": "This walkthrough follows one invented order through ChatterPilot. A WhatsApp export becomes a source-linked draft, a reviewer records a correction and accepts it, and the accepted order goes to an export. It ends with a coding agent using the same tools over MCP, including what it is not able to do. Everything runs locally on synthetic data, and the product is an early prototype that no real business has piloted yet.",
+  "socialHooks": [
+    "Every value in this order draft links to where it came from.",
+    "A customer writes 40 bags, then 45. A person records the fix.",
+    "This coding agent can draft orders. It has no tool to accept them.",
+    "Prices in this draft come from the catalogue, not from the chat.",
+    "This dashboard shows the days it has no data for."
+  ]
+}

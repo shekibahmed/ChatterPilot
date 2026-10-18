@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ChatterPilot cards</title>
+<!-- Motion-graphics cards for the walkthrough video. Recorded by apps/local/src/media/record.ts.
+     Modes: #intro, #outro, #social. Text comes from window.__COPY (storyboard.json). No network. -->
+<style>
+  :root {
+    --bg: #0b1417; --bg2: #0f2a2a; --text: #eef5f4; --muted: #9fb4b2; --accent: #2dd4bf;
+    --accent-d: #0f766e; --card: #13242a; --border: #24403f; --chat: #1d3b33; --chat-me: #22313a;
+    --mark: #ffe58a; --bad: #f87171; --chip-m: #1e3a5f; --chip-c: #3b2f5f; --chip-k: #33414d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
+  body { background: radial-gradient(1200px 700px at 20% 10%, var(--bg2), var(--bg) 70%); }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; opacity: 0; }
+  .fade { animation: fade-in 700ms ease forwards, fade-out 600ms ease forwards; }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes fade-out { to { opacity: 0; transform: translateY(-10px); } }
+  @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(45,212,191,.55); } 60% { box-shadow: 0 0 0 16px rgba(45,212,191,0); } }
+  .in { opacity: 0; animation: pop 600ms cubic-bezier(.2,.7,.2,1) forwards; }
+
+  /* Title scene */
+  .logo { font-size: 84px; font-weight: 800; letter-spacing: -2px; }
+  .logo span { color: var(--accent); }
+  .tag { margin-top: 18px; font-size: 30px; color: var(--muted); max-width: 980px; text-align: center; line-height: 1.35; }
+  .underline { height: 4px; width: 420px; margin-top: 26px; background: linear-gradient(90deg, var(--accent), transparent);
+    transform-origin: left; transform: scaleX(0); animation: grow 900ms 500ms ease forwards; }
+
+  /* Chat to draft scene */
+  .flow { display: grid; grid-template-columns: 470px 80px 560px; align-items: center; gap: 0; }
+  .phone { background: #0e1b1f; border: 1px solid var(--border); border-radius: 26px; padding: 22px 18px; height: 470px;
+    display: flex; flex-direction: column; gap: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .phone h3 { font-size: 15px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .bubble { background: var(--chat); border-radius: 4px 16px 16px 16px; padding: 10px 14px; font-size: 18px; line-height: 1.4; max-width: 92%; }
+  .bubble .who { font-size: 13px; color: var(--accent); font-weight: 700; display: block; margin-bottom: 2px; }
+  .bubble .ln { font-size: 12px; color: var(--muted); float: right; margin-left: 10px; }
+  .bubble mark { background: var(--mark); color: #1a1a1a; border-radius: 4px; padding: 0 3px; }
+  .arrow { font-size: 48px; color: var(--accent); text-align: center; }
+  .draft { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .draft h3 { font-size: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .badge { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: #3a2a10; color: #f5b74e; font-weight: 700; }
+  .row { display: grid; grid-template-columns: 1fr 90px 92px; gap: 8px; align-items: center; padding: 12px 0;
+    border-bottom: 1px solid var(--border); font-size: 18px; }
+  .row .q { text-align: right; font-variant-numeric: tabular-nums; }
+  .row .p { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chips { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--chip-m); color: #cfe3ff; }
+  .chip.c { background: var(--chip-c); color: #e2d8ff; }
+  .chip.k { background: var(--chip-k); color: #dbe4ea; }
+  .chip.h { background: #4a3a14; color: #ffe2a8; }
+  .strike { text-decoration: line-through; color: var(--bad); }
+  .total { display: flex; justify-content: space-between; padding-top: 14px; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .accept { margin-top: 16px; display: inline-block; padding: 10px 18px; border-radius: 10px; background: var(--accent-d);
+    color: #fff; font-weight: 700; font-size: 17px; }
+  .accept.pulse { animation: pop 500ms forwards, pulse 1.4s 500ms ease-out 2; }
+  .note { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .swap { position: relative; }
+  .swap > * { transition: opacity 400ms ease; }
+
+  /* Principles scene */
+  .grid { display: grid; grid-template-columns: repeat(2, 520px); gap: 22px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px;
+    display: grid; grid-template-columns: 54px 1fr; gap: 18px; align-items: start; }
+  .card svg { width: 46px; height: 46px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .card h4 { font-size: 24px; margin-bottom: 6px; }
+  .card p { font-size: 17px; color: var(--muted); line-height: 1.45; }
+  .kicker { font-size: 18px; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 22px; }
+
+  /* Outro */
+  .cmd { margin-top: 28px; font: 600 24px ui-monospace, "JetBrains Mono", "Fira Code", Menlo, monospace;
+    background: #050b0d; border: 1px solid var(--border); border-radius: 12px; padding: 16px 26px; color: var(--accent); }
+  .cmd .pr { color: var(--muted); }
+  .lines { margin-top: 26px; display: grid; gap: 10px; text-align: center; font-size: 22px; color: var(--muted); }
+  .meta { margin-top: 30px; display: flex; gap: 12px; }
+  .pill { font-size: 16px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); color: var(--text); }
+
+  /* Social card (1280x640) */
+  .social { width: 1280px; height: 640px; padding: 64px 72px; display: grid; grid-template-columns: 1fr 470px; gap: 40px; align-items: center; }
+  .social .logo { font-size: 72px; }
+  .social .tag { text-align: left; font-size: 28px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<script>
+  const COPY = Object.assign(
+    {
+      title: "ChatterPilot",
+      subtitle: "Turn WhatsApp order messages into source-linked drafts you can check and export.",
+      cards: [
+        { heading: "Every value cites its source", line: "Each product, quantity and price links to a chat line, a catalogue row or a calculation." },
+        { heading: "Unknown stays unknown", line: "Unclear products, units or prices are flagged for a person, never guessed." },
+        { heading: "A person accepts", line: "Agents can draft and propose edits. There is no tool to accept or submit." },
+        { heading: "Exports your tools can import", line: "CSV and JSON, plus experimental files for Tally, ERPNext, Zoho Books and UBL." },
+      ],
+      outroTitle: "Try it on invented data",
+      outroLines: ["Runs on your computer. No account, no API key.", "Early prototype, tested on synthetic data only."],
+    },
+    window.__COPY || {},
+  );
+  const mode = (location.hash || "#intro").slice(1);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const ICONS = [
+    '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg>',
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M16 4.5l1.5 1.5L21 2.5"/></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>',
+  ];
+  const at = (ms, fn) => setTimeout(fn, ms);
+  const scene = (html, start, end) => {
+    const el = document.createElement("section");
+    el.className = "scene";
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    el.style.animation = `fade-in 700ms ${start}ms ease forwards${end ? `, fade-out 600ms ${end}ms ease forwards` : ""}`;
+    return el;
+  };
+  const appear = (el, delay) => { el.classList.add("in"); el.style.animationDelay = `${delay}ms`; };
+
+  if (mode === "intro") {
+    // 1. Title
+    scene(`<div class="logo">Chatter<span>Pilot</span></div><div class="tag">${esc(COPY.subtitle)}</div><div class="underline"></div>`, 200, 3600);
+
+    // 2. A chat order becomes a draft (the demo's own synthetic data)
+    const flow = scene(`
+      <div class="flow">
+        <div class="phone">
+          <h3>Sunrise Hardware Orders · invented chat</h3>
+          <div class="bubble" id="b1"><span class="who">Ravi Kumar <span class="ln">lines 6–9</span></span>Order for Kumar Builders site 2:<br><span id="m1">40 bags cement</span><br><span id="m2">120 sq ft tiles 2x2 white</span><br>Deliver Thursday</div>
+          <div class="bubble" id="b2"><span class="who">Ravi Kumar <span class="ln">line 12</span></span><span id="m3">Sorry make it 45 bags cement</span></div>
+        </div>
+        <div class="arrow" id="arr">→</div>
+        <div class="draft" id="draft">
+          <h3>Draft · Kumar Builders <span class="badge" id="state">needs review</span></h3>
+          <div class="row" id="r1"><div class="swap"><span id="r1n">UltraBond Cement 50kg</span></div><div class="q" id="r1q">40 bag</div><div class="p">₹410.00</div>
+            <div class="chips"><span class="chip">chat line 7</span><span class="chip c">catalogue CEM-UB50</span><span class="chip k">GST 28%</span></div></div>
+          <div class="row" id="r2"><div>Vitrified Tile 2x2 White</div><div class="q">120 sq ft</div><div class="p">₹52.00</div>
+            <div class="chips"><span class="chip">chat line 8</span><span class="chip c">catalogue TIL-22W</span><span class="chip k">GST 18%</span></div></div>
+          <div class="row" id="r3" style="display:none"><div>UltraBond Cement 50kg</div><div class="q">45 bag</div><div class="p">₹410.00</div>
+            <div class="chips"><span class="chip">chat line 12</span><span class="chip h">linked by Anita: customer corrected</span></div></div>
+          <div class="total"><span>Total</span><span id="tot">INR 28,355.20</span></div>
+          <div class="accept" id="acc" style="opacity:0">Accept order</div>
+          <div class="note" id="nt" style="opacity:0">Nothing is exported until a person accepts.</div>
+        </div>
+      </div>`, 3900, 15600);
+    const $ = (id) => flow.querySelector(`#${id}`);
+    appear($("b1"), 4400);
+    appear($("arr"), 5600);
+    appear($("draft"), 5900);
+    at(6900, () => { $("m1").innerHTML = "<mark>40 bags cement</mark>"; });
+    at(7900, () => { $("m1").textContent = "40 bags cement"; $("m2").innerHTML = "<mark>120 sq ft tiles 2x2 white</mark>"; });
+    at(8900, () => { $("m2").textContent = "120 sq ft tiles 2x2 white"; });
+    appear($("b2"), 9200);
+    at(10300, () => { $("m3").innerHTML = "<mark>Sorry make it 45 bags cement</mark>"; });
+    at(10900, () => {
+      $("r1n").classList.add("strike"); $("r1q").classList.add("strike");
+      const r3 = $("r3"); r3.style.display = ""; appear(r3, 0);
+    });
+    at(11800, () => { $("tot").textContent = "INR 30,979.20"; $("tot").style.color = "var(--accent)"; });
+    at(12500, () => { const a = $("acc"); a.style.opacity = ""; a.classList.add("pulse"); });
+    at(13100, () => { const n = $("nt"); n.style.opacity = ""; appear(n, 0); });
+
+    // 3. Principles
+    const cards = COPY.cards.slice(0, 4).map((c, i) =>
+      `<div class="card" id="c${i}">${ICONS[i] || ICONS[0]}<div><h4>${esc(c.heading)}</h4><p>${esc(c.line)}</p></div></div>`).join("");
+    const principles = scene(`<div class="kicker">How it stays trustworthy</div><div class="grid">${cards}</div>`, 16100, 24000);
+    COPY.cards.slice(0, 4).forEach((_, i) => {
+      appear(principles.querySelector(`#c${i}`), 16600 + i * 900);
+    });
+    at(24700, () => { window.__done = true; });
+  } else if (mode === "outro") {
+    const lines = COPY.outroLines.map((l) => `<div>${esc(l)}</div>`).join("");
+    scene(`<div class="logo">Chatter<span>Pilot</span></div><div class="tag">${esc(COPY.outroTitle)}</div>
+      <div class="cmd"><span class="pr">$</span> pnpm install --frozen-lockfile &amp;&amp; pnpm demo</div><div class="lines">${lines}</div>
+      <div class="meta"><span class="pill">MIT licence</span><span class="pill">Local-first</span><span class="pill">MCP server for coding agents</span></div>`, 200, 0);
+    at(7000, () => { window.__done = true; });
+  } else if (mode === "social") {
+    document.documentElement.style.height = document.body.style.height = "640px";
+    const el = document.createElement("section");
+    el.className = "social";
+    el.innerHTML = `<div><div class="logo">Chatter<span>Pilot</span></div><div class="tag">${esc(COPY.subtitle)}</div>
+      <div class="meta"><span class="pill">MIT</span><span class="pill">Local-first</span><span class="pill">MCP for coding agents</span><span class="pill">Person accepts</span></div></div>
+      <div class="draft"><h3>Draft · Kumar Builders <span class="badge">needs review</span></h3>
+        <div class="row"><div>UltraBond Cement 50kg</div><div class="q">45 bag</div><div class="p">₹410.00</div>
+          <div class="chips"><span class="chip">chat line 12</span><span class="chip c">catalogue CEM-UB50</span></div></div>
+        <div class="row"><div>Vitrified Tile 2x2 White</div><div class="q">120 sq ft</div><div class="p">₹52.00</div>
+          <div class="chips"><span class="chip">chat line 8</span><span class="chip c">catalogue TIL-22W</span></div></div>
+        <div class="total"><span>Total</span><span>INR 30,979.20</span></div></div>`;
+    document.body.appendChild(el);
+    window.__done = true;
+  }
+</script>
+</body>
+</html>

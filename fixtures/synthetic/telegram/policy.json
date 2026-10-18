@@ -1,0 +1,5 @@
+{
+  "allowedSenderIds": [111001, 111002],
+  "allowedChatIds": [-100200300],
+  "approverIds": [111001]
+}

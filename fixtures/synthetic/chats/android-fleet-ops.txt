@@ -1,0 +1,15 @@
+03/02/2026, 08:02 - Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them.
+03/02/2026, 08:10 - Dispatch (Hilltop Travels): Booking BK-1021 request: 1 bus for Sharma wedding party, 14/02 Guwahati to Shillong
+03/02/2026, 08:25 - Dispatch (Hilltop Travels): BK-1021 confirmed with bus BUS-07
+03/02/2026, 09:40 - Imran (Driver): BUS-07 reported a tyre issue. Repair quoted at 2,400. Please approve.
+03/02/2026, 09:45 - Owner: Approved
+03/02/2026, 13:05 - Imran (Driver): Paid 2,400 for that repair
+04/02/2026, 10:00 - Dispatch (Hilltop Travels): BK-1021 change: departure shifted to 15/02
+04/02/2026, 11:30 - Dispatch (Hilltop Travels): Booking BK-1022 request: tempo traveller for airport drop on 06/02
+04/02/2026, 12:00 - Dispatch (Hilltop Travels): BK-1022 cancelled by customer
+05/02/2026, 07:50 - Rafiq (Driver): AB-12 brake noise, need check
+05/02/2026, 11:15 - Mechanic Joseph: AB-12 brake pads quote 3,150
+05/02/2026, 17:20 - Mechanic Joseph: AB-12 brakes fixed, ready
+05/02/2026, 18:00 - Rafiq (Driver): Paid 1,150 diesel for AB-12
+06/02/2026, 09:00 - Dispatch (Hilltop Travels): BK-1021 confirmed again for 15/02, bus BUS-07
+06/02/2026, 09:30 - Imran (Driver): <Media omitted>

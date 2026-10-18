@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MockBooks — draft</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>MockBooks — draft <span data-testid="draft-id"></span></h1>
+    <p class="note">Synthetic test form for ChatterPilot. Not a real product.</p>
+    <dl>
+      <dt>Status</dt><dd data-testid="status"></dd>
+      <dt>Reference</dt><dd data-testid="reference"></dd>
+      <dt>Customer</dt><dd data-testid="customer-id"></dd>
+      <dt>Order date</dt><dd data-testid="order-date"></dd>
+    </dl>
+    <table>
+      <thead><tr><th>Product</th><th>Quantity</th><th>Unit</th><th>Unit price</th><th>Amount</th><th>Tax</th></tr></thead>
+      <tbody id="lines"></tbody>
+    </table>
+    <p>
+      Subtotal <span data-testid="subtotal"></span> · Tax <span data-testid="tax-total"></span> ·
+      Total <span data-testid="total"></span>
+    </p>
+    <script type="module" src="draft.js"></script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MockBooks — new proforma</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>MockBooks — new proforma</h1>
+    <p class="note">Synthetic test form for ChatterPilot. Not a real product.</p>
+    <form id="order">
+      <label>Customer <select id="customer" required></select></label>
+      <label>Order date <input id="date" type="date" required /></label>
+      <label>Reference <input id="reference" /></label>
+      <table>
+        <thead>
+          <tr><th>Product</th><th>Quantity</th><th>Unit</th><th>Unit price</th><th>Amount</th><th>Tax</th></tr>
+        </thead>
+        <tbody id="lines"></tbody>
+      </table>
+      <button type="button" id="add">Add line</button>
+      <p>
+        Subtotal <output data-testid="subtotal"></output> · Tax <output data-testid="tax-total"></output> ·
+        Total <output data-testid="total"></output>
+      </p>
+      <button type="button" id="save">Save draft</button>
+      <button type="button" id="submit">Submit proforma</button>
+      <p role="status" id="status"></p>
+    </form>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
