@@ -21,7 +21,7 @@ records what was checked on 2026-10-17 and what still needs a decision. It is no
       not confirm: "Hilltop Travels" (fleet fixture), "UltraBond" and "Rockset" cement (catalogue
       fixture, tests, screenshots). Either confirm no conflict or rename to obviously invented names
       and regenerate screenshots (`CHATTERPILOT_SCREENSHOTS=1 pnpm test:e2e`).
-- [ ] **Visibility wording.** HANDOFF.md and PROGRESS.md say the repository is private; update when
+- [x] **Visibility wording.** HANDOFF.md and PROGRESS.md say the repository is private; update when
       it changes. History rewriting is optional (nothing secret is in it).
 - [ ] **Branding and trademark.** Product name ChatterPilot; optional "by Kaamchor"; confirm the
       call-to-action destination before adding it (PLAN §12).
@@ -30,7 +30,8 @@ records what was checked on 2026-10-17 and what still needs a decision. It is no
       "recorded"; until then public material must call it hand-written.
 - [ ] **Claims review.** README support matrix and docs must match the release; no time-saving or
       accuracy claims until measured with consenting pilots (PLAN §10 P5).
-- [ ] **Explicit approval** from Shekib for the visibility change and any promotion.
+- [x] **Explicit approval** from Shekib for the visibility change (given 2026-10-18; the repository
+      was made public that day). Promotion (posting launch drafts) still needs approval per post.
 
 ## Build-time only (not distributed)
 

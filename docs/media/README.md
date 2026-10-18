@@ -47,5 +47,6 @@ pnpm media:tour       # open the interactive tour at http://127.0.0.1:4318/media
    editor, and put the `https://github.com/user-attachments/assets/…` URL it creates on its own line
    where the README comment says so.
 2. **Social preview.** Settings → General → Social preview → upload `social/card-1280x640.png`.
-3. **Interactive tour online.** Enable GitHub Pages for the repository (it serves `docs/`); the
-   tour is then at `/media/tour.html`. Until then it runs locally with `pnpm media:tour`.
+3. **Interactive tour online.** Done on 2026-10-18: GitHub Pages serves `docs/` from `main`, so the
+   tour is at <https://shekibahmed.github.io/ChatterPilot/media/tour.html>. Locally it runs with
+   `pnpm media:tour`.
