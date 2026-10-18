@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/8d0de102-f271-46f9-93e5-22ced205c35a
-
 # ChatterPilot
 
 **Turn WhatsApp order messages into source-linked drafts you can check and export.**
@@ -19,15 +15,14 @@ Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) a
   <img src="docs/media/gif/intro.gif" width="860" alt="Animated intro: an invented chat order becomes a draft whose values link to chat lines and catalogue rows; a later correction changes the total; a person accepts">
 </p>
 
-**▶ [Watch the walkthrough with music](docs/media/tour.mp4)** (about 4 minutes, invented data) ·
-[interactive tour](https://shekibahmed.github.io/ChatterPilot/media/tour.html) with chapters, clickable captions and copy-paste agent setup
-(`pnpm media:tour` runs it locally) · [how the videos are made](docs/media/README.md)
+**▶ Watch the walkthrough with music** (about 4 minutes, invented data). It plays below; there is
+also an [interactive tour](https://shekibahmed.github.io/ChatterPilot/media/tour.html) with
+chapters, clickable captions and copy-paste agent setup, and a note on
+[how the videos are made](docs/media/README.md).
 
-<!-- Owner: after the repository is public, drag docs/media/tour.mp4 into this file in GitHub's web
-editor and put the https://github.com/user-attachments/assets/... URL it creates on the next line,
-on its own, for an inline player. See docs/media/README.md. -->
+https://github.com/user-attachments/assets/8d0de102-f271-46f9-93e5-22ced205c35a
 
-> **Status: early private prototype.** The parts below are built and tested on synthetic data.
+> **Status: early prototype.** The parts below are built and tested on synthetic data.
 > Nothing has been piloted with a real business yet, and no time-saving claims are made.
 > See [docs/why.md](docs/why.md) for the problem and the design principles, and
 > [docs/patterns.md](docs/patterns.md) for the ten patterns behind it, each with its source and
@@ -95,7 +90,7 @@ pnpm demo
 ```
 
 No Node.js on your machine? Open the repository in a dev container (VS Code "Reopen in Container",
-or GitHub Codespaces once the repository is public): [.devcontainer](.devcontainer/devcontainer.json)
+or GitHub Codespaces): [.devcontainer](.devcontainer/devcontainer.json)
 installs everything and runs the checks; then run `pnpm demo` inside it.
 
 Open http://127.0.0.1:4317. The demo uses invented chats and an invented hardware-store catalogue

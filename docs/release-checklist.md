@@ -1,7 +1,7 @@
 # Release checklist (P6, owner approval required)
 
-The repository stays **private** until Shekib explicitly approves a visibility change. This list
-records what was checked on 2026-10-17 and what still needs a decision. It is not an approval.
+The repository stayed **private** until Shekib approved the visibility change; it was made public on
+2026-10-18. This list records what was checked before that and what still needs a decision.
 
 ## Checked (automated audits, 2026-10-17)
 

@@ -42,11 +42,13 @@ pnpm media:tour       # open the interactive tour at http://127.0.0.1:4318/media
 
 ## Owner steps (need a person with access to the GitHub repository)
 
-1. **Inline player in the README.** GitHub plays a video inside a README only when it was uploaded
-   to GitHub. After the repository is public, edit README.md on github.com, drag `tour.mp4` into the
-   editor, and put the `https://github.com/user-attachments/assets/…` URL it creates on its own line
-   where the README comment says so.
-2. **Social preview.** Settings → General → Social preview → upload `social/card-1280x640.png`.
+1. **Inline player in the README.** Done on 2026-10-18. GitHub plays a video inside a README only
+   when it was uploaded to GitHub: edit README.md on github.com, drag the video into the editor
+   (under 10 MB on a free plan; the upload used a `-crf 28` re-encode of `tour.mp4`, 8.2 MB), and
+   put the `https://github.com/user-attachments/assets/…` URL it creates on its own line. Repeat
+   after regenerating the tour.
+2. **Social preview.** Done on 2026-10-18 (Settings → General → Social preview →
+   `social/card-1280x640.png`).
 3. **Interactive tour online.** Done on 2026-10-18: GitHub Pages serves `docs/` from `main`, so the
    tour is at <https://shekibahmed.github.io/ChatterPilot/media/tour.html>. Locally it runs with
    `pnpm media:tour`.

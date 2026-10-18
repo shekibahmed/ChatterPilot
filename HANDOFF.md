@@ -61,17 +61,15 @@
   deliberately).
 
 ## Owner actions (need Shekib)
-1. **README video player** (the browser extension was not connected, so this was not done): on
-   github.com edit README.md on `main`, drag in the upload copy of the tour (8.2 MB, under GitHub's
-   10 MB free-plan limit; regenerate it with the ffmpeg command in PROGRESS.md 2026-10-18 "Release"),
-   and put the `https://github.com/user-attachments/assets/...` URL it creates on its own line where
-   the README comment says so.
-2. **Social preview**: Settings, General, Social preview, upload
-   `docs/media/social/card-1280x640.png`.
-3. **Discussions**: create the categories in `docs/launch/discussions.md` and pin the welcome post.
-4. **Launch posts**: approve and post the drafts in `docs/launch/` in waves.
-5. **OA0 recording**, **P4 provider**, **OA1** live bot, **OA2** real target app, **P5 pilots**.
-6. Decide on the fixture names that might match real brands ("UltraBond", "Rockset", "Hilltop
+Done on 2026-10-18: README inline video (above the status note), social preview image, Discussions
+categories and the pinned welcome post (https://github.com/shekibahmed/ChatterPilot/discussions/3).
+1. **Discussions tidy-up (optional):** the default "General" and "Polls" categories still exist, and
+   "Show and tell" kept its name (its description is the "How you use it" one). Category
+   descriptions do not yet end with "Use invented data only. Never post real chats, names, phone
+   numbers or prices." (`docs/launch/discussions.md`).
+2. **Launch posts**: approve and post the drafts in `docs/launch/` in waves.
+3. **OA0 recording**, **P4 provider**, **OA1** live bot, **OA2** real target app, **P5 pilots**.
+4. Decide on the fixture names that might match real brands ("UltraBond", "Rockset", "Hilltop
    Travels"; `docs/release-checklist.md`), a contact/consulting link for the README, and try the
    import files in real Tally/ERPNext/Zoho sandboxes.
 

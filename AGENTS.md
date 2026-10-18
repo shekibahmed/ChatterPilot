@@ -1,8 +1,8 @@
 # Repository instructions (Claude Code, Codex and other agents)
 
 ChatterPilot is a local-first, MIT-licensed toolkit that turns WhatsApp order messages into
-source-linked drafts a person reviews and exports. The repository is **private** until the owner
-explicitly approves public release.
+source-linked drafts a person reviews and exports. The repository is **public** (since 2026-10-18,
+owner-approved): everything pushed is world-readable, so check for secrets and personal data first.
 
 ## Start of every session
 1. Inspect real state: `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse HEAD`,
@@ -15,7 +15,7 @@ explicitly approves public release.
 ## Working rules
 - One active writer per branch. Working branch: `build/v0.1`.
 - Work in small vertical slices. After each tested slice: run `pnpm check`, update `HANDOFF.md`, append to
-  `PROGRESS.md`, record decisions in `DECISIONS.md`, commit explicit paths, push to the private origin.
+  `PROGRESS.md`, record decisions in `DECISIONS.md`, commit explicit paths, push to origin.
 - Record exact commands and exit codes. Write "not run" truthfully; reading code is not a passing test.
 - Never commit secrets, real chats/audio, customer data, browser sessions/traces or the private planning
   packet (it lives outside this repository). Fixtures are independently authored synthetic data.

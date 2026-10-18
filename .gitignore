@@ -34,3 +34,7 @@ test-results/
 
 # Raw walkthrough recordings (regenerate with pnpm media)
 /docs/media/raw/
+
+# Editor lock files (LibreOffice, Emacs)
+.~lock.*#
+.#*
