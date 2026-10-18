@@ -536,3 +536,16 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
 - Not done: the README inline video and the social preview need GitHub's web UI and the Chrome
   extension was not connected. Upload copy for the README (8.2 MB, under the 10 MB free-plan limit):
   `ffmpeg -i docs/media/tour.mp4 -c:v libx264 -preset slow -crf 28 -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart chatterpilot-walkthrough.mp4`.
+
+## 2026-10-18 — Owner launch steps done; README and records brought up to date
+- Owner (on github.com): README inline video (commit `1b661d7` on `main`), social preview image
+  (`usesCustomOpenGraphImage: true`), Discussions categories and the pinned welcome post
+  (discussions/3, Announcements). Checked through the GitHub GraphQL API.
+- README: the video link moved from above the title to under the walkthrough links (the owner
+  comment marking that spot removed); status note now says "early prototype" (not "private");
+  Codespaces note no longer waits for the public flip. AGENTS.md, the release checklist and
+  `docs/media/README.md` describe the repository as public. `.gitignore` ignores editor lock files
+  (`.~lock.*#`, `.#*`); a LibreOffice lock file for `docs/launch/discussions.md` was present and is
+  not committed.
+- Discussions still has the default "General" and "Polls" categories, "Show and tell" kept its name,
+  and descriptions lack the invented-data sentence (noted in HANDOFF as optional owner tidy-up).
