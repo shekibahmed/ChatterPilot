@@ -508,3 +508,20 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   rules only). Noted by the QA review, not changed: the agent's proposed edit is stored with evidence
   `kind: "human"` and `reviewer: "agent:demo-agent"` (visible in the agent chapter).
 - Checks: `pnpm check` exit 0 (485 tests); `pnpm test:e2e` exit 0 (13 passed); `pnpm media` exit 0.
+
+## 2026-10-18 — Documented learnings (ce-compound) and release preparation
+- Three learnings written with ce-compound (Full mode: related-docs finder, session-history probe
+  and synthesis, frontmatter and claims validators, a Sonnet grounding pass each):
+  `docs/solutions/design-patterns/walkthrough-media-from-the-real-app.md`,
+  `docs/solutions/architecture-patterns/tiered-agent-workflows-for-repository-docs.md`,
+  `docs/solutions/developer-experience/generated-agent-references-drift-tested-as-data.md`.
+  Grounding corrected 9 claims across the three (loose line citations, an overclaim about verifier
+  yield, the exit-code scanner description). No CONCEPTS.md created (no qualifying terms).
+- Follow-ups from the finders: AGENTS.md lists `check:quick`, `agent-reference`, `media*` and points
+  at `docs/solutions/`; docs test now link-checks `docs/solutions/`; `how-it-was-built.md` covers
+  agent-written docs; stale comment in `ffmpeg.ts` and a size in `docs/launch/README.md` fixed;
+  `docs/.nojekyll` added for GitHub Pages.
+- Pre-release checks: full-history secret scan (only the synthetic test key
+  `sk-synthetic-not-a-real-key`), no private packet, databases or env files in history, no home
+  paths in tracked files, all commits use the GitHub noreply address, media metadata clean.
+- Checks: `pnpm check` exit 0 (485 tests).

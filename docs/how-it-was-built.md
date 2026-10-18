@@ -1,10 +1,10 @@
 # How ChatterPilot was built
 
 ChatterPilot was built in October 2026 by Shekib Ahmed working with AI coding agents (Claude Code,
-with Sonnet and Haiku sub-agents for research, test-data writing and review). This page describes
-the method, because the method is reusable even where the code is not. Every number below comes
-from this repository's history: [PROGRESS.md](../PROGRESS.md) has the test evidence for each step,
-and [DECISIONS.md](../DECISIONS.md) has the reasons.
+with Opus, Sonnet and Haiku sub-agents for drafting, research, test-data writing and review). This
+page describes the method, because the method is reusable even where the code is not. Every number
+below comes from this repository's history: [PROGRESS.md](../PROGRESS.md) has the test evidence for
+each step, and [DECISIONS.md](../DECISIONS.md) has the reasons.
 
 ## 1. Research before code, and say what was not verified
 
@@ -65,6 +65,14 @@ including two that silently produced wrong orders ("5 boxes 1 inch elbow" read a
 by 5pm" read as a quantity of 5) and a regular expression that a 20,000-character message could
 stall for minutes. A CI failure that looked like noise turned out to be a real race condition and
 now has a test that reproduces it.
+
+The same structure checks writing. For the walkthrough captions, the launch drafts and the agent
+docs, an Opus agent drafted and two Sonnet agents checked from different angles (facts against the
+code and tests; rules and tone) before anything was committed; every check found real problems,
+such as a video length that `ffprobe` disproved and a recipe that would have let an agent tune on
+the held-out set. A separate agent reviewed frames of the rendered video and found captions covering
+what they described. See
+[docs/solutions/architecture-patterns/tiered-agent-workflows-for-repository-docs.md](solutions/architecture-patterns/tiered-agent-workflows-for-repository-docs.md).
 
 ## 6. Built to be extended by your agent
 

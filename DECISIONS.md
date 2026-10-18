@@ -430,4 +430,5 @@ their replacement. No secrets, customer data or private transcripts.
   they drift or if any tool name suggests accepting, approving, rejecting, filling or submitting.
 - `pnpm check:quick` (lint, types, tests affected by uncommitted changes) gives agents a fast loop;
   `pnpm check` stays the gate before a commit. The docs link test now covers `llms.txt` and the
-  agent, launch and media folders.
+  agent, launch, media and solutions folders. Lessons from building these checks are in
+  `docs/solutions/developer-experience/generated-agent-references-drift-tested-as-data.md`.

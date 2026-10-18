@@ -28,8 +28,8 @@ const docs = [
   ...readdirSync(join(root, "docs"))
     .filter((n) => n.endsWith(".md"))
     .map((n) => `docs/${n}`),
-  // Agent docs, launch drafts and media notes, at any depth.
-  ...["docs/agents", "docs/launch", "docs/media"].flatMap((dir) =>
+  // Agent docs, launch drafts, media notes and documented learnings, at any depth.
+  ...["docs/agents", "docs/launch", "docs/media", "docs/solutions"].flatMap((dir) =>
     existsSync(join(root, dir))
       ? files(join(root, dir), (n) => n.endsWith(".md")).map((f) => f.slice(root.length))
       : [],

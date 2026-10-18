@@ -276,8 +276,8 @@ export function cursorWindow(
 }
 
 /**
- * A zoomed social clip from the 1280x720 recording: a crop window that follows the cursor, scaled
- * up, with the hook on top and captions drawn below. Square: the zoomed view fills the frame.
+ * A zoomed social clip from the clean 1280x624 app recording: a crop window that follows the cursor,
+ * scaled up, with the hook on top and captions drawn below. Square: the zoomed view fills the frame.
  * Vertical: the zoomed view sits in the middle with the hook above and captions below.
  */
 export function followClip(options: {

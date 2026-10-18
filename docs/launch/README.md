@@ -40,7 +40,7 @@ None of these can be done by an agent: they change visibility or publish materia
 5. **Get an inline video player.** A video file committed to the repository does not play inline in
    a README. Drag `docs/media/tour.mp4` into the README editor on github.com (or into an issue
    comment box) so GitHub uploads it as an attachment, then paste the resulting link on its own
-   line near the top of the README. tour.mp4 is about 13 MB; GitHub limits video attachments
+   line near the top of the README. tour.mp4 is about 12 MB; GitHub limits video attachments
    (check the current limit for the owner's plan before uploading), so if the upload is refused,
    use a clip from `docs/media/social/` instead (each is 1.2 to 1.9 MB) or re-encode the tour
    smaller.

@@ -37,7 +37,16 @@ explicitly approves public release.
   sets; held-out sets are scored, never tuned on (docs/evaluation.md)
 - `pnpm bench` — timings on a synthetic 100,000-message export
 - `node apps/local/src/agent-session.ts > docs/agent-session.md` — regenerate the recorded MCP session
+- `pnpm check:quick` — lint + typecheck + only the tests affected by uncommitted changes (fast loop)
+- `pnpm agent-reference` — regenerate `docs/agents/tools.json` and `docs/agents/errors.md` (a test
+  fails if they drift)
+- `pnpm media` / `pnpm media:render` / `pnpm media:tour` — re-record the walkthrough media (needs
+  ffmpeg, about 5 minutes, adds ~50 MB to history: run after visible UI changes only), re-render
+  from the last raw recording, serve the interactive tour (docs/media/README.md)
 
 ## Layout
 See `DECISIONS.md` D001. Packages export TypeScript source directly (`exports: ./src/index.ts`); relative
 imports use `.ts` extensions and only erasable TypeScript syntax, so Node runs them without a build step.
+`docs/solutions/` holds documented learnings from past work (patterns, pitfalls, decisions), organised by
+category with YAML frontmatter (`module`, `tags`, `problem_type`); relevant when working in an area it
+covers. Agent orientation: `llms.txt` and `docs/agents/`.
