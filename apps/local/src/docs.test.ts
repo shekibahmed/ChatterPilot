@@ -24,10 +24,17 @@ const docs = [
   "CONTRIBUTING.md",
   "SECURITY.md",
   "AGENTS.md",
+  "llms.txt",
   ...readdirSync(join(root, "docs"))
     .filter((n) => n.endsWith(".md"))
     .map((n) => `docs/${n}`),
-];
+  // Agent docs, launch drafts and media notes, at any depth.
+  ...["docs/agents", "docs/launch", "docs/media"].flatMap((dir) =>
+    existsSync(join(root, dir))
+      ? files(join(root, dir), (n) => n.endsWith(".md")).map((f) => f.slice(root.length))
+      : [],
+  ),
+].filter((doc) => existsSync(join(root, doc)));
 
 describe("documentation stays true to the code", () => {
   it("quotes only test names that exist (patterns guide)", () => {
@@ -41,6 +48,45 @@ describe("documentation stays true to the code", () => {
     );
     expect(names.length).toBeGreaterThan(20);
     for (const name of names) expect(testSources, `test "${name}" not found`).toContain(name);
+  });
+
+  it("quotes only test names that exist (problem catalogue)", () => {
+    const text = readFileSync(join(root, "docs/problems.md"), "utf8");
+    const proofs = text
+      .split("\n**Proof.**")
+      .slice(1)
+      .map((p) => p.split("\n**Pattern.**")[0] ?? "");
+    const names = proofs.flatMap((p) =>
+      [...p.replace(/\n/g, " ").matchAll(/"([^"]{12,})"/g)].map((m) => m[1] ?? ""),
+    );
+    expect(names.length).toBeGreaterThan(20);
+    for (const name of names) {
+      // Table tests (it.each) are quoted up to their placeholder.
+      const fixed = name.split(/%[jsdi]/)[0] ?? name;
+      expect(testSources, `test "${name}" not found`).toContain(fixed);
+    }
+  });
+
+  it("names only source files that exist (agent docs)", () => {
+    const agentDocs = [
+      "llms.txt",
+      "docs/problems.md",
+      ...files(join(root, "docs/agents"), (n) => n.endsWith(".md")).map((f) =>
+        f.slice(root.length),
+      ),
+    ];
+    for (const doc of agentDocs) {
+      for (const line of readFileSync(join(root, doc), "utf8").split("\n")) {
+        // A starter task may ask the reader to create a file; that line says so.
+        const proposes = /new file|\bAdd `|\bcreate/i.test(line);
+        for (const [, path = ""] of line.matchAll(
+          /`((?:packages|apps|fixtures|docs|skills)\/[\w./-]+\.(?:ts|tsx|json|md|csv|txt))`/g,
+        )) {
+          if (proposes && !existsSync(join(root, path))) continue;
+          expect(existsSync(join(root, path)), `${doc} names missing ${path}`).toBe(true);
+        }
+      }
+    }
   });
 
   it("links only to files that exist", () => {
