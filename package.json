@@ -15,10 +15,15 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p apps/local/web/tsconfig.json",
     "test": "vitest run",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "check:quick": "pnpm lint && pnpm typecheck && vitest run --changed",
     "build:web": "vite build --config apps/local/web/vite.config.ts",
     "demo": "pnpm build:web && node apps/local/src/cli.ts demo",
     "test:e2e": "pnpm build:web && playwright test --config apps/local/e2e/playwright.config.ts",
-    "bench": "node apps/local/src/bench.ts"
+    "bench": "node apps/local/src/bench.ts",
+    "media": "pnpm build:web && node apps/local/src/media/record.ts",
+    "media:render": "node apps/local/src/media/render.ts",
+    "media:tour": "node apps/local/src/media/serve-tour.ts",
+    "agent-reference": "node apps/local/src/agent-reference.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

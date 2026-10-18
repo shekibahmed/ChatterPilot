@@ -476,3 +476,35 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   Tally export refused (nothing accepted), `accept_draft` does not exist, follow-ups. A test keeps it
   running. Linked from docs/harnesses.md.
 - Checks: `pnpm check` exit 0, 463 tests.
+
+## 2026-10-18 — Media, launch kit and agent-first docs (owner request)
+- Starting HEAD: `64dd4f8703ffde2803155ab59712ad533cfd0fae`
+- Walkthrough media (`pnpm media`, D023): Playwright records the real demo (same flow as the browser
+  test) at 1280x624 with a visible cursor; HTML/CSS intro and outro; a typed replay of
+  `docs/agent-session.md`; ffmpeg draws chapter labels and captions in a band below the app, joins
+  the parts with cross-fades and mixes a CC0 music bed. Outputs: `docs/media/tour.mp4` (237.7 s,
+  H.264 + AAC, 12 MB), six README GIFs (2.7 to 4.7 MB), five square/vertical social clips (zoomed,
+  following the cursor; the agent clip recorded natively), `card-1280x640.png`, `chapters.json/.js`,
+  `tour.vtt`. Committed media totals about 53 MB.
+- Music: "Hypnotic Chill" and "Calm Ambient 2" by cynicmusic (OpenGameArt, CC0 1.0), licence checked
+  on the source pages, hashes in `docs/media/music/LICENSE.md`.
+- Interactive tour `docs/media/tour.html` (chapters, clickable captions, music toggle, speed, keys,
+  deep links, benefits with their tests, copy-paste agent setup); `pnpm media:tour` serves it locally
+  with range requests; Playwright test `tour.spec.ts`.
+- Workflows (Opus 5.5 leads at high effort, Sonnet verifiers, Haiku scouts):
+  `wf_771c3c30-143` storyboard (Opus draft, 2 Sonnet fact-checks, Opus reconcile);
+  `wf_2456b9ef-657` launch kit (`docs/launch/*`, `.github/ISSUE_TEMPLATE/usage.yml`; nothing posted);
+  `wf_7c70e511-1f8` agent docs (4 Haiku inventories, Opus writer, 2 Sonnet verifiers, Opus final):
+  `llms.txt`, `docs/problems.md`, `docs/agents/` (README, six recipes, starter tasks), CONTRIBUTING
+  agent section; `wf_a0c86d51-8b8` media QA (3 Haiku privacy scans: no findings; Sonnet legibility
+  review: captions covering content, chapter label overlap, two early captions, cursor on key text,
+  narrow vertical crop; all fixed by the caption band, re-timed captions and wider crops).
+- Generated references (D024): `docs/agents/tools.json` (MCP tools/list) and `docs/agents/errors.md`
+  (25 error codes with exit codes) from `node apps/local/src/agent-reference.ts`; drift test; no tool
+  name may suggest accept/approve/reject/fill/submit. Docs test now checks links in `llms.txt` and the
+  agent/launch/media folders, quoted test names in `docs/problems.md`, and source paths in agent docs.
+  `pnpm check:quick` added.
+- Not done: no recipe was executed end to end by an agent (the Sonnet pass checked paths, names and
+  rules only). Noted by the QA review, not changed: the agent's proposed edit is stored with evidence
+  `kind: "human"` and `reviewer: "agent:demo-agent"` (visible in the agent chapter).
+- Checks: `pnpm check` exit 0 (485 tests); `pnpm test:e2e` exit 0 (13 passed); `pnpm media` exit 0.

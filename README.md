@@ -11,7 +11,17 @@ It runs on your computer. The core needs no account, no API key and no internet 
 Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) and
 [docs/privacy.md](docs/privacy.md).
 
-![Reviewing an order draft: every value links to a chat line, a catalogue row, a calculation or a human edit](docs/images/draft-review.png)
+<p align="center">
+  <img src="docs/media/gif/intro.gif" width="860" alt="Animated intro: an invented chat order becomes a draft whose values link to chat lines and catalogue rows; a later correction changes the total; a person accepts">
+</p>
+
+**▶ [Watch the walkthrough with music](docs/media/tour.mp4)** (about 4 minutes, invented data) ·
+[interactive tour](docs/media/tour.html) with chapters, clickable captions and copy-paste agent setup
+(`pnpm media:tour` runs it locally) · [how the videos are made](docs/media/README.md)
+
+<!-- Owner: after the repository is public, drag docs/media/tour.mp4 into this file in GitHub's web
+editor and put the https://github.com/user-attachments/assets/... URL it creates on the next line,
+on its own, for an inline player. See docs/media/README.md. -->
 
 > **Status: early private prototype.** The parts below are built and tested on synthetic data.
 > Nothing has been piloted with a real business yet, and no time-saving claims are made.
@@ -54,9 +64,22 @@ flowchart LR
 | Export | Accepted orders download as CSV or JSON, or as import files for Tally Prime, ERPNext, Zoho Books and UBL 2.1 ([docs/exporters.md](docs/exporters.md)). | Exports come from frozen, fingerprinted snapshots; spreadsheet formula injection is neutralised. Import files are marked experimental (not yet tried in the real tools); Tally refuses to export until every name is mapped. |
 | Fill a form (opt-in, synthetic only) | `chatterpilot fill-form --approve` types an accepted order into a local synthetic web form (MockBooks) and reads it back. No real system is supported yet. | Approval bound to the exact document, prices, target, person and expiry; checked before and after saving; never twice; unknown outcomes reconciled, not retried; **stops before Submit**. See [docs/order-automation.md](docs/order-automation.md). |
 
-![Dashboard with coverage banner, reviewed-only order value and a refused week-on-week trend](docs/images/dashboard.png)
+### See it in motion
 
-![Export tab: CSV/JSON plus experimental import files; Tally refuses until every name is mapped](docs/images/export.png)
+| A correction, with reasons | A coding agent, with limits |
+|---|---|
+| <img src="docs/media/gif/correction.gif" alt="The reviewer links the later message 'Sorry make it 45 bags cement', gives a reason, excludes the old line and accepts; the order is frozen"> | <img src="docs/media/gif/agent.gif" alt="A coding agent calls the MCP tools: it loads the catalogue, imports a chat, drafts and proposes an edit; export is refused and there is no accept tool"> |
+
+<details>
+<summary>More clips: where each value came from, export, dashboard</summary>
+
+| Where each value came from | Export what was accepted | A dashboard that shows its gaps |
+|---|---|---|
+| <img src="docs/media/gif/provenance.gif" alt="Clicking a chat-line label highlights the exact words in the original message"> | <img src="docs/media/gif/export.gif" alt="CSV download, a Zoho Books import file, and Tally Prime refusing until names are mapped"> | <img src="docs/media/gif/dashboard.gif" alt="Dashboard stating its date coverage and gap, refusing a week comparison"> |
+
+Still images: [draft review](docs/images/draft-review.png), [dashboard](docs/images/dashboard.png),
+[export](docs/images/export.png).
+</details>
 
 ## Try the demo
 
@@ -104,6 +127,14 @@ and VS Code, the tool list and recipes for extending the code are in [docs/harne
 Every CLI command also takes `--json`. There is an agent skill in
 [skills/whatsapp-operations](skills/whatsapp-operations/SKILL.md).
 
+**If you are an agent** (or briefing one): start with [llms.txt](llms.txt) and
+[docs/agents/README.md](docs/agents/README.md). [docs/problems.md](docs/problems.md) maps each
+business problem to the code and the test that solves it, the recipes in
+[docs/agents/recipes](docs/agents/recipes) walk through common extensions, and
+[docs/agents/tools.json](docs/agents/tools.json) and [docs/agents/errors.md](docs/agents/errors.md)
+are generated from the code (a test fails if they drift). `pnpm check:quick` runs lint, types and
+only the tests affected by your change.
+
 ## Supported and not supported (yet)
 
 - **Tested export formats:** Android `dd/mm/yy, h:mm am - Name: text` and its variants (24-hour,
@@ -140,6 +171,12 @@ pnpm test:e2e   # browser test of the demo (Playwright)
 
 What comes next and what each step is waiting for (pilots, real test companies, native speakers) is
 in [docs/roadmap.md](docs/roadmap.md). Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+**Feedback is the most useful contribution right now.** Run the demo or point your coding agent at
+the repository, then tell us what you tried and what got in the way with the "Tell us how you use
+it" issue form (invented examples only, never real chats). Starter tasks for people and agents are
+in [docs/agents/tasks.md](docs/agents/tasks.md). If the patterns or the code saved you work, a star
+helps other developers find it.
 
 ## Licence
 

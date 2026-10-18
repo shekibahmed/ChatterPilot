@@ -396,3 +396,38 @@ their replacement. No secrets, customer data or private transcripts.
   the append-only guarantee becomes "append-only except audited redaction".
 - Owner to decide: adopt (2)?; the retention period default; whether redaction is offered in the review
   app or CLI only.
+
+## D023 — Walkthrough media generated from the running demo, with CC0 music
+- Date: 2026-10-18 (+05:30)
+- Status: accepted (owner asked for animated walkthroughs with background music in the README)
+- Chosen: `pnpm media` records the real review app with Playwright (one continuous recording,
+  visible cursor, chapter label), replaying the browser test's flow, plus HTML/CSS intro and outro
+  cards and a typed replay of the recorded MCP session (`docs/agent-session.md`). Captions live in
+  `apps/local/src/media/storyboard.json` (Opus draft, two Sonnet fact-checks, unit-tested rules) and
+  are drawn by ffmpeg from recorded timings, not in the page, so the same recording can be cropped.
+  ffmpeg renders `docs/media/tour.mp4` with a music bed, GIFs for the README, square and vertical
+  clips that follow the cursor, and chapter/caption data for `docs/media/tour.html`.
+- Music: two CC0 tracks by cynicmusic from OpenGameArt, licence checked on the source pages and
+  recorded in `docs/media/music/LICENSE.md` with the original hashes. A synthesised pad is the
+  fallback if the files are missing. No paid or generative service was used.
+- Why not AI-generated video: the walkthrough must show behaviour that exists and is tested; a
+  recording of the real app does that and regenerates after every UI change.
+- Limits: GitHub shows GIFs inline but plays MP4 inline only when uploaded through its editor
+  (owner step after the repository is public); `tour.html` needs GitHub Pages or `pnpm media:tour`.
+  Media is not diffed in CI (frame timing varies by a few hundred milliseconds between runs).
+
+## D024 — Agent-first documentation and generated interfaces
+- Date: 2026-10-18 (+05:30)
+- Status: accepted (owner asked to make the repository useful for other AI agents)
+- Chosen: `llms.txt` at the root (llmstxt.org format); `docs/agents/` with an orientation page,
+  task recipes (shop words, exporter, message template, MCP tool, evaluation cases, drafting rule)
+  and seeded starter tasks; `docs/problems.md` mapping business problems to code and tests. Written
+  by an Opus agent from an inventory by Haiku scouts, then checked by two Sonnet agents for
+  paths, test names and safety rules before integration.
+- Generated, tested references: `docs/agents/tools.json` is the MCP server's own `tools/list`
+  answer; `docs/agents/errors.md` lists every error code the `--json` CLI and MCP tools can return
+  with its exit code. `node apps/local/src/agent-reference.ts` regenerates both and a test fails if
+  they drift or if any tool name suggests accepting, approving, rejecting, filling or submitting.
+- `pnpm check:quick` (lint, types, tests affected by uncommitted changes) gives agents a fast loop;
+  `pnpm check` stays the gate before a commit. The docs link test now covers `llms.txt` and the
+  agent, launch and media folders.
