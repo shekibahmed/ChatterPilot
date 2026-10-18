@@ -5,7 +5,8 @@
 - Active writer: Claude Code. Next owner: Claude Code (Codex when the Claude allowance ends, about
   12:30 on 2026-10-18)
 - Approved outline: S0–S7 + OA0 (see PROGRESS.md / DECISIONS.md D000–D003), approved 2026-10-17
-- Authorised: local commits per tested slice; push to private origin branch `build/v0.1`.
+- Authorised: local commits per tested slice; push to origin branch `build/v0.1`; PRs into `main`
+  and merging them (owner, 2026-10-18).
   Owner direction (2026-10-17, evening): no provider or live bot for now; position the repository as
   a starting kit that people extend with their own coding agent; keep improving it autonomously
   (research, concepts, usability, quality) in a loop; commit and push each stage.
@@ -14,7 +15,9 @@
 - Current work package: overnight improvement loop (see PROGRESS.md "Overnight run" entries)
 
 ## Verified repository and code state
-- Repository: `shekibahmed/ChatterPilot` (GitHub visibility PRIVATE)
+- Repository: `shekibahmed/ChatterPilot`, **public since 2026-10-18** (owner-approved); `main` has
+  the v0.1 build (PR #1). Pages: https://shekibahmed.github.io/ChatterPilot/ (serves `docs/` from
+  `main`). Discussions on, `usage` label created, private vulnerability reporting on.
 - Branch: `build/v0.1`; look up the latest commit with `git log -1` (a file cannot contain its own SHA)
 - Last fully checked code: the media, launch-kit and agent-docs commits on 2026-10-18:
   `pnpm check` exit 0 (485 tests); `pnpm test:e2e` exit 0 (13 passed); `pnpm media` exit 0
@@ -57,16 +60,20 @@
 - Re-run `pnpm media` after visible UI changes (it adds about 50 MB to history each time; do it
   deliberately).
 
-## Owner actions (unchanged, need Shekib)
-1. **OA0 recording** (about 5 minutes): `fixtures/mock-order-app/recording/README.md`.
-2. **P4 provider** choice and cloud-data policy; **OA1** live bot; **OA2** real target app.
-3. **P5 pilots** and **P6 release** (`docs/release-checklist.md`); merge to `main`.
-4. When public: enable private vulnerability reporting; decide a contact/consulting link for the
-   README (none is invented in the repo); try the import files in real Tally/ERPNext/Zoho sandboxes.
-5. Launch (see `docs/launch/README.md`): drag `docs/media/tour.mp4` into the README on github.com
-   for an inline player; set `docs/media/social/card-1280x640.png` as the social preview; enable
-   Discussions and GitHub Pages (for `docs/media/tour.html`); create the `usage` label; post the
-   drafts in waves only after approving each.
+## Owner actions (need Shekib)
+1. **README video player** (the browser extension was not connected, so this was not done): on
+   github.com edit README.md on `main`, drag in the upload copy of the tour (8.2 MB, under GitHub's
+   10 MB free-plan limit; regenerate it with the ffmpeg command in PROGRESS.md 2026-10-18 "Release"),
+   and put the `https://github.com/user-attachments/assets/...` URL it creates on its own line where
+   the README comment says so.
+2. **Social preview**: Settings, General, Social preview, upload
+   `docs/media/social/card-1280x640.png`.
+3. **Discussions**: create the categories in `docs/launch/discussions.md` and pin the welcome post.
+4. **Launch posts**: approve and post the drafts in `docs/launch/` in waves.
+5. **OA0 recording**, **P4 provider**, **OA1** live bot, **OA2** real target app, **P5 pilots**.
+6. Decide on the fixture names that might match real brands ("UltraBond", "Rockset", "Hilltop
+   Travels"; `docs/release-checklist.md`), a contact/consulting link for the README, and try the
+   import files in real Tally/ERPNext/Zoho sandboxes.
 
 ## Resume command
 `pnpm install --frozen-lockfile && pnpm check && pnpm test:e2e && pnpm chatterpilot eval`

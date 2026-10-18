@@ -16,7 +16,7 @@ Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) a
 </p>
 
 **▶ [Watch the walkthrough with music](docs/media/tour.mp4)** (about 4 minutes, invented data) ·
-[interactive tour](docs/media/tour.html) with chapters, clickable captions and copy-paste agent setup
+[interactive tour](https://shekibahmed.github.io/ChatterPilot/media/tour.html) with chapters, clickable captions and copy-paste agent setup
 (`pnpm media:tour` runs it locally) · [how the videos are made](docs/media/README.md)
 
 <!-- Owner: after the repository is public, drag docs/media/tour.mp4 into this file in GitHub's web

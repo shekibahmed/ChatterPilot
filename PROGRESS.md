@@ -525,3 +525,14 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   `sk-synthetic-not-a-real-key`), no private packet, databases or env files in history, no home
   paths in tracked files, all commits use the GitHub noreply address, media metadata clean.
 - Checks: `pnpm check` exit 0 (485 tests).
+
+## 2026-10-18 — Release: merged to main and made public (owner-approved)
+- PR #1 (`build/v0.1` into `main`) merged as `c5d6548` after green CI (check and e2e).
+- Repository made public; description and topics updated (the old description claimed Telegram
+  workflows and optional AI that do not exist yet); Discussions enabled; `usage` label created;
+  private vulnerability reporting enabled; GitHub Pages serves `docs/` from `main`
+  (https://shekibahmed.github.io/ChatterPilot/, build status "built"; tour page, video and
+  `chapters.js` return 206 to range requests). `docs/index.html` forwards to the tour.
+- Not done: the README inline video and the social preview need GitHub's web UI and the Chrome
+  extension was not connected. Upload copy for the README (8.2 MB, under the 10 MB free-plan limit):
+  `ffmpeg -i docs/media/tour.mp4 -c:v libx264 -preset slow -crf 28 -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart chatterpilot-walkthrough.mp4`.
