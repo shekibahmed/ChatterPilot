@@ -1,0 +1,89 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shekibahmed/chatterpilot",
+  "title": "ChatterPilot",
+  "description": "Turn WhatsApp order exports into source-linked drafts a person reviews.",
+  "websiteUrl": "https://github.com/shekibahmed/ChatterPilot",
+  "repository": {
+    "url": "https://github.com/shekibahmed/ChatterPilot",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "chatterpilot",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "named",
+          "name": "--workspace",
+          "description": "Local workspace directory",
+          "default": "workspaces/default"
+        },
+        {
+          "type": "named",
+          "name": "--files",
+          "description": "Folder that file arguments must stay inside. Defaults to the current directory."
+        },
+        {
+          "type": "named",
+          "name": "--profile",
+          "description": "lite is read-only and the default. full adds import, catalogue load and draft edits.",
+          "default": "lite",
+          "choices": ["lite", "full"]
+        },
+        {
+          "type": "named",
+          "name": "--agent",
+          "description": "Name recorded on drafts and edits made with the full profile",
+          "default": "mcp"
+        }
+      ]
+    },
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "chatterpilot",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://127.0.0.1:{--port}/mcp"
+      },
+      "packageArguments": [
+        {
+          "type": "named",
+          "name": "--transport",
+          "value": "http",
+          "description": "Serve streamable HTTP instead of stdio"
+        },
+        {
+          "type": "named",
+          "name": "--host",
+          "description": "Bind address. Defaults to loopback. Any other address requires --token.",
+          "default": "127.0.0.1"
+        },
+        {
+          "type": "named",
+          "name": "--port",
+          "description": "Port for the streamable HTTP endpoint",
+          "default": "4318",
+          "format": "number"
+        },
+        {
+          "type": "named",
+          "name": "--profile",
+          "description": "lite is read-only and the default. full adds import, catalogue load and draft edits.",
+          "default": "lite",
+          "choices": ["lite", "full"]
+        }
+      ]
+    }
+  ]
+}

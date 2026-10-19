@@ -48,7 +48,7 @@ What it is not: it is an early prototype tested only on synthetic data. Nothing 
 with a real business. It is not a server you host for a team yet; it is a local app for one
 computer. There is no live WhatsApp connection: you export the chat yourself.
 
-Try it with invented data: `pnpm install --frozen-lockfile && pnpm demo` (Node 26+, pnpm 12), or
+Try it with invented data: `pnpm install --frozen-lockfile && pnpm demo` (Node.js 22.18+, pnpm 12), or
 open it in the dev container.
 
 Repository: https://github.com/shekibahmed/ChatterPilot

@@ -1,124 +1,124 @@
-> Draft. Do not post until the repository is public and the owner has approved it.
+# MCP listings
 
-# MCP list and directory entries
+The repository is public. The npm package `chatterpilot` is **not** published until the steps in [RELEASING.md](../../RELEASING.md) have been run. Do not submit a listing that tells people to `npx chatterpilot` before `npm view chatterpilot version` prints a version. Do not say a listing exists until it has been merged or approved.
 
-Submit only after the repository is public. ChatterPilot is **not listed anywhere yet**; do not say
-otherwise in any post until a listing has actually been merged or approved.
+Checked on 2026-10-19: the name `chatterpilot` was free on npm, and these directories had not listed this server.
 
-Things every list and directory will notice, so be ready to state them:
+Facts every listing should keep:
 
-- The server runs locally over stdio, started from a clone of the repository with Node.js 26+.
-- There is no npm package. Directories that install from a package registry (or a registry that
-  requires a published package) cannot list it until a package exists, and publishing a package
-  needs a separate owner decision.
-- It reads only files inside the folder passed with `--files`, and stores data in a local SQLite
-  workspace. It makes no network calls.
+- Local-first. Stdio by default. Streamable HTTP on `127.0.0.1:4318/mcp` with `--transport http`. No hosted URL.
+- Default tool profile `lite` is six read-only tools. `--profile full` is fourteen tools. No accept, reject or submit tool.
+- Node.js 22.18 or later. The clone also needs pnpm 12. `npx` does not need pnpm.
+- MIT. Synthetic fixtures only. Not piloted with a real business.
+- Chat text in tool results is untrusted data.
 
-## awesome-mcp-servers
+## Official MCP registry
 
-Several lists use this name; the most widely referenced one is `punkpeye/awesome-mcp-servers` on
-GitHub. Before opening a pull request, read that list's current CONTRIBUTING file and README:
+Manifest: [`server.json`](../../server.json) at the repository root (`name`: `io.github.shekibahmed/chatterpilot`). Schema: `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`. Description length limit on the registry is 100 characters; the committed description is within that.
 
-- which category fits (look for a category covering business tools, finance, communication or data
-  processing; pick the one where similar servers already sit);
-- the exact line format, including any language or scope markers the list requires (several lists
-  use small symbols for "TypeScript" and "runs locally"; add them only if the list's legend requires
-  them);
-- alphabetical ordering within the category, and whether one entry per pull request is required.
+Publish the npm package first. The registry checks `mcpName` in `packages/mcp-server/package.json` against `server.json`.
 
-Line to adapt to the list's format:
-
-```markdown
-- [shekibahmed/ChatterPilot](https://github.com/shekibahmed/ChatterPilot) - Local-first server that turns WhatsApp chat exports into order drafts where every value cites its source; agents can draft and propose edits, but there is no tool to accept or submit.
+```sh
+curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+./mcp-publisher validate
+./mcp-publisher login github
+./mcp-publisher publish
 ```
 
-Pull request title: `Add ChatterPilot (local WhatsApp order drafting with provenance)`
+GitHub login only authorises names starting with `io.github.shekibahmed/`. Confirm with:
+
+```sh
+curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.shekibahmed/chatterpilot"
+```
+
+There is no `remotes` entry. Do not add one until a public HTTPS endpoint exists.
+
+## punkpeye/awesome-mcp-servers
+
+Read [CONTRIBUTING.md](https://github.com/punkpeye/awesome-mcp-servers/blob/main/CONTRIBUTING.md) again on the day you open the pull request. On 2026-10-19 it asked for one server per line, alphabetical order inside the category, and a public GitHub repository you install and run yourself. Remote-only servers belong in a different list. Their note for automated agents: a pull request title ending in `🤖🤖🤖` is fast-tracked. Use that only if you are opening the pull request as an agent.
+
+Category: `### 💬 Communication` (local service that reads a chat export). Legend marks for this server: `📇` TypeScript, `🏠` local, `🍎` `🪟` `🐧` because it is Node. Do not add a Glama badge until Glama has a page.
+
+Line to insert in alphabetical order by `owner/repo`:
+
+```markdown
+- [shekibahmed/ChatterPilot](https://github.com/shekibahmed/ChatterPilot) 📇 🏠 🍎 🪟 🐧 - Local-first server that turns a WhatsApp chat export into order drafts where every value cites its source. The default profile is read-only; a person accepts. There is no accept or submit tool.
+```
+
+Pull request title: `Add ChatterPilot (local WhatsApp order drafts)`
 
 Pull request body:
 
 ```markdown
-Adds ChatterPilot, a local stdio MCP server (TypeScript, MIT). It imports WhatsApp chat exports,
-matches order lines against the user's own price list and creates drafts where each value cites the
-chat span, catalogue row or calculation it came from. Agents can import, draft and propose edits;
-there is deliberately no accept or submit tool, so a person decides. Early prototype, tested on
-synthetic data only.
+Adds ChatterPilot, a local MCP server (TypeScript, MIT, stdio and streamable HTTP). It imports a WhatsApp export you choose, matches order lines to your own price list, and builds drafts where each value cites a chat span, a catalogue row or a calculation. The default profile is six read-only tools. The full profile can draft and propose edits. There is no tool to accept or submit. Early prototype, tested on synthetic data only. Not yet used by a real business.
 ```
 
-## Fields typically requested by MCP directories
+One server in the pull request. Fork, branch, edit `README.md` only.
 
-Directories differ; copy the fields they ask for.
+## Smithery
+
+Smithery's publish documentation, fetched 2026-10-19 from https://smithery.ai/docs/build/publish, offers two paths:
+
+1. **URL.** A public HTTPS server that speaks streamable HTTP. ChatterPilot does not have one. Do not submit a URL.
+2. **Local MCPB bundle.** Build an `.mcpb` and publish it with `smithery mcp publish ./server.mcpb -n shekibahmed/chatterpilot`. That bundle is not built in this repository yet. Building one is a separate step (Anthropic's MCPB guide). Skip Smithery until you either host an HTTPS endpoint or produce the bundle.
+
+[`smithery.yaml`](../../smithery.yaml) is the stdio command (`npx -y chatterpilot`) for clients that still read that file. It is not a claim that Smithery lists the server. Their older "add from GitHub" flow may still notice the file; if the dashboard offers it after the npm package exists, the paste-ready description is the long description below. Do not invent a `https://smithery.ai/server/...` link.
+
+## Glama
+
+Glama's own server-score page (read 2026-10-19) says public GitHub repositories are scanned at least daily, and that `glama.json` is how a maintainer is named. [`glama.json`](../../glama.json) names `shekibahmed`.
+
+1. After the npm package exists, sign in to https://glama.ai with the GitHub user `shekibahmed`.
+2. If ChatterPilot is not listed yet, use the submit control on https://glama.ai/mcp/servers and give `https://github.com/shekibahmed/ChatterPilot`.
+3. Server type: local / stdio. Install command: `npx -y chatterpilot`.
+4. Claim the listing with GitHub. The score page says authentication plus `glama.json` is how an author is verified.
+5. Do not add a Glama badge to the README until the page exists. The badge URL is on that page, not before.
+
+## Paste-ready fields
 
 **Name:** ChatterPilot
 
-**Short description (one line):**
-Turn WhatsApp order chat exports into source-linked order drafts; agents draft, a person accepts.
+**One line:** Turn a WhatsApp order export into source-linked drafts a person reviews.
 
 **Long description:**
 
-ChatterPilot is a local-first, MIT-licensed toolkit for small businesses that take orders in
-WhatsApp groups. Its MCP server lets a coding agent import a WhatsApp TXT export from an allowed
-folder, load the business's own price list, list messages that look like orders, create order
-drafts and propose edits. Every value in a draft cites its evidence: the exact chat span, a
-catalogue row, a calculation, or a named edit with a reason. Unknown values stay unknown and are
-flagged rather than guessed; prices come only from the catalogue. Agent edits are recorded as
-`agent:<name>` with a reason. There is deliberately no tool to accept, reject or submit a draft, so
-prompt-injected chat text cannot become an accepted order; a person accepts in the local review app.
-Tool results label chat text as untrusted data. The server runs over stdio, reads only files inside
-the folder passed with `--files`, stores data in a local SQLite workspace and makes no network calls.
-Status: early prototype, tested only on synthetic data; not yet used by a real business.
+ChatterPilot is a local-first, MIT-licensed toolkit for shops that take orders in WhatsApp groups. The MCP server lets an agent read a workspace, preview a WhatsApp TXT export from an allowed folder, and see messages that look like orders, with a draft preview where each value cites its evidence. The default profile is read-only (six tools). `--profile full` can import an export, load the shop's price list, create an open draft and propose an edit, recorded as `agent:<name>` with a reason. There is no tool to accept, reject or submit. Unknown values stay unknown. Prices come only from the catalogue. Chat text in results is labelled untrusted. Stdio is the default. `--transport http` serves streamable HTTP on 127.0.0.1 (a non-loopback bind requires a bearer token). Data stays in a local SQLite workspace. The server makes no network calls of its own. Status: early prototype, tested on synthetic data only, not yet used by a real business.
 
-**Install / run command:**
+**Install, after publish:**
 
 ```sh
-git clone https://github.com/shekibahmed/ChatterPilot && cd ChatterPilot
-pnpm install --frozen-lockfile
+npx -y chatterpilot --workspace workspaces/default --files .
+```
+
+**Install from a clone, works today:**
+
+```sh
+git clone https://github.com/shekibahmed/ChatterPilot.git && cd ChatterPilot
+corepack enable && corepack prepare pnpm@12.14.0 --activate && pnpm install --frozen-lockfile
 node apps/local/src/cli.ts mcp --workspace workspaces/default --files fixtures/synthetic --agent <name>
 ```
 
-Claude Code (from the repository folder):
+**Transports:** stdio (default); streamable HTTP at `http://127.0.0.1:4318/mcp`
 
-```sh
-claude mcp add chatterpilot -- node apps/local/src/cli.ts mcp --workspace workspaces/default --files fixtures/synthetic --agent claude-code
-```
+**Requirements:** Node.js 22.18 or later. pnpm 12 only for a clone. `npx` does not need pnpm.
 
-Configs for Codex, Cursor and VS Code: `docs/harnesses.md`.
+**Tools:**
 
-**Transport:** stdio
-
-**Requirements:** Node.js 26 or later, pnpm 12
-
-**Tools (14), from `docs/agent-session.md` and `docs/harnesses.md`:**
-
-| Tool | Effect |
+| Profile | Tools |
 |---|---|
-| `workspace_status` | Read only: imports, catalogue, saved drafts, pending suggestions |
-| `parse_export` | Read only: preview a WhatsApp export without storing it |
-| `import_export` | Stores an export from the allowed folder in the local workspace |
-| `check_catalogue` | Read only: validate a price list folder |
-| `load_catalogue` | Stores a price list from the allowed folder in the local workspace |
-| `list_suggestions` | Read only: messages that look like orders |
-| `create_draft` | Creates an order draft, recorded as `agent:<name>` |
-| `revise_draft` | Proposes a change with a reason; the draft stays open |
-| `list_drafts` | Read only |
-| `get_draft` | Read only: a draft with evidence for every value |
-| `export_orders` | Read only: exports accepted orders (CSV/JSON and experimental import files) |
-| `dashboard` | Read only: metrics with stated coverage |
-| `fleet_events` | Read only: bookings, changes, faults and payments for the fleet template |
-| `followups` | Read only: open deliveries, complaints, payment promises and quote requests |
+| lite (default, all read-only) | `workspace_status`, `parse_export`, `list_suggestions`, `list_drafts`, `get_draft`, `dashboard` |
+| full, added on top | `import_export`, `check_catalogue`, `load_catalogue`, `create_draft`, `revise_draft`, `export_orders`, `fleet_events`, `followups` |
 
-Not offered, by design: accept, reject, reopen, fill a form or submit.
+Not offered: accept, reject, reopen, fill a form, submit.
 
 **Licence:** MIT
 
-**Category:** Business / productivity (alternatives, depending on the directory: data processing,
-communication, finance)
+**Category:** Communication, or business / productivity if the directory has no communication section.
 
-**Tags:** whatsapp, orders, small-business, provenance, human-in-the-loop, local-first, sqlite,
-typescript, india, hinglish
+**Tags:** whatsapp, orders, small-business, provenance, human-in-the-loop, local-first, sqlite, typescript
 
 **Repository:** https://github.com/shekibahmed/ChatterPilot
 
-**Author / maintainer:** Shekib Ahmed (GitHub: shekibahmed)
+**Author:** Shekib Ahmed (GitHub: shekibahmed)
 
-**Screenshots or media:** `docs/images/draft-review.png`, `docs/media/social/card-1280x640.png`,
-`docs/media/gif/agent.gif`
+**Media that exists in the repo:** `docs/media/gif/intro.gif`, `docs/media/gif/agent.gif`, `docs/images/draft-review.png`

@@ -1,26 +1,29 @@
 # Current handoff
 
 ## Session and authority
-- Updated at: 2026-10-18 (+05:30), after the media, launch-kit and agent-docs slice
-- Active writer: Claude Code. Next owner: Claude Code (Codex when the Claude allowance ends, about
-  12:30 on 2026-10-18)
+- Updated at: 2026-10-19, after the launch-readiness slice (D025)
+- Active writer: Cursor cloud agent on `cursor/launch-mcp-readme-ac05`. Next owner: Shekib, for the
+  publish, tag and listing steps in `RELEASING.md` and `docs/launch/mcp-listings.md`.
 - Approved outline: S0–S7 + OA0 (see PROGRESS.md / DECISIONS.md D000–D003), approved 2026-10-17
-- Authorised: local commits per tested slice; push to origin branch `build/v0.1`; PRs into `main`
-  and merging them (owner, 2026-10-18).
+- Authorised: local commits per tested slice; push to origin; a pull request into `main`. The
+  2026-10-19 launch task authorises the README CTA to https://bekaamchor.com (the same public
+  channels already printed in `operations-intelligence-workbench`).
   Owner direction (2026-10-17, evening): no provider or live bot for now; position the repository as
-  a starting kit that people extend with their own coding agent; keep improving it autonomously
-  (research, concepts, usability, quality) in a loop; commit and push each stage.
-  Not authorised: visibility change, publication, deployment, paid/provider calls, bot setup,
-  real-target submission, merge to `main`, inventing contact/CTA URLs.
-- Current work package: overnight improvement loop (see PROGRESS.md "Overnight run" entries)
+  a starting kit that people extend with their own coding agent.
+  Not authorised: visibility change, publishing the npm package, pushing a version tag, deployment,
+  paid/provider calls, bot setup, real-target submission, merge to `main`.
+- Current work package: launch readiness (README, Node floor, MCP HTTP + lite profile, unpublished
+  npm package). See PROGRESS.md "2026-10-19".
 
 ## Verified repository and code state
 - Repository: `shekibahmed/ChatterPilot`, **public since 2026-10-18** (owner-approved); `main` has
   the v0.1 build (PR #1). Pages: https://shekibahmed.github.io/ChatterPilot/ (serves `docs/` from
   `main`). Discussions on, `usage` label created, private vulnerability reporting on.
-- Branch: `build/v0.1`; look up the latest commit with `git log -1` (a file cannot contain its own SHA)
-- Last fully checked code: the media, launch-kit and agent-docs commits on 2026-10-18:
-  `pnpm check` exit 0 (485 tests); `pnpm test:e2e` exit 0 (13 passed); `pnpm media` exit 0
+- Branch: `cursor/launch-mcp-readme-ac05` off `main` @ `58a2ae8`. Look up the latest commit with
+  `git log -1` (a file cannot contain its own SHA).
+- Last fully checked code: this slice, Node 22.23.3, pnpm 12.14.0:
+  `pnpm check` exit 0 (491 tests). `pnpm test:e2e` not run here (no Playwright Chromium). The npm
+  package is not published.
 
 ## Working tree to preserve
 - Private planning packet: sibling folder `../ChatterPilot-private/`. Never copy it in.
@@ -61,17 +64,27 @@
   deliberately).
 
 ## Owner actions (need Shekib)
-Done on 2026-10-18: README inline video (above the status note), social preview image, Discussions
-categories and the pinned welcome post (https://github.com/shekibahmed/ChatterPilot/discussions/3).
-1. **Discussions tidy-up (optional):** the default "General" and "Polls" categories still exist, and
-   "Show and tell" kept its name (its description is the "How you use it" one). Category
-   descriptions do not yet end with "Use invented data only. Never post real chats, names, phone
-   numbers or prices." (`docs/launch/discussions.md`).
-2. **Launch posts**: approve and post the drafts in `docs/launch/` in waves.
-3. **OA0 recording**, **P4 provider**, **OA1** live bot, **OA2** real target app, **P5 pilots**.
-4. Decide on the fixture names that might match real brands ("UltraBond", "Rockset", "Hilltop
-   Travels"; `docs/release-checklist.md`), a contact/consulting link for the README, and try the
-   import files in real Tally/ERPNext/Zoho sandboxes.
+Done on 2026-10-18: README inline video, social preview image, Discussions categories and the pinned
+welcome post (https://github.com/shekibahmed/ChatterPilot/discussions/3). The README CTA is now in
+the repo (this task). The npm package is still unpublished.
+1. **Publish:** follow `RELEASING.md`. Create the `NPM_TOKEN` Actions secret, merge this pull
+   request, tag `v0.1.0` from `main`, and push the tag. Do not publish by hand from a laptop unless
+   the workflow cannot run. Confirm `npm view chatterpilot` is still 404 before tagging.
+2. **Listings:** after npm shows `0.1.0`, follow `docs/launch/mcp-listings.md` (official registry,
+   awesome-mcp-servers, Glama). Smithery stays a stdio config until there is a public HTTPS URL or
+   an MCPB bundle. Do not submit a URL this repository does not host.
+3. **GitHub topics:** on 2026-10-19 the API already returned 11 topics (`ai-agents`, `claude-code`,
+   `human-in-the-loop`, `local-first`, `mcp`, `mcp-server`, `order-management`, `provenance`,
+   `small-business`, `typescript`, `whatsapp`). Confirm they still match what you want. The launch
+   note that said "currently 7" was behind the live list.
+4. **Discussions tidy-up (optional):** the default "General" and "Polls" categories still exist, and
+   "Show and tell" kept its name. Descriptions do not yet end with the invented-data sentence
+   (`docs/launch/discussions.md`).
+5. **Launch posts**: approve and post the drafts in `docs/launch/` in waves. `reddit.md` and
+   `show-hn.md` now say Node.js 22.18+.
+6. **OA0 recording**, **P4 provider**, **OA1** live bot, **OA2** real target app, **P5 pilots**.
+7. Try the import files in real Tally/ERPNext/Zoho sandboxes. Fixture names that might match real
+   brands are still listed in `docs/release-checklist.md`.
 
 ## Resume command
 `pnpm install --frozen-lockfile && pnpm check && pnpm test:e2e && pnpm chatterpilot eval`

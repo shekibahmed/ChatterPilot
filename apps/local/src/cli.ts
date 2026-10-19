@@ -86,9 +86,10 @@ const USAGE = `Usage (every command accepts --json for machine-readable output):
       Score the drafting rules against a labelled message set (default: the synthetic set in
       fixtures/eval). Nothing is stored. See docs/evaluation.md.
 
-  chatterpilot mcp [--workspace <dir>] [--files <dir>] [--agent <name>]
-      Run as a Model Context Protocol server on stdio for agent harnesses (Claude Code, Codex, ...).
-      File arguments must be inside --files (default: current folder). Accepting drafts stays human.
+  chatterpilot mcp [--workspace <dir>] [--files <dir>] [--agent <name>] [--profile lite|full] [--transport stdio|http] [--host <addr>] [--port <n>] [--token <secret>]
+      Model Context Protocol server. Default profile is lite (read-only). --profile full adds import,
+      catalogue load and draft edits. --transport http serves streamable HTTP on 127.0.0.1:4318/mcp.
+      A non-loopback --host requires --token. File arguments must be inside --files. No accept tool.
 
 Everything runs locally. Nothing is sent anywhere.`;
 
@@ -757,25 +758,8 @@ const commands: Record<string, Command> = {
   },
 
   async mcp(args) {
-    const { values } = parseArgs({
-      args,
-      options: {
-        workspace: ws,
-        files: { type: "string" },
-        agent: { type: "string", default: "mcp" },
-      },
-    });
-    const { runMcpServer } = await import("./mcp.ts");
-    await runMcpServer({
-      workspace: values.workspace,
-      agentName: values.agent,
-      ...(values.files ? { filesRoot: values.files } : {}),
-    });
-    // Runs until the client closes stdin; then exit cleanly.
-    return new Promise<number>((done) => {
-      process.stdin.once("close", () => done(0));
-      process.stdin.once("end", () => done(0));
-    });
+    const { runMcpCommand } = await import("./mcp-cli.ts");
+    return runMcpCommand(args);
   },
 };
 

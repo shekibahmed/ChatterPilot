@@ -1,0 +1,37 @@
+{
+  "name": "chatterpilot",
+  "version": "0.1.0",
+  "description": "Local MCP server: WhatsApp order exports become source-linked drafts a person reviews.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "chatterpilot": "./dist/chatterpilot.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "mcpName": "io.github.shekibahmed/chatterpilot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shekibahmed/ChatterPilot.git",
+    "directory": "packages/mcp-server"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "node build.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "yauzl": "3.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "ChatterPilot",
-  "image": "node:26-bookworm",
+  "image": "node:22-bookworm",
   "postCreateCommand": "npm install -g pnpm@12.14.0 && pnpm install --frozen-lockfile && pnpm check",
   "forwardPorts": [4317],
   "portsAttributes": {
