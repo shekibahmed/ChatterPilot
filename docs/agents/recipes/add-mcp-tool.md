@@ -51,7 +51,7 @@ keep the tool's code path read-only.
    (`activeCatalogue` comes from `apps/local/src/review.ts`; `catalogueSummary` is a placeholder
    name.)
 
-2. Register the tool in `createMcpServer` in `apps/local/src/mcp.ts`:
+2. Register the tool in `createMcpServer` in `apps/local/src/mcp.ts`. `server.registerTool` is wrapped so a name that is not in `LITE_TOOL_NAMES` is omitted from the default lite profile. Leave a new tool off that list unless it is read-only and belongs in the small default set.
 
    ```ts
    server.registerTool(

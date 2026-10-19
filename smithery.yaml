@@ -1,0 +1,28 @@
+# Stdio start command for clients that still read smithery.yaml.
+# As of 2026-10-19 Smithery's publish page asks for a public HTTPS URL or an MCPB
+# bundle. This file does not point at a hosted URL. See docs/launch/mcp-listings.md.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      profile:
+        type: string
+        enum: [lite, full]
+        default: lite
+        description: lite is read-only. full adds import, catalogue load and draft edits.
+      workspace:
+        type: string
+        default: workspaces/default
+        description: Local workspace directory.
+      files:
+        type: string
+        description: Folder that file arguments must stay inside.
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'chatterpilot', '--profile', config.profile ?? 'lite', '--workspace', config.workspace ?? 'workspaces/default', ...(config.files ? ['--files', config.files] : [])]
+    })
+  exampleConfig:
+    profile: lite
+    workspace: workspaces/default

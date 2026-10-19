@@ -432,3 +432,32 @@ their replacement. No secrets, customer data or private transcripts.
   `pnpm check` stays the gate before a commit. The docs link test now covers `llms.txt` and the
   agent, launch, media and solutions folders. Lessons from building these checks are in
   `docs/solutions/developer-experience/generated-agent-references-drift-tested-as-data.md`.
+
+## D025 — Node 22.18 floor, lite MCP, and an unpublished npm package
+- Date: 2026-10-19
+- Status: accepted (owner launch task of 2026-10-19)
+- Supersedes: the "Node >= 26" line in D001. The rest of D001 stands, including better-sqlite3.
+- Node: D001 picked Node >= 26 because `node:sqlite` was a release candidate then. The code uses
+  better-sqlite3 13, not `node:sqlite`. Packages are TypeScript source with erasable syntax, so the
+  real floor is Node's unflagged type stripping (stable default since 22.18.0). Checked on this
+  machine: Node 22.14.0 (`process.features.typescript` false) exits 1 with
+  `ERR_UNKNOWN_FILE_EXTENSION` on `apps/local/src/cli.ts`. Node 22.23.3 (`typescript` feature
+  `strip`) runs that file (usage, exit 2). `engines` is `>=22.18.0`. pnpm stays 12.14.0.
+  Node 24 was not installed here.
+- MCP profile: default `lite` is six read-only tools (`workspace_status`, `parse_export`,
+  `list_suggestions`, `list_drafts`, `get_draft`, `dashboard`). `--profile full` is the existing
+  fourteen. No accept or submit tool in either profile. In-repo `.mcp.json` passes `--profile full`.
+- HTTP: streamable HTTP on `http://127.0.0.1:4318/mcp`, stateful sessions. Loopback binds check the
+  Host header against localhost names. Any other bind requires `--token` (`Authorization: Bearer`).
+  There is no public remote URL.
+- Package: `packages/mcp-server` is the publishable `chatterpilot` npm package (bin starts the MCP
+  server). Root package renamed `chatterpilot-monorepo` and stays private. `server.json` is the
+  official MCP registry manifest (stdio and streamable-http, no remotes). Not published. The name
+  `chatterpilot` returned 404 from the npm registry on 2026-10-19. Release steps are in
+  `RELEASING.md`; `.github/workflows/release.yml` publishes on a `v*.*.*` tag using
+  `secrets.NPM_TOKEN` and does not contain a token.
+- CTA: the README links https://bekaamchor.com and the public contact channels already printed in
+  the sibling repository `operations-intelligence-workbench`. This task is the authorisation to
+  print them. No ROI or time-saved claim.
+- Skill: `skills/whatsapp-operations/SKILL.md` stays the source. A byte-identical copy lives at
+  `.claude/skills/whatsapp-operations/SKILL.md`. A test fails if they diverge.

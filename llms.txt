@@ -55,7 +55,7 @@ Invariants an agent must keep: money is integer minor units plus a scale, never 
 
 ## Commands
 
-- [pnpm install --frozen-lockfile](package.json): install (Node 26 or later, pnpm 12)
+- [pnpm install --frozen-lockfile](package.json): install (Node.js 22.18 or later, pnpm 12)
 - [pnpm check](package.json): Biome lint, TypeScript, all Vitest tests; must exit 0 before a commit
 - [pnpm check:quick](package.json): lint, types and only the tests affected by your change
 - [pnpm test:e2e](apps/local/e2e/playwright.config.ts): Playwright browser tests; run for UI or server changes
@@ -68,7 +68,7 @@ Invariants an agent must keep: money is integer minor units plus a scale, never 
 ## Optional
 
 - [docs/agent-session.md](docs/agent-session.md): a recorded agent session against the MCP server
-- [skills/whatsapp-operations/SKILL.md](skills/whatsapp-operations/SKILL.md): agent skill for running the CLI
+- [skills/whatsapp-operations/SKILL.md](skills/whatsapp-operations/SKILL.md): agent skill for running the CLI (same file at `.claude/skills/whatsapp-operations/SKILL.md`)
 - [DECISIONS.md](DECISIONS.md): design decisions D001 onward, with reasons
 - [HANDOFF.md](HANDOFF.md): current state of the work
 - [PROGRESS.md](PROGRESS.md): slice log with commands and exit codes

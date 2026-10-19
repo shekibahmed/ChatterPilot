@@ -28,6 +28,14 @@ describe("agent skill matches the real CLI", () => {
     expect(skill).toMatch(/^---\nname: whatsapp-operations\ndescription: .+\n---\n/);
   });
 
+  it("is copied to the Claude Code skills path", () => {
+    const copy = readFileSync(
+      new URL(".claude/skills/whatsapp-operations/SKILL.md", `file://${root}`),
+      "utf8",
+    );
+    expect(copy).toBe(skill);
+  });
+
   it("only uses commands and flags that the CLI documents", () => {
     const invocations = [
       ...skill.matchAll(/pnpm chatterpilot ([a-z]+)(?: ([a-z]+))?((?: [^`\n]*)?)/g),

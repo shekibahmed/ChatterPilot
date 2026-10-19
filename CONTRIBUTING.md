@@ -26,7 +26,7 @@ synthetic line that reproduces the problem.
 
 ## Development
 
-Node.js 26+ and pnpm 12.
+Node.js 22.18+ and pnpm 12. Node 26 is not required.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -64,7 +64,7 @@ anything. [docs/problems.md](docs/problems.md) maps each problem to its code and
 - **Synthetic data only.** Write new invented messages, names, numbers and prices. Never commit real
   chats, audio, customer or supplier names, phone numbers, price lists, secrets or browser
   sessions, even redacted.
-- **Run the checks.** First run `pnpm install --frozen-lockfile` (Node 26 or later, pnpm 12).
+- **Run the checks.** First run `pnpm install --frozen-lockfile` (Node.js 22.18 or later, pnpm 12).
   `pnpm check` must exit 0. Run `pnpm test:e2e` for web app or server changes (it needs
   `pnpm exec playwright install chromium` once), and `pnpm agent-reference` when you change an MCP
   tool or an error code. Write down each command and its exit code. Write "not run" for anything

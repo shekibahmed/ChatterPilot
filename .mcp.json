@@ -6,6 +6,8 @@
       "args": [
         "${CLAUDE_PROJECT_DIR:-.}/apps/local/src/cli.ts",
         "mcp",
+        "--profile",
+        "full",
         "--workspace",
         "${CLAUDE_PROJECT_DIR:-.}/workspaces/default",
         "--files",

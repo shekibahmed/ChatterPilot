@@ -549,3 +549,29 @@ Synthetic/sanitised details only. A partial slice stays partial even if committe
   not committed.
 - Discussions still has the default "General" and "Polls" categories, "Show and tell" kept its name,
   and descriptions lack the invented-data sentence (noted in HANDOFF as optional owner tidy-up).
+
+## 2026-10-19 — Launch readiness: README, Node 22.18, MCP HTTP and lite profile
+- Tool / active writer: Cursor cloud agent
+- Approved scope: owner launch task of 2026-10-19 (README, packaging, MCP transports and profiles,
+  skill copy, listings, split note). D025. Nothing published. Nothing merged to `main`.
+- Starting branch / HEAD: `main` @ `58a2ae8e44dec0ba4421421c9b4694f5bc716dee`; branch
+  `cursor/launch-mcp-readme-ac05`
+- Outcome: completed. The pull request is the commit on `cursor/launch-mcp-readme-ac05`.
+- Changes: README pitch, three-command quick start, "what it is not", existing intro GIF and
+  walkthrough video, Kaamchor CTA. Engines and CI/devcontainer Node floor `>=22.18.0`. MCP lite
+  default (6 read-only tools) and `--profile full` (14). Streamable HTTP on loopback port 4318,
+  bearer token required off loopback. Publishable `packages/mcp-server` (`chatterpilot`),
+  `server.json`, `RELEASING.md`, release workflow on tag `v*.*.*` using `secrets.NPM_TOKEN`.
+  Skill copied to `.claude/skills/whatsapp-operations/SKILL.md`. `docs/launch/mcp-listings.md`
+  rewritten. `docs/launch/wa-order-draft-split.md` is a cut line, not a new repo.
+- Checks (cwd = repo root, PATH puts Node 22.23.3 first, pnpm 12.14.0, after the doc edits):
+  - `node` 22.14.0 on `apps/local/src/cli.ts` — exit 1, `ERR_UNKNOWN_FILE_EXTENSION` (`.ts`)
+  - `node` 22.23.3 on `apps/local/src/cli.ts` — exit 2 (usage). `process.features.typescript` is
+    `strip` on 22.23.3 and `false` on 22.14.0
+  - `pnpm exec biome check --write .` — exit 0 (fixed 6 files)
+  - `pnpm check` — exit 0; 37 files, 491 tests passed
+  - `pnpm test:e2e` — not run. Playwright Chromium is not installed in this environment. The review
+    app routes were not changed. CI's `e2e` job still runs `pnpm test:e2e` on the pull request.
+  - npm publish, tag push, `mcp-publisher` — not run
+- Next: Shekib publishes, tags, and submits the listings in `RELEASING.md` and
+  `docs/launch/mcp-listings.md`. GitHub topics on 2026-10-19 were already 11, not 7.

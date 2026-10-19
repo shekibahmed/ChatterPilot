@@ -25,6 +25,8 @@ export async function recordSession(): Promise<string> {
     [
       "apps/local/src/cli.ts",
       "mcp",
+      "--profile",
+      "full",
       "--workspace",
       join(dir, "ws"),
       "--files",
@@ -91,7 +93,7 @@ export async function recordSession(): Promise<string> {
       "synthetic fixtures. This is the real server output (trimmed), showing what a coding agent can",
       "and cannot do through MCP. Regenerate it after changing the tools.",
       "",
-      `The server offers ${tools.result.tools.length} tools: ${tools.result.tools.map((t) => `\`${t.name}\``).join(", ")}.`,
+      `The full profile offers ${tools.result.tools.length} tools: ${tools.result.tools.map((t) => `\`${t.name}\``).join(", ")}. The default profile is lite (read-only). This session uses the full profile.`,
       "",
     );
     await call("1. Load the price list", "load_catalogue", { dir: "catalogue" }, (r) => ({

@@ -1,40 +1,42 @@
 # ChatterPilot
 
-**Turn WhatsApp order messages into source-linked drafts you can check and export.**
+**Turn a WhatsApp order export into drafts you can check, where every quantity and price cites the message or catalogue row it came from.**
 
-Many small businesses take orders, corrections and payment updates in WhatsApp groups. Someone then
-re-types them into a spreadsheet, billing tool or ERP. ChatterPilot reads a chat export you choose,
-proposes order drafts using your own price catalogue, shows exactly where every value came from,
-and lets a person correct and accept them before anything is exported.
+For a shop that takes orders in a WhatsApp group and then retypes them into a spreadsheet, Tally or another billing tool. Also for a developer or coding agent who wants a small, tested starting point for that workflow. It runs on your computer. The core needs no account, no API key and no network.
 
-It runs on your computer. The core needs no account, no API key and no internet connection.
-Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) and
-[docs/privacy.md](docs/privacy.md).
+Run a shop rather than code? Start with [docs/for-shops.md](docs/for-shops.md) and [docs/privacy.md](docs/privacy.md).
 
 <p align="center">
   <img src="docs/media/gif/intro.gif" width="860" alt="Animated intro: an invented chat order becomes a draft whose values link to chat lines and catalogue rows; a later correction changes the total; a person accepts">
 </p>
 
-**▶ Watch the walkthrough with music** (about 4 minutes, invented data). It plays below; there is
-also an [interactive tour](https://shekibahmed.github.io/ChatterPilot/media/tour.html) with
-chapters, clickable captions and copy-paste agent setup, and a note on
-[how the videos are made](docs/media/README.md).
+## Quick start
+
+Node.js 22.18 or later. Node 26 is not required. The third command turns on Corepack (it ships with Node 22) so pnpm 12 is available. If Corepack is disabled, install pnpm with `npm install -g pnpm@12` and run `pnpm install --frozen-lockfile && pnpm demo` instead.
+
+```sh
+git clone https://github.com/shekibahmed/ChatterPilot.git
+cd ChatterPilot
+corepack enable && corepack prepare pnpm@12.14.0 --activate && pnpm install --frozen-lockfile && pnpm demo
+```
+
+Open http://127.0.0.1:4317. The demo uses invented chats and an invented hardware-store catalogue ([fixtures/synthetic](fixtures/synthetic)). No Node on the machine? Open the repository in a dev container ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)); it installs dependencies and runs the checks, then run `pnpm demo` inside it.
+
+## What it is not
+
+- Not a connection to WhatsApp. You choose an export file. Nothing is sent anywhere.
+- Not piloted with a real business. Tests and the demo use synthetic data only. No time-saved or ROI claim is made.
+- Not able to accept or submit an order by itself. A person does that. The MCP server has no accept or submit tool.
+- Not a live bot, and it does not transcribe voice notes. A person can attach a transcript they already have.
+- Not on npm yet. The `chatterpilot` package is ready to publish; until that release, start it from this clone. See [RELEASING.md](RELEASING.md).
+
+## Walkthrough
+
+**Watch the walkthrough** (about 4 minutes, invented data). There is also an [interactive tour](https://shekibahmed.github.io/ChatterPilot/media/tour.html) and a note on [how the videos are made](docs/media/README.md).
 
 https://github.com/user-attachments/assets/8d0de102-f271-46f9-93e5-22ced205c35a
 
-> **Status: early prototype.** The parts below are built and tested on synthetic data.
-> Nothing has been piloted with a real business yet, and no time-saving claims are made.
-> See [docs/why.md](docs/why.md) for the problem and the design principles, and
-> [docs/patterns.md](docs/patterns.md) for the ten patterns behind it, each with its source and
-> the test that proves it.
-> [docs/how-it-was-built.md](docs/how-it-was-built.md) describes the method: research, small
-> tested slices, independent evaluation sets and adversarial review with AI agents.
-
-**A starting kit for your coding agent.** ChatterPilot is small, tested, readable code for a
-pattern many businesses need: messy messages in, checked records out, with a person in charge.
-Use it as it is, or point Claude Code, Codex, Cursor or your own agent at it to fit your shop's
-words, your billing tool and your workflow. The tests keep the safety rules in place while you
-change things. See [docs/harnesses.md](docs/harnesses.md).
+The problem and the design principles are in [docs/why.md](docs/why.md). The ten patterns, each with the test that proves it, are in [docs/patterns.md](docs/patterns.md). [docs/how-it-was-built.md](docs/how-it-was-built.md) is the method: research, small tested slices, held-out evaluation and review.
 
 ## How it works
 
@@ -45,139 +47,76 @@ flowchart LR
   B --> D["Draft<br/>each value cites its source<br/>unknown stays unknown"]
   D --> E{"A person reviews<br/>fixes, accepts"}
   E -->|accepted snapshot| F["Export<br/>CSV/JSON, Tally, ERPNext,<br/>Zoho, UBL files"]
-  E -->|accepted snapshot| G["Dashboard<br/>with stated coverage"]
-  H["Your coding agent<br/>(MCP)"] -.->|import, draft, propose edits| D
+  H["Your coding agent<br/>(MCP)"] -.->|read, or draft if you opt in| D
   H -.-x|cannot accept| E
 ```
 
-## What it does today
+Import keeps every line and refuses hostile ZIPs. Prices and tax come only from your catalogue. Unknown values stay unknown. Money is integer minor units. Exports read frozen accepted snapshots. Import files for Tally Prime, ERPNext, Zoho Books and UBL 2.1 are experimental: not yet tried in those products ([docs/exporters.md](docs/exporters.md)). The opt-in form filler types into a local synthetic form and stops before Submit ([docs/order-automation.md](docs/order-automation.md)).
 
-| Step | What happens | Safeguards |
-|---|---|---|
-| Import | Reads WhatsApp TXT or ZIP exports (Android and iOS formats). | Every line is accounted for; ambiguous day/month order must be confirmed; hostile ZIPs (path tricks, symlinks, zip bombs) are refused; identical re-imports change nothing; the original text is kept byte-for-byte. |
-| Voice notes | `chatterpilot transcript add` attaches a transcript you already have to a voice note; it is versioned and can then be drafted like text. | Values from a transcript are labelled "voice note", never passed off as typed chat. No automatic transcription yet. |
-| Suggest | Messages mentioning products from your catalogue become order suggestions. | Suggestions only. Messages that read as payments, deliveries or quotes (English keyword rules) are not suggested. A message can belong to only one live draft. |
-| Draft | Products, quantities and units are matched to your `products.csv`; prices and tax come only from the catalogue; totals use exact integer arithmetic. | Unknown values stay unknown. Typos, ambiguous names, stale or missing prices and incompatible units are flagged, never guessed. |
-| Review | A person can set the customer, fix any field, exclude a line or link a later correction. | Every edit needs a reason and is kept in an append-only history. A draft with open issues cannot be accepted. |
-| Dashboard | Order value by day, chat activity, pipeline, quantities by product, orders by customer and open review work. | Money figures count accepted orders only unless you choose otherwise; every metric states its definition, date coverage and what it left out; trends are refused ("insufficient comparable data") when coverage or volume is too thin. |
-| Export | Accepted orders download as CSV or JSON, or as import files for Tally Prime, ERPNext, Zoho Books and UBL 2.1 ([docs/exporters.md](docs/exporters.md)). | Exports come from frozen, fingerprinted snapshots; spreadsheet formula injection is neutralised. Import files are marked experimental (not yet tried in the real tools); Tally refuses to export until every name is mapped. |
-| Fill a form (opt-in, synthetic only) | `chatterpilot fill-form --approve` types an accepted order into a local synthetic web form (MockBooks) and reads it back. No real system is supported yet. | Approval bound to the exact document, prices, target, person and expiry; checked before and after saving; never twice; unknown outcomes reconciled, not retried; **stops before Submit**. See [docs/order-automation.md](docs/order-automation.md). |
-
-### See it in motion
-
-| A correction, with reasons | A coding agent, with limits |
-|---|---|
-| <img src="docs/media/gif/correction.gif" alt="The reviewer links the later message 'Sorry make it 45 bags cement', gives a reason, excludes the old line and accepts; the order is frozen"> | <img src="docs/media/gif/agent.gif" alt="A coding agent calls the MCP tools: it loads the catalogue, imports a chat, drafts and proposes an edit; export is refused and there is no accept tool"> |
-
-<details>
-<summary>More clips: where each value came from, export, dashboard</summary>
-
-| Where each value came from | Export what was accepted | A dashboard that shows its gaps |
-|---|---|---|
-| <img src="docs/media/gif/provenance.gif" alt="Clicking a chat-line label highlights the exact words in the original message"> | <img src="docs/media/gif/export.gif" alt="CSV download, a Zoho Books import file, and Tally Prime refusing until names are mapped"> | <img src="docs/media/gif/dashboard.gif" alt="Dashboard stating its date coverage and gap, refusing a week comparison"> |
-
-Still images: [draft review](docs/images/draft-review.png), [dashboard](docs/images/dashboard.png),
-[export](docs/images/export.png).
-</details>
-
-## Try the demo
-
-Requires Node.js 26+ and pnpm 12.
-
-```sh
-pnpm install --frozen-lockfile
-pnpm demo
-```
-
-No Node.js on your machine? Open the repository in a dev container (VS Code "Reopen in Container",
-or GitHub Codespaces): [.devcontainer](.devcontainer/devcontainer.json)
-installs everything and runs the checks; then run `pnpm demo` inside it.
-
-Open http://127.0.0.1:4317. The demo uses invented chats and an invented hardware-store catalogue
-(see [fixtures/synthetic](fixtures/synthetic)). Try drafting the Kumar Builders order, then link the
-"make it 45 bags" correction and exclude the old line.
-
-## Use it with your own export
-
-```sh
-pnpm chatterpilot init --timezone Asia/Kolkata --name "My shop"
-pnpm chatterpilot catalogue check path/to/catalogue     # products.csv, customers.csv, catalogue.json
-pnpm chatterpilot catalogue load path/to/catalogue
-pnpm chatterpilot import "WhatsApp Chat with Orders.zip"
-pnpm chatterpilot serve                                  # http://127.0.0.1:4317
-```
-
-Other commands: `parse` (preview an export without storing it), `draft` (print suggested drafts
-in the terminal) and `events --vehicles vehicles.csv` (a second, fleet/travel template: bookings,
-changes, cancellations, vehicle faults, repair quotes and reported payments, with links between
-them; see [fixtures/synthetic/fleet](fixtures/synthetic/fleet)) and `followups` (a third template:
-deliveries being chased, short or damaged supplies, payment promises and reports, quote requests,
-and what is still open). Run `pnpm chatterpilot` for help. The catalogue format is described in
-[docs/catalogue.md](docs/catalogue.md).
+## Use your own export
 
 Only import chats you have the right to process. Workspaces live in `workspaces/` (ignored by Git).
 
-## Use it with your coding agent
-
-ChatterPilot includes an MCP server, so agents can import exports, prepare drafts and propose
-edits. They cannot accept orders: that tool does not exist, so a person always decides. In this
-repository Claude Code picks up [`.mcp.json`](.mcp.json) automatically. Configs for Codex, Cursor
-and VS Code, the tool list and recipes for extending the code are in [docs/harnesses.md](docs/harnesses.md).
-Every CLI command also takes `--json`. There is an agent skill in
-[skills/whatsapp-operations](skills/whatsapp-operations/SKILL.md).
-
-**If you are an agent** (or briefing one): start with [llms.txt](llms.txt) and
-[docs/agents/README.md](docs/agents/README.md). [docs/problems.md](docs/problems.md) maps each
-business problem to the code and the test that solves it, the recipes in
-[docs/agents/recipes](docs/agents/recipes) walk through common extensions, and
-[docs/agents/tools.json](docs/agents/tools.json) and [docs/agents/errors.md](docs/agents/errors.md)
-are generated from the code (a test fails if they drift). `pnpm check:quick` runs lint, types and
-only the tests affected by your change.
-
-## Supported and not supported (yet)
-
-- **Tested export formats:** Android `dd/mm/yy, h:mm am - Name: text` and its variants (24-hour,
-  dots, year-first, `a.m./p. m.`), iOS `[dd/mm/yy, h:mm:ss AM] Name: text`, with the special spaces and
-  direction marks recent exports contain. Other locales may work but are untested.
-- **Language:** order lines in English and romanised Hindi (Hinglish): unit words such as *bori,
-  peti, nag, darjan*, number words such as *do, pachas, dedh, sawa do*, and digits in Devanagari,
-  Bengali, Gujarati, Tamil and other scripts. Quantities written in words are always flagged for a
-  person to confirm. Add your shop's own words in `lexicon.json` ([docs/catalogue.md](docs/catalogue.md)).
-  Other languages need native-speaker evaluation first.
-- **Telegram:** `chatterpilot intake` applies the staff-only intake rules to saved Telegram updates
-  offline. There is no live bot yet.
-- **Not included:** live WhatsApp connection, a live Telegram bot, automatic voice-note transcription, AI
-  extraction (only the offline consent/validation boundary exists), any real (non-synthetic) target
-  system, and document submission. These are planned as separate, opt-in,
-  permission-gated steps.
-
-## How it is built
-
-TypeScript monorepo: `packages/import-whatsapp` (parser, safe ZIP), `packages/storage` (SQLite,
-content-addressed files), `packages/orders` (catalogue, lexicon, matching, drafts), `packages/core`
-(money, CSV, provenance), `packages/exporters` (import files for other tools),
-`packages/templates` (fleet), `packages/order-automation` (approvals, ledger, form connector),
-`packages/telegram-intake`, `packages/providers` (AI boundary, offline) and `apps/local` (CLI, MCP
-server, loopback API, React review app). Design decisions are
-recorded in [DECISIONS.md](DECISIONS.md); progress and test evidence in [PROGRESS.md](PROGRESS.md).
-
 ```sh
-pnpm check      # lint + typecheck + unit/integration tests
-pnpm test:e2e   # browser test of the demo (Playwright)
+pnpm chatterpilot init --timezone Asia/Kolkata --name "My shop"
+pnpm chatterpilot catalogue check path/to/catalogue
+pnpm chatterpilot catalogue load path/to/catalogue
+pnpm chatterpilot import "WhatsApp Chat with Orders.zip"
+pnpm chatterpilot serve
 ```
 
-## Roadmap and helping
+`parse` previews an export without storing it. `draft` prints suggestions in the terminal. `events` and `followups` are two other templates (fleet bookings, and open delivery or payment follow-ups). Catalogue columns are in [docs/catalogue.md](docs/catalogue.md). Order lines are tested in English and romanised Hindi, with digits in several Indic scripts. Other languages need a native speaker before anyone should trust them.
 
-What comes next and what each step is waiting for (pilots, real test companies, native speakers) is
-in [docs/roadmap.md](docs/roadmap.md). Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
+## Call it from an agent
 
-**Feedback is the most useful contribution right now.** Run the demo or point your coding agent at
-the repository, then tell us what you tried and what got in the way with the "Tell us how you use
-it" issue form (invented examples only, never real chats). Starter tasks for people and agents are
-in [docs/agents/tasks.md](docs/agents/tasks.md). If the patterns or the code saved you work, a star
-helps other developers find it.
+The MCP server defaults to a **lite** profile: six read-only tools (`workspace_status`, `parse_export`, `list_suggestions`, `list_drafts`, `get_draft`, `dashboard`). **`--profile full`** adds the other eight, including import, catalogue load, creating a draft and proposing an edit. Fourteen tools in total. Still no accept, reject or submit.
+
+Stdio, from this clone:
+
+```sh
+node apps/local/src/cli.ts mcp --workspace workspaces/default --files fixtures/synthetic --agent your-agent
+```
+
+Streamable HTTP (what a remote client such as xAI Grok can connect to). It binds to loopback unless you pass a token:
+
+```sh
+node apps/local/src/cli.ts mcp --transport http --port 4318
+```
+
+Endpoint: `http://127.0.0.1:4318/mcp`. Listening on any other address requires `--token`, sent as `Authorization: Bearer <token>`. This repository does not host a public URL.
+
+After the npm release (not published yet):
+
+```sh
+npx chatterpilot --workspace workspaces/default --files .
+```
+
+Configs for Claude Code, Codex, Cursor and VS Code, and both profiles, are in [docs/harnesses.md](docs/harnesses.md). This repository's [`.mcp.json`](.mcp.json) opts into `--profile full` so an agent working in the clone can import and draft. The agent skill is [skills/whatsapp-operations/SKILL.md](skills/whatsapp-operations/SKILL.md), also copied to [.claude/skills/whatsapp-operations/SKILL.md](.claude/skills/whatsapp-operations/SKILL.md).
+
+**If you are an agent:** start with [llms.txt](llms.txt) and [docs/agents/README.md](docs/agents/README.md). The full tool list is generated into [docs/agents/tools.json](docs/agents/tools.json).
+
+## Build
+
+```sh
+pnpm check      # lint + typecheck + tests
+pnpm test:e2e   # browser test of the demo
+```
+
+Packages are TypeScript source (no build step) except the publishable MCP bundle in `packages/mcp-server`, which is built when publishing. Layout and decisions: [DECISIONS.md](DECISIONS.md). What comes next: [docs/roadmap.md](docs/roadmap.md). Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). A smaller first-look repository is sketched in [docs/launch/wa-order-draft-split.md](docs/launch/wa-order-draft-split.md). It has not been split out.
+
+## Who builds this, and how can they help you?
+
+ChatterPilot is designed and built by Shekib and [Kaamchor](https://bekaamchor.com). Kaamchor builds and deploys this for your Tally/ERP/WhatsApp workflow.
+
+If you tried the demo and the shape matches how orders arrive in your shop, that conversation is the point of this repository:
+
+- **Website:** [bekaamchor.com](https://bekaamchor.com)
+- **Email:** [hello@bekaamchor.com](mailto:hello@bekaamchor.com)
+- **WhatsApp:** [+91 84040 29692](https://wa.me/918404029692)
+- **LinkedIn:** [linkedin.com/company/bekaamchor](https://www.linkedin.com/company/bekaamchor)
+
+A good first message names the chat where orders arrive and the system they are retyped into. The data in this repository is synthetic, and nothing here has been piloted with a real business.
 
 ## Licence
 
-MIT © 2026 Shekib Ahmed. See [LICENSE](LICENSE). Third-party packages keep their own licences; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT © 2026 Shekib Ahmed. See [LICENSE](LICENSE). Third-party packages keep their own licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

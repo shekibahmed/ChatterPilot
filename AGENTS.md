@@ -28,7 +28,7 @@ owner-approved): everything pushed is world-readable, so check for secrets and p
   version-bound actions, and in release 1 it stops before Submit.
 
 ## Commands
-- `pnpm install --frozen-lockfile` — install (Node >= 26, pnpm 12)
+- `pnpm install --frozen-lockfile` — install (Node >= 22.18, pnpm 12)
 - `pnpm check` — lint (Biome) + typecheck (TypeScript) + tests (Vitest)
 - `pnpm format` — apply Biome formatting
 - `pnpm test:e2e` — Playwright browser tests (demo, connector, follow-ups); run for UI/server changes

@@ -1,14 +1,32 @@
 /**
- * ChatterPilot as a Model Context Protocol server (stdio), for agent harnesses such as Claude Code,
- * Codex, Cursor or VS Code. Safety design:
+ * ChatterPilot as a Model Context Protocol server (stdio or streamable HTTP), for agent harnesses
+ * such as Claude Code, Codex, Cursor, VS Code or a remote client that speaks streamable HTTP.
+ * Safety design:
  * - The workspace is fixed when the server starts; tools cannot switch to another one.
  * - File arguments must resolve inside the allowed folder (default: the current directory).
  * - Chat text is returned as data in clearly named fields and must never be followed as
  *   instructions; tool descriptions say so.
- * - Agents can import, preview, create drafts and propose edits (recorded as "agent:<name>" with a
- *   reason). Accepting, rejecting, reopening and filling forms in other systems are NOT exposed:
- *   those stay with a person in the review app or CLI.
+ * - The default profile is `lite`: a small read-only set. `--profile full` adds the local writes
+ *   (import, catalogue load, create and revise a draft). Accepting, rejecting, reopening and
+ *   filling forms in other systems are NOT exposed: those stay with a person in the review app.
  */
+export const MCP_SERVER_VERSION = "0.1.0";
+
+/**
+ * Read-only tools registered by default. The full profile adds the other tools in this file.
+ * Keep this list small: a remote client sees one tool definition per entry.
+ */
+export const LITE_TOOL_NAMES = [
+  "workspace_status",
+  "parse_export",
+  "list_suggestions",
+  "list_drafts",
+  "get_draft",
+  "dashboard",
+] as const;
+
+export type McpProfile = "lite" | "full";
+
 import { realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/server";
@@ -39,6 +57,8 @@ export interface McpOptions {
   readonly filesRoot?: string;
   /** Name recorded on drafts and edits made through MCP. */
   readonly agentName?: string;
+  /** `lite` (default) is read-only. `full` adds import, catalogue load and draft edits. */
+  readonly profile?: McpProfile;
 }
 
 export const UNTRUSTED_NOTE =
@@ -102,14 +122,22 @@ export function createMcpServer(options: McpOptions): McpServer {
   const workspace = options.workspace;
   const root = options.filesRoot ?? process.cwd();
   const agent = `agent:${(options.agentName ?? "mcp").slice(0, 40)}`;
-  const server = new McpServer({ name: "chatterpilot", version: "0.1.0" });
+  const profile = options.profile ?? "lite";
+  const lite = new Set<string>(LITE_TOOL_NAMES);
+  const server = new McpServer({ name: "chatterpilot", version: MCP_SERVER_VERSION });
+
+  const registerAll = server.registerTool.bind(server);
+  server.registerTool = ((name: string, config: never, cb: never) => {
+    if (profile === "lite" && !lite.has(name)) return {} as never;
+    return registerAll(name, config, cb);
+  }) as typeof server.registerTool;
 
   server.registerTool(
     "workspace_status",
     {
       title: "Workspace status",
       description:
-        "Imports, catalogue, saved drafts and the number of pending order suggestions. Read-only.",
+        "Read-only. What is in this local workspace: whether a price catalogue is loaded, which chats were imported, how many drafts are open or accepted, and how many messages look like orders but have no saved draft yet. Does not return message text and does not change anything.",
       inputSchema: z.object({}),
       annotations: READ_ONLY,
     },
@@ -120,7 +148,7 @@ export function createMcpServer(options: McpOptions): McpServer {
     "parse_export",
     {
       title: "Preview a WhatsApp export",
-      description: `Parse a WhatsApp TXT export (path inside the allowed folder) and return every message with its source lines. Stores nothing. ${UNTRUSTED_NOTE}`,
+      description: `Read-only. Parse one WhatsApp .txt export inside the allowed folder and return every message with its source line numbers. Stores nothing. If the date order could be day/month or month/day, the call fails and asks for dateOrder; ask the person, never guess. ${UNTRUSTED_NOTE}`,
       inputSchema: z.object({
         path: z.string().describe("Path to a .txt export, relative to the allowed folder"),
         dateOrder: z
@@ -190,7 +218,7 @@ export function createMcpServer(options: McpOptions): McpServer {
     "list_suggestions",
     {
       title: "Order suggestions with preview drafts",
-      description: `Messages that look like orders and are not drafted yet, each with a preview draft (values, sources, open issues). Stores nothing. ${UNTRUSTED_NOTE}`,
+      description: `Read-only. Imported messages that look like orders and are not saved as drafts yet. Each item includes a preview draft: product, quantity, price, tax, total, the source of every value, and open issues. Nothing is saved. Prices come only from the loaded catalogue; unknown stays unknown. ${UNTRUSTED_NOTE}`,
       inputSchema: z.object({}),
       annotations: READ_ONLY,
     },
@@ -248,7 +276,7 @@ export function createMcpServer(options: McpOptions): McpServer {
     {
       title: "List drafts",
       description:
-        "Saved drafts with status (open/accepted/rejected), customer, total and open issues. Read-only.",
+        "Read-only. Drafts saved in this workspace, with status (open, accepted or rejected), customer, total and open issues. Does not accept or change a draft.",
       inputSchema: z.object({}),
       annotations: READ_ONLY,
     },
@@ -259,7 +287,7 @@ export function createMcpServer(options: McpOptions): McpServer {
     "get_draft",
     {
       title: "Get a draft",
-      description: `One draft with every field's provenance, its source messages and its decision history. Read-only. ${UNTRUSTED_NOTE}`,
+      description: `Read-only. One saved draft: every field's provenance (chat line, catalogue row, calculation or named edit), the source messages, and the decision history. This tool cannot accept the draft. ${UNTRUSTED_NOTE}`,
       inputSchema: z.object({ draftId: z.string() }),
       annotations: READ_ONLY,
     },
@@ -293,7 +321,7 @@ export function createMcpServer(options: McpOptions): McpServer {
     {
       title: "Dashboard metrics",
       description:
-        "Deterministic metrics with coverage and exclusions. Money uses accepted orders unless scope is 'all'. Read-only.",
+        "Read-only. Deterministic metrics for this workspace. Each metric states its definition, the dates it covers and what it left out. Money uses accepted orders unless scope is 'all'. A thin or incomplete period is reported as insufficient comparable data, not as a trend.",
       inputSchema: z.object({ scope: z.enum(["accepted", "all"]).default("accepted") }),
       annotations: READ_ONLY,
     },
@@ -330,5 +358,7 @@ export async function runMcpServer(options: McpOptions): Promise<void> {
   const server = createMcpServer(options);
   await server.connect(new StdioServerTransport());
   // Diagnostics go to stderr; stdout carries the protocol.
-  console.error(`ChatterPilot MCP server ready (workspace ${options.workspace}).`);
+  console.error(
+    `ChatterPilot MCP server ready (${options.profile ?? "lite"}, workspace ${options.workspace}).`,
+  );
 }

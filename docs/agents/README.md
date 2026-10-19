@@ -45,7 +45,7 @@ keep them by what you write and what you look at.
 
 ## Prove a change
 
-First run `pnpm install --frozen-lockfile` (Node 26 or later, pnpm 12). `pnpm test:e2e` also needs
+First run `pnpm install --frozen-lockfile` (Node.js 22.18 or later, pnpm 12). `pnpm test:e2e` also needs
 the Playwright browser: `pnpm exec playwright install chromium`. If it cannot run, write "not run"
 and say why.
 
@@ -120,7 +120,7 @@ Quote figures only from output you saw in this session.
 With `--json`, a refused command prints `{"error": {"code": "...", "message": "..."}}` on stdout.
 Branch on `code`, not on the message. The full list is [errors.md](errors.md). `serve`, `demo` and
 `mcp` do not accept `--json`. MCP tools return the same message with `isError: true` and no code
-field. The tool list, with input schemas and read-only hints, is [tools.json](tools.json).
+field. The tool list, with input schemas and read-only hints, is [tools.json](tools.json). That file is the full profile (`--profile full`). A server started with no profile flag exposes the read-only lite profile only.
 
 ## Recipes
 

@@ -8,7 +8,7 @@ and **extend** it for your shop by editing the code with the tests as guard rail
 
 ## 1. Set up once
 
-Node.js 26+ and pnpm 12:
+Node.js 22.18+ and pnpm 12 (Node 26 is not required; 22.18 is when Node runs this repository's TypeScript without a flag):
 
 ```sh
 git clone <this repository> && cd ChatterPilot
@@ -21,15 +21,31 @@ Put the chat exports you are allowed to process in one folder (for example `inbo
 should keep out of git). The MCP server can only read files inside the folder you pass with
 `--files`; the examples below use the synthetic fixtures so you can try it safely first.
 
-## 2. Connect your agent (MCP, stdio)
+## 2. Connect your agent
 
-The server is started by your agent with:
+The server defaults to the **lite** profile: `workspace_status`, `parse_export`, `list_suggestions`, `list_drafts`, `get_draft`, `dashboard`. All six are read-only. Pass `--profile full` for the other eight tools (import, catalogue check and load, create and revise a draft, export, fleet, follow-ups). The configs below opt into `full` because they are for working in this repository. Omit `--profile` and the server stays lite.
+
+Stdio:
 
 ```sh
-node apps/local/src/cli.ts mcp --workspace workspaces/default --files fixtures/synthetic --agent <name>
+node apps/local/src/cli.ts mcp --profile full --workspace workspaces/default --files fixtures/synthetic --agent <name>
 ```
 
 `--agent` names the agent in the review history (drafts and edits show `agent:<name>`).
+
+Streamable HTTP, for a client that only accepts HTTP (xAI Grok's remote MCP is one). Loopback, no token:
+
+```sh
+node apps/local/src/cli.ts mcp --transport http --port 4318 --profile full --workspace workspaces/default --files fixtures/synthetic --agent <name>
+```
+
+Endpoint `http://127.0.0.1:4318/mcp`. Binding any other host requires `--token`; the client sends `Authorization: Bearer <token>`. There is no hosted URL in this repository.
+
+After the npm package is published (it is not, until [RELEASING.md](../RELEASING.md)):
+
+```sh
+npx -y chatterpilot --profile full --workspace workspaces/default --files .
+```
 
 ### Claude Code
 
@@ -37,7 +53,7 @@ This repository ships a project config, [`.mcp.json`](../.mcp.json); Claude Code
 approve it the first time. To add it by hand instead:
 
 ```sh
-claude mcp add chatterpilot -- node apps/local/src/cli.ts mcp --workspace workspaces/default --files fixtures/synthetic --agent claude-code
+claude mcp add chatterpilot -- node apps/local/src/cli.ts mcp --profile full --workspace workspaces/default --files fixtures/synthetic --agent claude-code
 ```
 
 ### Codex CLI (`.codex/config.toml` in a trusted project, or `~/.codex/config.toml`)
@@ -45,7 +61,7 @@ claude mcp add chatterpilot -- node apps/local/src/cli.ts mcp --workspace worksp
 ```toml
 [mcp_servers.chatterpilot]
 command = "node"
-args = ["apps/local/src/cli.ts", "mcp", "--workspace", "workspaces/default", "--files", "fixtures/synthetic", "--agent", "codex"]
+args = ["apps/local/src/cli.ts", "mcp", "--profile", "full", "--workspace", "workspaces/default", "--files", "fixtures/synthetic", "--agent", "codex"]
 cwd = "/absolute/path/to/ChatterPilot"
 default_tools_approval_mode = "writes"
 ```
@@ -58,7 +74,7 @@ default_tools_approval_mode = "writes"
     "chatterpilot": {
       "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/apps/local/src/cli.ts", "mcp", "--workspace", "${workspaceFolder}/workspaces/default", "--files", "${workspaceFolder}/fixtures/synthetic", "--agent", "cursor"]
+      "args": ["${workspaceFolder}/apps/local/src/cli.ts", "mcp", "--profile", "full", "--workspace", "${workspaceFolder}/workspaces/default", "--files", "${workspaceFolder}/fixtures/synthetic", "--agent", "cursor"]
     }
   }
 }
@@ -72,7 +88,7 @@ default_tools_approval_mode = "writes"
     "chatterpilot": {
       "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/apps/local/src/cli.ts", "mcp", "--workspace", "${workspaceFolder}/workspaces/default", "--files", "${workspaceFolder}/fixtures/synthetic", "--agent", "vscode"]
+      "args": ["${workspaceFolder}/apps/local/src/cli.ts", "mcp", "--profile", "full", "--workspace", "${workspaceFolder}/workspaces/default", "--files", "${workspaceFolder}/fixtures/synthetic", "--agent", "vscode"]
     }
   }
 }
@@ -90,11 +106,12 @@ config and the raw stdio protocol are exercised by this repository's tests.
 
 ## 3. What the agent can and cannot do
 
-| Tool | Effect |
-|---|---|
-| `workspace_status`, `parse_export`, `check_catalogue`, `list_suggestions`, `list_drafts`, `get_draft`, `export_orders`, `dashboard`, `fleet_events`, `followups` | Read only |
-| `import_export`, `load_catalogue` | Store a file from the allowed folder in the local workspace |
-| `create_draft`, `revise_draft` | Create a draft or propose a change; recorded as `agent:<name>` with a reason |
+| Profile | Tools | Effect |
+|---|---|---|
+| lite (default) | `workspace_status`, `parse_export`, `list_suggestions`, `list_drafts`, `get_draft`, `dashboard` | Read only |
+| full | `check_catalogue`, `export_orders`, `fleet_events`, `followups` | Read only, in addition to lite |
+| full | `import_export`, `load_catalogue` | Store a file from the allowed folder in the local workspace |
+| full | `create_draft`, `revise_draft` | Create a draft or propose a change; recorded as `agent:<name>` with a reason |
 
 There is deliberately **no tool to accept, reject or reopen a draft, or to fill a form in another
 system**. Those stay with a person in the review app (`pnpm chatterpilot serve`) or CLI. This holds

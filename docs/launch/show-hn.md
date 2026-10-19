@@ -53,7 +53,7 @@ The design ideas (field-level provenance, abstaining, integer money, frozen appr
 approvals, safe re-imports, chat text as untrusted input) are written up in docs/patterns.md with
 the test that checks each one. They apply to any "messy messages in, records out" system.
 
-Try it: `pnpm install --frozen-lockfile && pnpm demo` (Node 26+, pnpm 12), then open
+Try it: `pnpm install --frozen-lockfile && pnpm demo` (Node.js 22.18+, pnpm 12), then open
 http://127.0.0.1:4317. The demo uses invented chats and an invented hardware-store catalogue.
 There is a walkthrough video of about four minutes in docs/media (invented data).
 

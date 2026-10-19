@@ -42,6 +42,8 @@ beforeAll(async () => {
     [
       "apps/local/src/cli.ts",
       "mcp",
+      "--profile",
+      "full",
       "--workspace",
       join(dir, "ws"),
       "--files",
